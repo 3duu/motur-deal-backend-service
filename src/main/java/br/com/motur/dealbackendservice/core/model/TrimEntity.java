@@ -5,17 +5,16 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "vehicle_equipment")
-public class VehicleEquipmentEntity {
+@Table(name = "trim")
+public class TrimEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer equipmentId;
-/*
+    private Integer trimId;
+
     @ManyToOne
-    @JoinColumn(name = "vehicle_id")
-    private VehicleEntity vehicle;*/
+    @JoinColumn(name = "model_id")
+    private ModelEntity model;
 
     private String name;
-    private String description;
 }

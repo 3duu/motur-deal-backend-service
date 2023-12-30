@@ -1,8 +1,10 @@
 package br.com.motur.dealbackendservice.core.model;
 
 import br.com.motur.dealbackendservice.core.converter.JsonNodeConverter;
+import br.com.motur.dealbackendservice.core.model.common.AuthType;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
+import lombok.Data;
 
 /**
  * Entidade que representa a configuração de autenticação de um Provider.
@@ -12,20 +14,51 @@ import jakarta.persistence.*;
  * Validação e Relacionamentos: Dependendo das regras de negócio, adicione anotações de validação e defina os relacionamentos apropriados com outras entidades.
  */
 @Entity
+@Data
+@Table(name = "auth_config")
 public class AuthConfigEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long authId;
+    private Integer id;
 
     @Column(nullable = false)
-    private Long providerId; // Referência ao ID do Provider
+    private Integer providerId; // Referência ao ID do Provider
 
     @Column(length = 50, nullable = false)
-    private String authType; // Tipo de autenticação (Basic, OAuth2, API Key, etc.)
+    private AuthType authType; // Tipo de autenticação (Basic, OAuth2, API Key, etc.)
 
     @Column(columnDefinition = "jsonb")
     @Convert(converter = JsonNodeConverter.class)
     private JsonNode details; // Detalhes da autenticação como um objeto JSON
 
 }
+
+/**
+ * Exemplos de Dados Armazenados em "details":
+ * Para OAuth2:
+ *
+ * json
+ * Copy code
+ * {
+ *     "client_id": "abc123",
+ *     "client_secret": "xyz789",
+ *     "scopes": ["read", "write"],
+ *     "token_url": "https://example.com/oauth/token"
+ * }
+ * Para API Key:
+ *
+ * json
+ * Copy code
+ * {
+ *     "api_key": "some_unique_key"
+ * }
+ * Para Basic Auth:
+ *
+ * json
+ * Copy code
+ * {
+ *     "username": "user",
+ *     "password": "pass"
+ * }
+ */
