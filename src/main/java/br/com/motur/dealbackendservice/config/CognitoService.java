@@ -15,14 +15,14 @@ public class CognitoService {
 
     public CognitoService() {
         this.cognitoClient = AWSCognitoIdentityProviderClientBuilder.standard()
-                .withRegion(Regions.DEFAULT_REGION) // substitua com sua região
+                .withRegion(Regions.US_EAST_1)
                 .build();
     }
 
     public String signUpUser(String username, String password, String email) {
         SignUpRequest signUpRequest = new SignUpRequest()
-                .withClientId("SEU_CLIENT_ID") // Substitua pelo seu App Client ID
-                .withUsername(username)
+                .withClientId("motur-login") // Substitua pelo seu App Client ID
+                //.withUsername(username)
                 .withPassword(password)
                 .withUserAttributes(
                         new AttributeType()
@@ -36,8 +36,8 @@ public class CognitoService {
 
     public String loginUser(String username, String password) {
         AdminInitiateAuthRequest authRequest = new AdminInitiateAuthRequest()
-                .withClientId("SEU_CLIENT_ID") // Substitua pelo seu App Client ID
-                .withUserPoolId("SEU_USER_POOL_ID") // Substitua pelo seu User Pool ID
+                .withClientId("motur-login") // Substitua pelo seu App Client ID
+                .withUserPoolId("us-east-1_edAonTQSm") // Substitua pelo seu User Pool ID
                 .withAuthFlow(AuthFlowType.ADMIN_NO_SRP_AUTH)
                 .withAuthParameters(
                         Map.of(
@@ -52,7 +52,7 @@ public class CognitoService {
 
     public void resetPassword(String username) {
         AdminResetUserPasswordRequest resetRequest = new AdminResetUserPasswordRequest()
-                .withUserPoolId("SEU_USER_POOL_ID") // Substitua pelo seu User Pool ID
+                .withUserPoolId("us-east-1_edAonTQSm") // Substitua pelo seu User Pool ID
                 .withUsername(username);
 
         cognitoClient.adminResetUserPassword(resetRequest);
