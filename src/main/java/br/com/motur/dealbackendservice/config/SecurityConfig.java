@@ -7,18 +7,18 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import static org.springframework.security.config.Customizer.withDefaults;
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
-
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests((authz) -> authz
-                        .anyRequest().authenticated()
+                        //.requestMatchers("/v1/auth/**").authenticated()
+                        //.requestMatchers("/v1/public/**").permitAll()
+                        .anyRequest().permitAll()
                 )
                 .httpBasic(withDefaults());
         return http.build();
     }
+
 }

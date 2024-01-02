@@ -34,11 +34,11 @@ public class CognitoService {
         return result.getUserSub();
     }
 
-    public String loginUser(String username, String password) {
+    public String loginUser(final String username, final String password) {
         AdminInitiateAuthRequest authRequest = new AdminInitiateAuthRequest()
                 .withClientId("motur-login") // Substitua pelo seu App Client ID
                 .withUserPoolId("us-east-1_edAonTQSm") // Substitua pelo seu User Pool ID
-                .withAuthFlow(AuthFlowType.ADMIN_NO_SRP_AUTH)
+                .withAuthFlow(AuthFlowType.USER_PASSWORD_AUTH)
                 .withAuthParameters(
                         Map.of(
                                 "USERNAME", username,
