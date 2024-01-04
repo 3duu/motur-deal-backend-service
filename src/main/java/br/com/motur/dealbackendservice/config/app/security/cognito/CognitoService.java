@@ -1,4 +1,4 @@
-package br.com.motur.dealbackendservice.config;
+package br.com.motur.dealbackendservice.config.app.security.cognito;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProvider;

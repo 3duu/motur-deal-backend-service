@@ -1,6 +1,6 @@
 package br.com.motur.dealbackendservice.core.entrypoints.v1;
 
-import br.com.motur.dealbackendservice.config.CognitoService;
+import br.com.motur.dealbackendservice.config.app.security.cognito.CognitoService;
 import br.com.motur.dealbackendservice.core.entrypoints.v1.request.LoginRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
