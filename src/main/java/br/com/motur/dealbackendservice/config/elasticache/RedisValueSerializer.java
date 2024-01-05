@@ -2,8 +2,8 @@ package br.com.motur.dealbackendservice.config.elasticache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.SerializationException;
+//import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+//import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
@@ -12,12 +12,12 @@ import org.springframework.util.Assert;
 import java.util.LinkedHashMap;
 
 
-public class RedisValueSerializer extends GenericJackson2JsonRedisSerializer {
+public class RedisValueSerializer /*extends GenericJackson2JsonRedisSerializer*/ {
 
     static final byte[] EMPTY_ARRAY = new byte[0];
 
     public static final ObjectMapper mapper = new ObjectMapper();
-
+/*
     @Override
     public byte[] serialize(@Nullable Object source) throws SerializationException {
         if (source == null) {
@@ -74,7 +74,7 @@ public class RedisValueSerializer extends GenericJackson2JsonRedisSerializer {
 
     static boolean isEmpty(@Nullable byte[] data) {
         return data == null || data.length == 0;
-    }
+    }*/
 
 }
 

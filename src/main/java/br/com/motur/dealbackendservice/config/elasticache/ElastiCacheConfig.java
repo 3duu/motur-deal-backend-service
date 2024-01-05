@@ -3,17 +3,17 @@ package br.com.motur.dealbackendservice.config.elasticache;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
+//import org.springframework.data.redis.cache.RedisCacheConfiguration;
+//import org.springframework.data.redis.serializer.RedisSerializationContext;
 import java.time.Duration;
 
-@Configuration
+//@Configuration
 //@IcarrosDependecyTree( elasticache = @Elasticache(nome = "test-ms-anunciocache.icarros.io",
         //descricao = "Elasticache de anuncio."))
 public class ElastiCacheConfig {
 
     final RedisValueSerializer serializer = new RedisValueSerializer();
-
+/*
     @Bean
     public RedisCacheConfiguration cacheConfiguration() {
         return RedisCacheConfiguration.defaultCacheConfig()
@@ -41,5 +41,5 @@ public class ElastiCacheConfig {
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(60)).disableCachingNullValues()).enableStatistics()
                 .withCacheConfiguration("KEYCLOAK_TOKEN",
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMillis(280)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics();
-    }
+    }*/
 }

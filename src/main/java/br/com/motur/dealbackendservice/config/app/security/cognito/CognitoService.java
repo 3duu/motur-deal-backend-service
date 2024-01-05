@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-@Service
+//@Service
 public class CognitoService {
 
     private AWSCognitoIdentityProvider cognitoClient;

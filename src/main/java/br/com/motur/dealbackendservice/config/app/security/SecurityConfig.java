@@ -1,36 +1,39 @@
 package br.com.motur.dealbackendservice.config.app.security;
 
-import br.com.motur.dealbackendservice.config.app.security.cognito.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.keycloak.adapters.KeycloakConfigResolver;
+import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-
+/*
     private final CustomBearerTokenAccessDeniedHandler customBearerTokenAccessDeniedHandler;
 
     private final CustomBearerTokenAuthenticationEntryPoint customCognitoAuthenticationEntryPoint;
 
-    private final CognitoUserPoolConfig cognitoUserPoolConfig;
-
+    private final CognitoUserPoolConfig cognitoUserPoolConfig;*/
+/*
     @Autowired
     public SecurityConfig(CustomBearerTokenAccessDeniedHandler customBearerTokenAccessDeniedHandler, CustomBearerTokenAuthenticationEntryPoint customCognitoAuthenticationEntryPoint, CognitoUserPoolConfig cognitoUserPoolConfig) {
         this.customBearerTokenAccessDeniedHandler = customBearerTokenAccessDeniedHandler;
         this.customCognitoAuthenticationEntryPoint = customCognitoAuthenticationEntryPoint;
         this.cognitoUserPoolConfig = cognitoUserPoolConfig;
-    }
+    }*/
 /*
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -62,17 +65,46 @@ public class SecurityConfig {
     }*/
 
     @Bean
+    public KeycloakConfigResolver KeycloakConfigResolver() {
+        return new KeycloakSpringBootConfigResolver();
+    }
+
+    /*httpSecurityCorsConfigurer -> {
+                    httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource());
+                }*/
+
+    /**
+     * Configuração de segurança
+     * @param http
+     * @return
+     * @throws Exception
+     */
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeRequests(authorizeRequests ->
-                        authorizeRequests
-                                .requestMatchers("/v1/login/**").permitAll()
+        return http.cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.ignoringRequestMatchers(AUTH_WHITELIST))
+                .authorizeHttpRequests(ar ->
+                        ar
+                                .requestMatchers(AUTH_WHITELIST).permitAll()
                                 .anyRequest().authenticated()
                 )
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
-                .oauth2Login();
-        return http.build();
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> Customizer.withDefaults()))
+                .build();
     }
+
+    /***
+     * Configuração de CORS
+     * @return
+     */
+
+    private CorsConfigurationSource corsConfigurationSource() {
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
+        return source;
+    }
+
 
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -83,10 +115,17 @@ public class SecurityConfig {
         return jwtConverter;
     }
 
-    @Bean
+    /*@Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) {
+        final KeycloakAuthenticationProvider keycloakAuthenticationProvider = keycloakAuthenticationProvider();
+        keycloakAuthenticationProvider.setGrantedAuthoritiesMapper(new SimpleAuthorityMapper());
+        auth.authenticationProvider(keycloakAuthenticationProvider);
+    }*/
+
+    /*@Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
-    }
+    }*/
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -118,50 +157,10 @@ public class SecurityConfig {
             "/csa/api/token",
             // Actuators
             "/actuator/**",
-            "/health/**"
+            "/health/**",
+            //endpoints
+            "api/v1/login/**",
+            "api/v1/public/**",
     };
-/*
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests( auth -> auth
-                        .requestMatchers(AUTH_WHITELIST).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(withDefaults())
-                .addFilterBefore(authenticationJwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
-                //.addFilterAfter(authenticationJwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
-
-    @Bean
-    public SecurityFilterChain configure(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers( new AntPathRequestMatcher("swagger-ui/**")).permitAll()
-                        .requestMatchers( new AntPathRequestMatcher("/swagger-ui/**")).permitAll()
-                        .requestMatchers( new AntPathRequestMatcher("v3/api-docs/**")).permitAll()
-                        .requestMatchers( new AntPathRequestMatcher("/v3/api-docs/**")).permitAll()
-                        .anyRequest().authenticated())
-                .httpBasic();
-        return httpSecurity.build();
-    }*/
-/*
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf().disable()
-                .authorizeHttpRequests(requests -> requests
-                        .requestMatchers(HttpMethod.GET, "/", "/static/**", "/index.html", "/api/users/me").permitAll()
-                        .requestMatchers("/v1/login/**").permitAll()
-                        .requestMatchers("/v1/teste").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/{id}", "/api/storages/{id}", "/api/customers/{id}").authenticated()
-                        .anyRequest().authenticated()).httpBasic(withDefaults());
-        return http.build();
-    }*/
-
-
 
 }

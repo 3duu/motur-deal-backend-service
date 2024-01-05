@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice.core.entrypoints.v1;
 
+import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestEndpoint {
 
     @GetMapping("/teste")
-    public String test() {
+    public String test(KeycloakAuthenticationToken keycloakAuthenticationToken) {
         return "Teste";
     }
 }
