@@ -42,14 +42,6 @@ public class AppBeansBootstrap {
                 .version(projectVersion)
                 .license(new License().name("Apache 2.0").url("http://springdoc.org")));
     }
-/*
-    @Bean
-    public GroupedOpenApi controllerApi() {
-        return GroupedOpenApi.builder()
-                .group("controller-api")
-                .packagesToScan("br.com.motur.dealbackendservice.core.entrypoints.*") // Specify the package to scan
-                .build();
-    }*/
 
     @PostConstruct
     void timeZone() {
