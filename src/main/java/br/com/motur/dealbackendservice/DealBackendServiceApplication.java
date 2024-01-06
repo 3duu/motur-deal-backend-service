@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,7 +12,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableFeignClients
-@EnableAsync
 @EnableScheduling
 //@EnableSchedulerLock(defaultLockAtMostFor = "PT30S")
 @EnableCaching

@@ -17,7 +17,7 @@ import java.util.TimeZone;
 @Configuration
 public class AppBeansBootstrap {
 
-    private BeanFactory beanFactory;
+    private final BeanFactory beanFactory;
 
     public AppBeansBootstrap(BeanFactory beanFactory) {
         this.beanFactory = beanFactory;
@@ -42,6 +42,14 @@ public class AppBeansBootstrap {
                 .version(projectVersion)
                 .license(new License().name("Apache 2.0").url("http://springdoc.org")));
     }
+/*
+    @Bean
+    public GroupedOpenApi controllerApi() {
+        return GroupedOpenApi.builder()
+                .group("controller-api")
+                .packagesToScan("br.com.motur.dealbackendservice.core.entrypoints.*") // Specify the package to scan
+                .build();
+    }*/
 
     @PostConstruct
     void timeZone() {

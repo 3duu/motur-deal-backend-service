@@ -80,9 +80,17 @@ spring:
 springdoc:
     api-docs:
         path: /api-docs
+
+    swagger-ui:
+        protocol: http
+        path: /swagger-ui.html
+        enabled: true
+    spring:
+        mvc:
+            static-path-pattern: /swagger*
 #logging:
 #    level:
-#        root: WARN
+#        root: DEBUG
 #        org.springframework.security: DEBUG
 #        org.springframework.web: DEBUG
 #        org.springframework.boot: DEBUG
@@ -93,4 +101,6 @@ springdoc:
 #        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.attemptAuthentication: DEBUG
 #        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.successfulAuthentication: DEBUG
 #        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.unsuccessfulAuthentication: DEBUG
+
+
 

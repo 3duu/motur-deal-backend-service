@@ -149,12 +149,18 @@ public class SecurityConfig {
             "configuration/security",
             "/swagger-ui.html",
             "swagger-ui.html",
+            "api/swagger-ui.html",
+            "/api/swagger-ui.html",
             "webjars/**",
             // -- Swagger UI v3
             "/v3/api-docs/**",
             "v3/api-docs/**",
             "/swagger-ui/**",
             "swagger-ui/**",
+            "api/swagger-ui/index.html",
+            "/api/swagger-ui/index.html",
+            "api/swagger-ui/**",
+            "/api/swagger-ui/**",
             // CSA Controllers
             "/csa/api/token",
             // Actuators
@@ -163,8 +169,12 @@ public class SecurityConfig {
             //endpoints
             "/api/v1/login/**",
             "/api/v1/public/**",
+            "api/v1/login/**",
+            "api/v1/public/**",
             "/v1/login/**",
             "/v1/public/**",
+            "api-docs/**",
+            "/api-docs/**",
     };
 
 }
