@@ -6,21 +6,21 @@
 #        url: https://accounts-motur.auth.us-east-1.amazoncognito.com
 #        userPoolId: us-east-1_edAonTQSm
 
-#keycloak:
-#    auth-server-url: http://localhost:8080/realms/motur/protocol/openid-connect/token
-#    credentials:
-#        secret: ik2NsiG4ukAA5Gbtk6cFF3fsrBC2xQI4
-#    realm: motur
-#    resource: login
-#    security-constraints:
-#    -   authRoles:
-#        - role1
-#        securityCollections:
-#        -   patterns:
-#            - /protected/*
-#    ssl-required: external
-#    use-resource-role-mappings: true
-#    autodetect-bearer-only: true
+keycloak:
+    auth-server-url: http://localhost:8080/realms/motur/protocol/openid-connect/token
+    credentials:
+        secret: ik2NsiG4ukAA5Gbtk6cFF3fsrBC2xQI4
+    realm: motur
+    resource: login
+    security-constraints:
+    -   authRoles:
+        - role1
+        securityCollections:
+        -   patterns:
+            - /protected/*
+    ssl-required: external
+    use-resource-role-mappings: true
+    autodetect-bearer-only: true
 project:
     version: '@project.version@'
 server:
@@ -80,22 +80,17 @@ spring:
 springdoc:
     api-docs:
         path: /api-docs
-logging:
-    level:
-        root: DEBUG
-        org.springframework.security: DEBUG
-        org.springframework.web: DEBUG
-        org.springframework.boot: DEBUG
-        org.springframework.security.oauth2: DEBUG
-        org.springframework.security.oauth2.client: DEBUG
-        org.springframework.security.oauth2.client.endpoint: DEBUG
-        org.springframework.security.oauth2.client.registration: DEBUG
-        org.springframework.security.oauth2.client.registration.ClientRegistration: DEBUG
-        org.springframework.security.oauth2.client.registration.ClientRegistrationRepository: DEBUG
-        org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository: DEBUG
-        org.springframework.security.oauth2.client.web: DEBUG
-        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter: DEBUG
-        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.attemptAuthentication: DEBUG
-        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.successfulAuthentication: DEBUG
-        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.unsuccessfulAuthentication: DEBUG
+#logging:
+#    level:
+#        root: WARN
+#        org.springframework.security: DEBUG
+#        org.springframework.web: DEBUG
+#        org.springframework.boot: DEBUG
+#        org.springframework.security.oauth2: DEBUG
+#        org.springframework.security.oauth2.client: DEBUG
+#        org.springframework.security.oauth2.client.endpoint: DEBUG
+#        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter: DEBUG
+#        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.attemptAuthentication: DEBUG
+#        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.successfulAuthentication: DEBUG
+#        org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.unsuccessfulAuthentication: DEBUG
 

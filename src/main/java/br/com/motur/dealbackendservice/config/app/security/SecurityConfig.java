@@ -81,15 +81,17 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.ignoringRequestMatchers(AUTH_WHITELIST))
+        return http
                 .authorizeHttpRequests(ar ->
                         ar
-                                .requestMatchers(AUTH_WHITELIST).permitAll()
-                                .anyRequest().authenticated()
+                            .requestMatchers(AUTH_WHITELIST).permitAll()
+                            .anyRequest().authenticated()
+                            //.anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> Customizer.withDefaults()))
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwtAuthenticationConverter()))
+                .csrf(csrf -> csrf.disable())
+                .cors(crs -> crs.configurationSource(corsConfigurationSource()))
                 .build();
     }
 
@@ -159,8 +161,10 @@ public class SecurityConfig {
             "/actuator/**",
             "/health/**",
             //endpoints
-            "api/v1/login/**",
-            "api/v1/public/**",
+            "/api/v1/login/**",
+            "/api/v1/public/**",
+            "/v1/login/**",
+            "/v1/public/**",
     };
 
 }
