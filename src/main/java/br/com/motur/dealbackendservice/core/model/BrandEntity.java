@@ -14,4 +14,7 @@ public class BrandEntity {
 
     @Column(name = "name")
     private String name;
+
+    @Column(name = "priority_order")
+    private Integer order;
 }
