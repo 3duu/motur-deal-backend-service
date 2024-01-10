@@ -10,11 +10,19 @@ public class ModelEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer modelId;
+    private Integer id;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "synonym")
+    private String synonym;
+
+    @Column(name = "search_index")
+    private Float searchIndex;
 
     @ManyToOne
     @JoinColumn(name = "brand_id")
     private BrandEntity brand;
 
-    private String name;
 }

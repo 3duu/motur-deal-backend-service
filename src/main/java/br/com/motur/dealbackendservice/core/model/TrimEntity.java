@@ -10,7 +10,7 @@ public class TrimEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer trimId;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "model_id")

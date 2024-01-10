@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface IBrandService {
     List<BrandEntity> findAllBrands();
+
+    BrandEntity findBrandByName(String name);
 }

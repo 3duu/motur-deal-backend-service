@@ -1,6 +1,6 @@
 package br.com.motur.dealbackendservice.core.service;
 
-import br.com.motur.dealbackendservice.core.dataproviders.BrandRepository;
+import br.com.motur.dealbackendservice.core.dataproviders.repository.BrandRepository;
 import br.com.motur.dealbackendservice.core.model.BrandEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,4 +21,10 @@ public class BrandService implements IBrandService {
     public List<BrandEntity> findAllBrands() {
         return brandRepository.findAll();
     }
+
+    @Override
+    public BrandEntity findBrandByName(String name) {
+        return brandRepository.getByName(name).orElse(null);
+    }
+
 }
