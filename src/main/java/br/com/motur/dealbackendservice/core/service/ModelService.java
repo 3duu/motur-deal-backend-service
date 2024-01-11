@@ -37,7 +37,7 @@ public class ModelService {
     @EventListener(ApplicationReadyEvent.class)
     public void doSomethingAfterStartup() {
 
-        /*String path = "C:\\Users\\Eduardo\\Desktop\\models__select_m_nome_brand_m2_nome_name_m2_sinonimo_m2_indicebusca_m2__202401091836.csv"; // Substitua pelo caminho do seu arquivo
+        /*String path = "C:\\Users\\Eduardo\\Desktop\\models__select_m_nome_brand_m2_nome_name_m2_sinonimo_m2_indicebusca_m2__202401111120.csv"; // Substitua pelo caminho do seu arquivo
         String line = "";
 
         try {
@@ -54,7 +54,7 @@ public class ModelService {
                     final ModelEntity model = new ModelEntity();
                     model.setBrand(list.stream().filter(brand -> brand.getName().equals(values[0])).findFirst().orElse(null));
                     model.setName(values[1]);
-                    model.setSynonym(values[2] != null && !values[2].isEmpty() ? values[2] : null);
+                    model.setSynonym((values[2] != null && !values[2].trim().isEmpty()) || (values[2] != null && values[2].equals("\"\"")) ? values[2] : null);
                     try{
                         model.setSearchIndex(values[3] != null && !values[3].isEmpty() ? Float.parseFloat(values[3]) : null);
                     }
@@ -62,8 +62,8 @@ public class ModelService {
                         model.setSearchIndex(null);
                     }
 
-
-                    modelRepository.save(model);
+                    if (model.getBrand() != null)
+                        modelRepository.save(model);
                 }
 
                 i++;
