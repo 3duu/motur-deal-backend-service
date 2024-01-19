@@ -73,15 +73,5 @@ public class AdEntity {
     @Column(name = "status")
     private String status; // Status do veículo
 
-    @Column(name = "vehicle_type")
-    private String vehicleType; // Tipo do veículo
-
-    @Column(name = "qt_doors")
-    private Short qtoors; // Número de portas
-
-    @Column(name = "body_type")
-    @Enumerated(EnumType.ORDINAL)
-    private BodyType bodyType;
-
 
 }

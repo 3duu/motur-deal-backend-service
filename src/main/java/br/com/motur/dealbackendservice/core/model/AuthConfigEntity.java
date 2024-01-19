@@ -22,10 +22,12 @@ public class AuthConfigEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false)
-    private Integer providerId; // Referência ao ID do Provider
+    @ManyToOne
+    @JoinColumn(name = "provider_id", nullable = false)
+    private ProviderEntity provider;
 
-    @Column(length = 50, nullable = false)
+    @Enumerated(EnumType.ORDINAL)
+    @Column(nullable = false)
     private AuthType authType; // Tipo de autenticação (Basic, OAuth2, API Key, etc.)
 
     @Column(columnDefinition = "jsonb")
