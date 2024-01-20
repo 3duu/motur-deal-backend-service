@@ -3,6 +3,7 @@ package br.com.motur.dealbackendservice.core.model;
 
 import br.com.motur.dealbackendservice.core.model.common.BodyType;
 import br.com.motur.dealbackendservice.core.model.common.Color;
+import br.com.motur.dealbackendservice.core.model.common.FuelType;
 import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -31,7 +32,7 @@ public class VehicleEntity {
     private Integer productionYear; // Ano de produção
 
     @Enumerated(EnumType.ORDINAL)
-    private Long fuelId; // Id do tipo de combustível
+    private FuelType fuelId; // Id do tipo de combustível
 
     @Enumerated(EnumType.ORDINAL)
     private TransmissionType transmissionType;
@@ -73,8 +74,8 @@ public class VehicleEntity {
     @Enumerated(EnumType.ORDINAL)
     private BodyType bodyType;
 
-    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
-    private List<VehicleEquipmentEntity> equipments;
+    /*@OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
+    private List<VehicleEquipmentEntity> equipments;*/
 
     @ElementCollection
     @CollectionTable(name = "vehicle_providers", joinColumns = @JoinColumn(name = "vehicle_id"))

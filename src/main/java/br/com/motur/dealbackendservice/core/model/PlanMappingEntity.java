@@ -24,5 +24,4 @@ public class PlanMappingEntity {
     @Column
     private String externalPlanField;
 
-    // Getters e setters
 }

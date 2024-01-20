@@ -5,7 +5,6 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.util.Date;
-import java.util.Map;
 import jakarta.persistence.*;
 
 @Entity
@@ -38,7 +37,7 @@ public class VehiclePublicationEntity {
     private Date expirationDate;
 
     @Column(columnDefinition = "JSON")
-    private Map<String, Object> additionalInfo;
+    private String additionalInfo;
 
 }
 
