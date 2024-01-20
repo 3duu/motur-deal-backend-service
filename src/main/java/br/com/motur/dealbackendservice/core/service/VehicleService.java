@@ -26,7 +26,7 @@ public class VehicleService {
     }
 
     @Transactional
-    public VehicleEntity save(VehicleEntity vehicle) {
+    public VehicleEntity save(VehicleEntity vehicle) throws Exception {
         VehicleEntity savedVehicle = vehicleRepository.save(vehicle);
         // Chamar a integração para cada provedor configurado
         List<ProviderEntity> providers = providerRepository.findAll();

@@ -20,7 +20,7 @@ public class VehicleController {
     }
 
     @PostMapping
-    public ResponseEntity<VehicleEntity> createVehicle(@RequestBody VehicleEntity vehicle) {
+    public ResponseEntity<VehicleEntity> createVehicle(@RequestBody VehicleEntity vehicle) throws Exception {
         VehicleEntity savedVehicle = vehicleService.save(vehicle);
         return ResponseEntity.ok(savedVehicle);
     }

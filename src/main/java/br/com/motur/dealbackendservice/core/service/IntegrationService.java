@@ -5,7 +5,8 @@ import br.com.motur.dealbackendservice.core.dataproviders.repository.FieldMappin
 import br.com.motur.dealbackendservice.core.model.AuthConfigEntity;
 import br.com.motur.dealbackendservice.core.model.FieldMappingEntity;
 import br.com.motur.dealbackendservice.core.model.VehicleEntity;
-import br.com.motur.dealbackendservice.core.model.common.DataType;
+import br.com.motur.dealbackendservice.core.model.common.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -13,8 +14,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.DataInput;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -33,16 +37,19 @@ public class IntegrationService {
     private final FieldMappingRepository fieldMappingRepository;
     private final RestTemplate restTemplate;
 
+    private final ObjectMapper objectMapper;
+
     @Autowired
     public IntegrationService(AuthConfigRepository authConfigRepository,
                               FieldMappingRepository fieldMappingRepository,
-                              RestTemplate restTemplate) {
+                              RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.authConfigRepository = authConfigRepository;
         this.fieldMappingRepository = fieldMappingRepository;
         this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
     }
 
-    public void integrateVehicle(VehicleEntity vehicle, final Integer providerId) {
+    public void integrateVehicle(VehicleEntity vehicle, final Integer providerId) throws Exception {
         // Encontrar a configuração de autenticação e mapeamento de campos para o provedor
         AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
         List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(providerId);
@@ -134,60 +141,112 @@ public class IntegrationService {
         }
     }
 
-    private String authenticateWithProvider(AuthConfigEntity authConfig) {
-        // Implementar a lógica para autenticar com o provedor e retornar o token
-    }
 
-    public String authenticateWithProvider(AuthConfigEntity authConfig) {
+    public String authenticateWithProvider(final AuthConfigEntity authConfig) throws Exception {
         switch (authConfig.getAuthType()) {
             case OAUTH2:
                 return authenticateWithOAuth(authConfig);
             case BASIC:
-                return authenticateWithBasicAuth(authConfig);
+                return authenticateWithBasic(authConfig);
             case API_KEY:
-                return authConfig.getApiKey(); // Assumindo que a chave da API está na AuthConfig
+                return authenticateWithApiKey(authConfig); // Assumindo que a chave da API está na AuthConfig
             case BEARER_TOKEN:
-                return "Bearer " + authConfig.getBearerToken(); // Assumindo que o token Bearer está na AuthConfig
+                return "Bearer " + authenticateWithBearerToken(authConfig); // Assumindo que o token Bearer está na AuthConfig
+            case JWT:
+                return authenticateWithJwt(authConfig); // Assumindo que o token JWT está na AuthConfig
+            case DIGEST:
+                return authenticateWithDigest(authConfig); // Implemente a lógica de autenticação Digest aqui
+            case NTLM:
+                return authenticateWithNtlm(authConfig); // Implemente a lógica de autenticação NTLM aqui
+            case SAML:
+                return authenticateWithSaml(authConfig); // Implemente a lógica de autenticação SAML aqui
+            case OPENID_CONNECT:    // Implemente a lógica de autenticação OpenID Connect aqui
+                return authenticateWithOpenIDConnect(authConfig);
             // Adicione casos para outros tipos de autenticação conforme necessário
             case CUSTOM:
                 // Implemente sua lógica personalizada de autenticação
-                return customAuthenticationMethod(authConfig);
+                return authenticateWithCustom(authConfig);
             default:
                 throw new IllegalArgumentException("Tipo de autenticação não suportado: " + authConfig.getAuthType().getDisplayName());
         }
     }
 
     private String authenticateWithOAuth(AuthConfigEntity authConfig) {
-        // Implementar lógica de autenticação OAuth
+
+        final OAuth2AuthConfig details = objectMapper.convertValue(authConfig.getDetails(), OAuth2AuthConfig.class);
+        String clientId = details.getClientId();
+        String clientSecret = details.getClientSecret();
+        String tokenUrl = details.getTokenUrl();
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("grant_type", "client_credentials");
-        requestBody.put("client_id", authConfig.getClientId());
-        requestBody.put("client_secret", authConfig.getClientSecret());
+        MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
+        requestBody.add("grant_type", "client_credentials");
+        requestBody.add("client_id", clientId);
+        requestBody.add("client_secret", clientSecret);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(authConfig.getTokenUrl(), request, String.class);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(tokenUrl, request, String.class);
 
         // Extraindo token do response (depende do formato da resposta)
-        // Supondo que o token está no corpo da resposta como um campo "access_token"
-        // Esta parte pode variar dependendo do provedor de OAuth
         return response.getBody(); // Modifique conforme a estrutura da resposta
     }
 
-    private String authenticateWithBasicAuth(AuthConfigEntity authConfig) {
-        // Implementar lógica de autenticação Basic Auth
-        // Geralmente, Basic Auth não necessita de uma etapa extra de autenticação como OAuth
-        // A codificação do cabeçalho de autorização é normalmente feita em cada solicitação
-        String credentials = authConfig.getUsername() + ":" + authConfig.getPassword();
-        return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes());
+    private String authenticateWithBasic(AuthConfigEntity authConfig) {
+        final BasicAuthConfig details = objectMapper.convertValue(authConfig.getDetails(), BasicAuthConfig.class);
+        String username = details.getUsername();
+        String password = details.getPassword();
+
+        String credentials = username + ":" + password;
+        String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
+        return "Basic " + encodedCredentials;
     }
 
-    // Métodos para outros tipos de autenticação...
+    private String authenticateWithApiKey(AuthConfigEntity authConfig) {
+        final ApiKeyAuthConfig details = objectMapper.convertValue(authConfig.getDetails(), ApiKeyAuthConfig.class);
+        String apiKey = details.getApiKey();
+        return apiKey;
+    }
 
-    private String customAuthenticationMethod(AuthConfigEntity authConfig) {
-        // Implemente seu método personalizado de autenticação
+    private String authenticateWithBearerToken(AuthConfigEntity authConfig) throws Exception {
+        BearerTokenAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), BearerTokenAuthConfig.class);
+        return "Bearer " + config.getToken();
+    }
+
+    private String authenticateWithDigest(AuthConfigEntity authConfig) throws Exception {
+        DigestAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), DigestAuthConfig.class);
+        // Implemente a lógica de autenticação Digest aqui
+        return ""; // Retorne o valor apropriado
+    }
+
+    private String authenticateWithJwt(AuthConfigEntity authConfig) throws Exception {
+        JWTAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), JWTAuthConfig.class);
+        return "Bearer " + config.getJwtToken();
+    }
+
+    private String authenticateWithSaml(AuthConfigEntity authConfig) throws Exception {
+        SAMLAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), SAMLAuthConfig.class);
+        // Implemente a lógica de autenticação SAML aqui
+        return ""; // Retorne o valor apropriado
+    }
+
+    private String authenticateWithOpenIDConnect(AuthConfigEntity authConfig) throws Exception {
+        OpenIDConnectAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), OpenIDConnectAuthConfig.class);
+        // Implemente a lógica de autenticação OpenID Connect aqui
+        return ""; // Retorne o valor apropriado
+    }
+
+    private String authenticateWithNtlm(AuthConfigEntity authConfig) throws Exception {
+        NTLMAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), NTLMAuthConfig.class);
+        // Implemente a lógica de autenticação NTLM aqui
+        return ""; // Retorne o valor apropriado
+    }
+
+    private String authenticateWithCustom(AuthConfigEntity authConfig) throws Exception {
+        CustomAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), CustomAuthConfig.class);
+        // Implemente sua lógica de autenticação personalizada aqui
+        return ""; // Retorne o valor apropriado
     }
 
     private void sendVehicleToProvider(Object providerVehicle, AuthConfigEntity authConfig, String token) {
