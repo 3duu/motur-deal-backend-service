@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/providers")
 public class ProviderEndpoint extends CrudController<Provider> {
 
@@ -71,7 +73,7 @@ public class ProviderEndpoint extends CrudController<Provider> {
             @ApiResponse(description = "Provedor não encontrado", responseCode = "404")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<ProviderEntity> updateProvider(@PathVariable Integer id, @RequestBody ProviderEntity providerDetails) {
+    public ResponseEntity<ProviderEntity> updateProvider(@PathVariable final Integer id, @RequestBody final ProviderEntity providerDetails) {
         ProviderEntity updatedProvider = providerService.update(id, providerDetails);
         return ResponseEntity.ok(updatedProvider);
     }

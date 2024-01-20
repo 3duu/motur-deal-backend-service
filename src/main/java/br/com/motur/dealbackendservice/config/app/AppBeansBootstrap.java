@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import jakarta.annotation.PostConstruct;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.BeanFactory;
@@ -12,6 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.web.client.RestTemplate;
+
 import java.util.TimeZone;
 
 @Configuration
@@ -35,12 +39,24 @@ public class AppBeansBootstrap {
 
 
     @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
     public OpenAPI customOpenAPI(@Value("${project.version}") String projectVersion) {
         return new OpenAPI().info(new Info()
                 .title("Deal Backend Service para o Motur")
                 .description("Esse projeto contempla toda a movimentação de anúnicios PJ do Icarros. Sua documentação pode ser encontrada com mais detalhes nesse <a href='https://i-carros.monday.com/docs/3790637649' > <strong>link</strong> </a>  ")
                 .version(projectVersion)
-                .license(new License().name("Apache 2.0").url("http://springdoc.org")));
+                .license(new License().name("Apache 2.0").url("http://springdoc.org")))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .components(new io.swagger.v3.oas.models.Components()
+                        .addSecuritySchemes("bearerAuth", new SecurityScheme()
+                                .name("bearerAuth")
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")));
     }
 
     @PostConstruct

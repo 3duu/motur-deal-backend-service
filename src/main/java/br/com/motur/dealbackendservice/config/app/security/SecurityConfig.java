@@ -81,7 +81,7 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
+        /*return http
                 .authorizeHttpRequests(ar ->
                         ar
                             .requestMatchers(AUTH_WHITELIST).permitAll()
@@ -90,6 +90,16 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwtAuthenticationConverter()))
+                .csrf(csrf -> csrf.disable())
+                .cors(crs -> crs.configurationSource(corsConfigurationSource()))
+                .build();*/
+
+        return http
+                .authorizeHttpRequests(ar ->
+                                ar
+                                        .requestMatchers(AUTH_WHITELIST).permitAll()
+                                        .anyRequest().permitAll()
+                )
                 .csrf(csrf -> csrf.disable())
                 .cors(crs -> crs.configurationSource(corsConfigurationSource()))
                 .build();

@@ -1,7 +1,6 @@
 package br.com.motur.dealbackendservice.core.model;
 
 
-import br.com.motur.dealbackendservice.core.model.common.BodyType;
 import br.com.motur.dealbackendservice.core.model.common.Color;
 import br.com.motur.dealbackendservice.core.model.common.FuelType;
 import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
