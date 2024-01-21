@@ -62,7 +62,7 @@ public class IntegrationService {
         sendVehicleToProvider(vehicle, provider);
     }
 
-    public Map<String, Object> adaptVehicleToProviderFormat(VehicleEntity vehicle, ProviderEntity provider, List<FieldMappingEntity> fieldMappings) {
+    public Map<String, Object> adaptVehicleToProviderFormat(final VehicleEntity vehicle, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
         Map<String, Object> adaptedVehicle = new HashMap<>();
 
         if (vehicle.getProviderIds().contains(provider.getId())) {
@@ -70,7 +70,7 @@ public class IntegrationService {
                 if (fieldMapping.getProvider().getId().equals(provider.getId())) {
                     String localFieldName = fieldMapping.getLocalFieldName();
                     String externalFieldName = fieldMapping.getExternalFieldName();
-                    Object fieldValue = getFieldValue(vehicle, localFieldName);
+                    final Object fieldValue = getFieldValue(vehicle, localFieldName);
 
                     adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType()));
                 }
