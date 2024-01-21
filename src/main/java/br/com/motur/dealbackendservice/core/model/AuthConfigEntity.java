@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import br.com.motur.dealbackendservice.core.converter.JsonNodeConverter;
 import br.com.motur.dealbackendservice.core.model.common.AuthType;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
@@ -25,13 +26,13 @@ public class AuthConfigEntity {
     @JoinColumn(name = "provider_id", nullable = false)
     private ProviderEntity provider;
 
-    @Enumerated(EnumType.ORDINAL)
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 15)
     private AuthType authType; // Tipo de autenticação (Basic, OAuth2, API Key, etc.)
 
     @Column(columnDefinition = "jsonb")
-    //@Convert(converter = JsonNodeConverter.class)
-    private String details; // Detalhes da autenticação como um objeto JSON
+    @Convert(converter = JsonNodeConverter.class)
+    private JsonNode details; // Detalhes da autenticação como um objeto JSON
 
 }
 

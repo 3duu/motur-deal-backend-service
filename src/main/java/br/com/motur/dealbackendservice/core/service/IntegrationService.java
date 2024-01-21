@@ -272,10 +272,10 @@ public class IntegrationService {
         // Preparar a URL e os dados do veículo
         String providerApiUrl = getProviderApiUrl(provider);
 
-        String createAdUrl = provider.getCreateAdEndpoint();
+        /*String createAdUrl = provider.getCreateAdEndpoint();
 
         // Enviar veículo
-        sendVehicleData(createAdUrl, vehicleData, authToken);
+        sendVehicleData(createAdUrl, vehicleData, authToken);*/
     }
 
     private void sendVehicleData(String providerApiUrl, Map<String, Object> vehicleData, String authToken) {
