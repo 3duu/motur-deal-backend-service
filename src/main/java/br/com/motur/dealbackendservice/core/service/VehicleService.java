@@ -34,7 +34,7 @@ public class VehicleService {
         // Chamar a integração para cada provedor configurado
         List<ProviderEntity> providers = providerRepository.findAll();
         for (ProviderEntity provider : providers) {
-            integrationService.integrateVehicle(savedVehicle, provider.getId());
+            integrationService.integrateVehicle(savedVehicle, provider);
         }
         return savedVehicle;
     }

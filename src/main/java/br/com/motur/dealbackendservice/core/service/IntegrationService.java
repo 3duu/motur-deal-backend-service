@@ -4,6 +4,7 @@ import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigR
 import br.com.motur.dealbackendservice.core.dataproviders.repository.FieldMappingRepository;
 import br.com.motur.dealbackendservice.core.model.AuthConfigEntity;
 import br.com.motur.dealbackendservice.core.model.FieldMappingEntity;
+import br.com.motur.dealbackendservice.core.model.ProviderEntity;
 import br.com.motur.dealbackendservice.core.model.VehicleEntity;
 import br.com.motur.dealbackendservice.core.model.common.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,25 +49,25 @@ public class IntegrationService {
         this.objectMapper = objectMapper;
     }
 
-    public void integrateVehicle(VehicleEntity vehicle, final Integer providerId) throws Exception {
+    public void integrateVehicle(VehicleEntity vehicle, final ProviderEntity provider) throws Exception {
         // Encontrar a configuração de autenticação e mapeamento de campos para o provedor
         //AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
-        List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(providerId);
+        List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(provider.getId());
 
         // Adaptar o veículo para o formato esperado pela API do provedor
-        Object providerVehicle = adaptVehicleToProviderFormat(vehicle, providerId, fieldMappings);
+        Object providerVehicle = adaptVehicleToProviderFormat(vehicle, provider, fieldMappings);
 
         // Realizar a autenticação e enviar a solicitação para a API do provedor
         //String token = authenticateWithProvider(authConfig);
-        sendVehicleToProvider(vehicle, providerId);
+        sendVehicleToProvider(vehicle, provider);
     }
 
-    public Map<String, Object> adaptVehicleToProviderFormat(VehicleEntity vehicle, Integer providerId, List<FieldMappingEntity> fieldMappings) {
+    public Map<String, Object> adaptVehicleToProviderFormat(VehicleEntity vehicle, ProviderEntity provider, List<FieldMappingEntity> fieldMappings) {
         Map<String, Object> adaptedVehicle = new HashMap<>();
 
-        if (vehicle.getProviderIds().contains(providerId)) {
+        if (vehicle.getProviderIds().contains(provider.getId())) {
             for (FieldMappingEntity fieldMapping : fieldMappings) {
-                if (fieldMapping.getProvider().getId().equals(providerId)) {
+                if (fieldMapping.getProvider().getId().equals(provider.getId())) {
                     String localFieldName = fieldMapping.getLocalFieldName();
                     String externalFieldName = fieldMapping.getExternalFieldName();
                     Object fieldValue = getFieldValue(vehicle, localFieldName);
@@ -252,27 +253,29 @@ public class IntegrationService {
      * Envia o veículo para o provedor.
      *
      * @param vehicle    O veículo a ser enviado.
-     * @param providerId O ID do provedor para o qual o veículo deve ser enviado.
+     * @param provider O ID do provedor para o qual o veículo deve ser enviado.
      */
-    public void sendVehicleToProvider(final VehicleEntity vehicle, final Integer providerId) throws Exception {
+    public void sendVehicleToProvider(final VehicleEntity vehicle, final ProviderEntity provider) throws Exception {
         // Obter configuração de autenticação
-        final AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
+        final AuthConfigEntity authConfig = authConfigRepository.findByProviderId(provider.getId());
         if (authConfig == null) {
-            throw new IllegalStateException("Configuração de autenticação não encontrada para o provedor: " + providerId);
+            throw new IllegalStateException("Configuração de autenticação não encontrada para o provedor: " + provider.getId());
         }
 
-        final List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(providerId);
+        final List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(provider.getId());
 
-        final Map<String, Object> vehicleData = adaptVehicleToProviderFormat(vehicle, providerId, fieldMappings);
+        final Map<String, Object> vehicleData = adaptVehicleToProviderFormat(vehicle, provider, fieldMappings);
 
         // Autenticar com o provedor e obter o token
         String authToken = authenticateWithProvider(authConfig);
 
         // Preparar a URL e os dados do veículo
-        String providerApiUrl = getProviderApiUrl(providerId);
+        String providerApiUrl = getProviderApiUrl(provider);
+
+        String createAdUrl = provider.getCreateAdEndpoint();
 
         // Enviar veículo
-        sendVehicleData(providerApiUrl, vehicleData, authToken);
+        sendVehicleData(createAdUrl, vehicleData, authToken);
     }
 
     private void sendVehicleData(String providerApiUrl, Map<String, Object> vehicleData, String authToken) {
@@ -290,7 +293,7 @@ public class IntegrationService {
         }
     }
 
-    private String getProviderApiUrl(Integer providerId) {
+    private String getProviderApiUrl(final ProviderEntity provider) {
         // Retorne a URL da API com base no providerId. Isso pode envolver uma consulta ao banco de dados ou uma configuração.
         return "http://example.com/api"; // Exemplo. Substitua pela lógica real.
     }
