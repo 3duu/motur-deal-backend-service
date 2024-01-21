@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/vehicles")
-public class VehicleController extends CrudController<VehicleDTO> {
+public class VehicleController extends CrudController<VehicleEntity> {
 
     private final VehicleService vehicleService;
 

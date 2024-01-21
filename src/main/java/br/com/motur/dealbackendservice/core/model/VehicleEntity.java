@@ -87,5 +87,5 @@ public class VehicleEntity {
     @ElementCollection
     @CollectionTable(name = "vehicle_providers", joinColumns = @JoinColumn(name = "vehicle_id"))
     @Column(name = "provider_id")
-    private Set<Long> providerIds;
+    private Set<Integer> providerIds;
 }

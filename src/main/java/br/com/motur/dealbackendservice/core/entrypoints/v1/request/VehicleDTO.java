@@ -78,5 +78,5 @@ public class VehicleDTO implements Serializable {
 
     @NotNull
     @Column(name = "provider_id")
-    private Set<Long> providerIds;
+    private Set<Integer> providerIds;
 }
