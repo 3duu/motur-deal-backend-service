@@ -1,5 +1,7 @@
 package br.com.motur.dealbackendservice.core.model.common;
 
+import jakarta.persistence.Id;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -19,7 +21,8 @@ public enum DataType {
     LOCAL_DATETIME("LocalDateTime", LocalDateTime.class),//10
     BIG_DECIMAL("BigDecimal", BigDecimal.class),//11
     LIST("List", List.class),//12
-    JSON("JSON", Object.class);//13
+    JSON("JSON", Object.class),//13
+    ID("byte", Id.class);//14
 
     private final String displayName;
     final Class<?> clazz;

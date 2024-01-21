@@ -3,6 +3,7 @@ package br.com.motur.dealbackendservice.core.model;
 import br.com.motur.dealbackendservice.core.model.common.BodyType;
 import br.com.motur.dealbackendservice.core.model.common.FuelType;
 import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
+import br.com.motur.dealbackendservice.core.model.common.VehicleTractionType;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -19,22 +20,26 @@ public class TrimEntity {
     @JoinColumn(name = "model_id")
     private ModelEntity model;
 
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "year_from")
+    @Column(name = "year_from", nullable = false)
     private Integer yearFrom;
 
-    @Column(name = "year_to")
+    @Column(name = "year_to", nullable = false)
     private Integer yearTo;
 
     @Column(name = "qt_doors")
     private Short qtoors; // Número de portas
 
+    @Column(name = "seats")
+    private Short seats; // Número de assentos
+
     @Column(name = "code_a")
     private String codaA;
 
     @Column(name = "engine_hp")
-    private Integer engineHp;
+    private Float engineHp;
 
     @Column(name = "torque")
     private Float torque;
@@ -42,8 +47,9 @@ public class TrimEntity {
     @Column(name = "weight")
     private Float weight;
 
-    @Column(name = "traction")
-    private String traction;
+    @Column(name = "traction_id")
+    @Enumerated(EnumType.ORDINAL)
+    private VehicleTractionType traction;
 
     @Column(name = "vehicle_type")
     private String vehicleType; // Tipo do veículo

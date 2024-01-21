@@ -1,6 +1,7 @@
 package br.com.motur.dealbackendservice.common;
 
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.lang.Nullable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -39,4 +40,7 @@ public abstract class ValueObjectConverter<T, E> implements Converter<T, E> {
 
         return new ArrayList<>();
     }
+
+    @Nullable
+    public abstract T invert(E source);
 }

@@ -1,4 +1,4 @@
-package br.com.motur.dealbackendservice.core.entrypoints.v1.converter;
+package br.com.motur.dealbackendservice.core.converter;
 
 
 import br.com.motur.dealbackendservice.common.ValueObjectConverter;
@@ -16,5 +16,10 @@ public class ProviderConverter extends ValueObjectConverter<ProviderEntity, Prov
             return null;
 
         return new Provider(provider.getId(), provider.getName(), provider.getUrl(), provider.getApiType());
+    }
+
+    @Override
+    public ProviderEntity invert(Provider source) {
+        return null;
     }
 }

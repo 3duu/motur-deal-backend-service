@@ -18,7 +18,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.DataInput;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -51,15 +50,15 @@ public class IntegrationService {
 
     public void integrateVehicle(VehicleEntity vehicle, final Integer providerId) throws Exception {
         // Encontrar a configuração de autenticação e mapeamento de campos para o provedor
-        AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
+        //AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
         List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(providerId);
 
         // Adaptar o veículo para o formato esperado pela API do provedor
         Object providerVehicle = adaptVehicleToProviderFormat(vehicle, providerId, fieldMappings);
 
         // Realizar a autenticação e enviar a solicitação para a API do provedor
-        String token = authenticateWithProvider(authConfig);
-        sendVehicleToProvider(providerVehicle, authConfig, token);
+        //String token = authenticateWithProvider(authConfig);
+        sendVehicleToProvider(vehicle, providerId);
     }
 
     public Map<String, Object> adaptVehicleToProviderFormat(VehicleEntity vehicle, Integer providerId, List<FieldMappingEntity> fieldMappings) {
@@ -249,7 +248,50 @@ public class IntegrationService {
         return ""; // Retorne o valor apropriado
     }
 
-    private void sendVehicleToProvider(Object providerVehicle, AuthConfigEntity authConfig, String token) {
-        // Implementar a lógica para enviar o veículo adaptado à API do provedor
+    /**
+     * Envia o veículo para o provedor.
+     *
+     * @param vehicle    O veículo a ser enviado.
+     * @param providerId O ID do provedor para o qual o veículo deve ser enviado.
+     */
+    public void sendVehicleToProvider(final VehicleEntity vehicle, final Integer providerId) throws Exception {
+        // Obter configuração de autenticação
+        final AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
+        if (authConfig == null) {
+            throw new IllegalStateException("Configuração de autenticação não encontrada para o provedor: " + providerId);
+        }
+
+        final List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(providerId);
+
+        final Map<String, Object> vehicleData = adaptVehicleToProviderFormat(vehicle, providerId, fieldMappings);
+
+        // Autenticar com o provedor e obter o token
+        String authToken = authenticateWithProvider(authConfig);
+
+        // Preparar a URL e os dados do veículo
+        String providerApiUrl = getProviderApiUrl(providerId);
+
+        // Enviar veículo
+        sendVehicleData(providerApiUrl, vehicleData, authToken);
+    }
+
+    private void sendVehicleData(String providerApiUrl, Map<String, Object> vehicleData, String authToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", authToken);
+
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(vehicleData, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(providerApiUrl, requestEntity, String.class);
+            // Verifique a resposta. Em caso de erro, lidar adequadamente.
+        } catch (Exception e) {
+            e.printStackTrace(); // Log e tratamento adequado de erros.
+        }
+    }
+
+    private String getProviderApiUrl(Integer providerId) {
+        // Retorne a URL da API com base no providerId. Isso pode envolver uma consulta ao banco de dados ou uma configuração.
+        return "http://example.com/api"; // Exemplo. Substitua pela lógica real.
     }
 }

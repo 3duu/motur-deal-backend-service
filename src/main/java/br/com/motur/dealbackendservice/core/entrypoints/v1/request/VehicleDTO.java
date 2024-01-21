@@ -1,91 +1,82 @@
-package br.com.motur.dealbackendservice.core.model;
-
+package br.com.motur.dealbackendservice.core.entrypoints.v1.request;
 
 import br.com.motur.dealbackendservice.common.FieldMappingInfo;
+import br.com.motur.dealbackendservice.core.model.VehiclePublicationEntity;
 import br.com.motur.dealbackendservice.core.model.common.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
-@Table(name = "vehicle")
-@Entity
 @Data
-public class VehicleEntity {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class VehicleDTO implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @FieldMappingInfo(name = "id", type = DataType.ID)
-    @ManyToOne
-    @JoinColumn(name = "trim_id")
-    private TrimEntity trim;
+    @NotNull
+    @FieldMappingInfo(name = "id", type = DataType.INT)
+    private Integer trimId;
 
+    @NotNull
     @FieldMappingInfo(name = "modelYear", type = DataType.INT)
-    @Column(name = "model_year")
     private Integer modelYear; // Ano do modelo
 
+    @NotNull
     @FieldMappingInfo(name = "productionYear", type = DataType.INT)
-    @Column(name = "production_year")
     private Integer productionYear; // Ano de produção
 
+    @NotNull
     @FieldMappingInfo(name = "fuelId", type = DataType.INT)
-    @Column(name = "fuel_id")
-    @Enumerated(EnumType.ORDINAL)
     private FuelType fuelId; // Id do tipo de combustível
 
+    @NotNull
     @FieldMappingInfo(name = "transmissionType", type = DataType.STRING)
-    @Enumerated(EnumType.ORDINAL)
-    @Column(name="transmission_type")
     private TransmissionType transmissionType;
 
     @FieldMappingInfo(name = "licensePlate", type = DataType.STRING)
-    @Column(name = "license_plate")
     private String licensePlate; // Placa
 
+    @NotNull
     @FieldMappingInfo(name = "color", type = DataType.INT)
-    @Enumerated(EnumType.ORDINAL)
     private Color color; // Id da cor
 
+    @NotNull
     @FieldMappingInfo(name = "km", type = DataType.INT)
-    @Column(name = "km")
     private Integer km; // Quilometragem
 
+    @NotNull
     @FieldMappingInfo(name = "price", type = DataType.DOUBLE)
-    @Column(name = "price")
-    private BigDecimal price; // Preço
+    private Float price; // Preço
 
     @FieldMappingInfo(name = "description", type = DataType.STRING)
-    @Column(name = "description")
     private String description; // Descrição
 
+    @NotNull
     @FieldMappingInfo(name = "description", type = DataType.INT)
-    @Column(name = "dealer_id")
     private Integer dealerId; // Id da concessionária
 
+    @NotNull
     @FieldMappingInfo(name = "dealerCityId", type = DataType.INT)
     @Column(name = "dealer_city_id")
     private Integer dealerCityId; // Id da cidade da concessionária
 
+    @NotNull
     @FieldMappingInfo(name = "dealerState", type = DataType.STRING)
-    @Column(name = "dealer_state")
     private String dealerState; // Id do estado da concessionária
 
+    @NotNull
     @FieldMappingInfo(name = "status", type = DataType.STRING)
-    @Column(name = "status")
     private String status; // Status
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "vehicle")
+    @NotNull
     private List<VehiclePublicationEntity> publication;
 
-    /*@OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
-    private List<VehicleEquipmentEntity> equipments;*/
-
-    @ElementCollection
-    @CollectionTable(name = "vehicle_providers", joinColumns = @JoinColumn(name = "vehicle_id"))
+    @NotNull
     @Column(name = "provider_id")
     private Set<Long> providerIds;
 }

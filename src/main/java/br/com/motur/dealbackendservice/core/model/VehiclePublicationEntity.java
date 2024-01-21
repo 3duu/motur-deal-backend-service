@@ -14,7 +14,10 @@ public class VehiclePublicationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long publicationId;
+    private Long id;
+
+    @Column(name = "external_id")
+    private String externalId;
 
     @ManyToOne
     @JoinColumn(name = "vehicle_id", nullable = false)
@@ -25,7 +28,7 @@ public class VehiclePublicationEntity {
     private ProviderEntity provider;
 
     @Column(name = "plan_id")
-    private Integer planId;
+    private String planId;
 
     @Column(name = "status")
     private String status;

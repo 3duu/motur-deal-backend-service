@@ -4,6 +4,7 @@ import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderRep
 import br.com.motur.dealbackendservice.core.dataproviders.repository.VehicleRepository;
 import br.com.motur.dealbackendservice.core.model.ProviderEntity;
 import br.com.motur.dealbackendservice.core.model.VehicleEntity;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,12 +18,14 @@ public class VehicleService {
     private final VehicleRepository vehicleRepository;
     private final IntegrationService integrationService;
     private final ProviderRepository providerRepository;
+    private final ModelMapper modelMapper;
 
     @Autowired
-    public VehicleService(final VehicleRepository vehicleRepository, IntegrationService integrationService, ProviderRepository providerRepository) {
+    public VehicleService(final VehicleRepository vehicleRepository, IntegrationService integrationService, ProviderRepository providerRepository, ModelMapper modelMapper) {
         this.vehicleRepository = vehicleRepository;
         this.integrationService = integrationService;
         this.providerRepository = providerRepository;
+        this.modelMapper = modelMapper;
     }
 
     @Transactional
@@ -47,14 +50,8 @@ public class VehicleService {
     public VehicleEntity update(final Long id, final VehicleEntity vehicleDetails) {
         return vehicleRepository.findById(id)
                 .map(vehicle -> {
-                    vehicle.setTrim(vehicleDetails.getTrim());
-                    vehicle.setModelYear(vehicleDetails.getModelYear());
-                    vehicle.setPrice(vehicleDetails.getPrice());
-                    vehicle.setFuelId(vehicleDetails.getFuelId());
-                    vehicle.setKm(vehicleDetails.getKm());
-                    vehicle.setColor(vehicleDetails.getColor());
-                    //vehicle.setDetails(vehicleDetails.getDetails());
-                    //vehicle.setProvider(vehicleDetails.getProvider());
+
+                    modelMapper.map(vehicleDetails, vehicle);
                     return vehicleRepository.save(vehicle);
                 })
                 .orElseThrow(() -> new RuntimeException("Vehicle not found with id " + id));

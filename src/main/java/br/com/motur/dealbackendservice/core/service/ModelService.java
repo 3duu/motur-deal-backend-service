@@ -1,19 +1,25 @@
 package br.com.motur.dealbackendservice.core.service;
 
+import br.com.motur.dealbackendservice.core.converter.BodyTypeConverter;
+import br.com.motur.dealbackendservice.core.converter.TractionTypeConverter;
+import br.com.motur.dealbackendservice.core.converter.TransmissionConverter;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.ModelRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.TrimRepository;
 import br.com.motur.dealbackendservice.core.model.ModelEntity;
 import br.com.motur.dealbackendservice.core.model.TrimEntity;
+import br.com.motur.dealbackendservice.core.model.common.BodyType;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ModelService {
@@ -23,11 +29,19 @@ public class ModelService {
 
     private final TrimRepository trimRepository;
 
+    private final TransmissionConverter transmissionConverter;
+
+    private final TractionTypeConverter tractionTypeConverter;
+    private final BodyTypeConverter bodyTypeConverter;
+
     @Autowired
-    public ModelService(ModelRepository modelRepository, BrandService brandService, TrimRepository trimRepository) {
+    public ModelService(ModelRepository modelRepository, BrandService brandService, TrimRepository trimRepository, TransmissionConverter transmissionConverter, TractionTypeConverter tractionTypeConverter, BodyTypeConverter bodyTypeConverter) {
         this.modelRepository = modelRepository;
         this.brandService = brandService;
         this.trimRepository = trimRepository;
+        this.transmissionConverter = transmissionConverter;
+        this.tractionTypeConverter = tractionTypeConverter;
+        this.bodyTypeConverter = bodyTypeConverter;
     }
 
     public List<ModelEntity> findAllModels() {
@@ -81,52 +95,90 @@ public class ModelService {
         }*/
 
 
-        /*String path = "C:\\Users\\Eduardo\\Desktop\\trims__select_m2_nome_model_v_nome_name_v_anoinicial_year_from_v_anofi_202401121756.csv"; // Substitua pelo caminho do seu arquivo
+        String path = "C:\\Users\\Eduardo\\Desktop\\trims_marca_modelo_versao_202401201505.json"; // Substitua pelo caminho do seu arquivo
         String line = "";
 
+        System.out.println("INICIO");
+
         try {
-            BufferedReader br = new BufferedReader(new FileReader(path));
+
+            Map<String, Object> map = new ObjectMapper().readValue(new File(path),
+                    new TypeReference<HashMap<String, Object>>() {});
 
             final List<ModelEntity> list = modelRepository.findAll();
 
-            int i = 0;
-            while ((line = br.readLine()) != null) {
-                // Usando vírgula como separador
-                if (i > 0){
+            final List<Map> data = (List<Map>) map.get("data");
 
-                    String[] values = line.trim().replace("\"", "").split(",");
-                    final TrimEntity trim = new TrimEntity();
-                    trim.setModel(list.stream().filter(brand -> brand.getName().equals(values[0])).findFirst().orElse(null));
-                    trim.setName(values[1]);
-                    try {
-                        trim.setYearFrom(!StringUtils.isAllEmpty(values[2]) ? Integer.parseInt(values[2]) : null);
-                    }catch (Exception e){
-                        trim.setYearFrom(null);
-                    }
-                    try {
-                        trim.setYearTo(!StringUtils.isAllEmpty(values[3]) ? Integer.parseInt(values[3]) : null);
-                    }catch (Exception e){
-                        trim.setYearTo(null);
-                    }
-                    trim.setTorque(!StringUtils.isAllEmpty(values[4]) ? Float.parseFloat(values[4]) : null);
-                    trim.setCodaA(values[5]);
-                    trim.setWeight(!StringUtils.isAllEmpty(values[6]) ? Float.parseFloat(values[6]) : null);
-                    trim.setEngineHp(!StringUtils.isAllEmpty(values[7]) ? Integer.parseInt(values[7]) : null);
-                    trim.setTraction(values[8]);
-                    trim.setQtoors(!StringUtils.isAllEmpty(values[9]) ? Short.parseShort(values[9]) : null);
+            data.forEach(d -> {
 
-                    if (trim.getModel() != null)
-                        trimRepository.save(trim);
+                final TrimEntity trim = new TrimEntity();
+                trim.setModel(list.stream().filter(brand -> brand.getName().equals(d.get("model"))).findFirst().orElse(null));
+
+                trim.setName(d.get("name").toString().trim());
+                try {
+                    if (d.get("year_from") != null)
+                        trim.setYearFrom(!StringUtils.isAllEmpty(d.get("year_from").toString().trim()) ? Integer.parseInt(d.get("year_from").toString()) : null);
+                }catch (Exception e){
+                    trim.setYearFrom(null);
+                }
+                try {
+                    if (d.get("year_to") != null)
+                        trim.setYearTo( !StringUtils.isAllEmpty(d.get("year_to").toString().trim()) ? Integer.parseInt(d.get("year_to").toString()) : null);
+                }catch (Exception e){
+                    trim.setYearTo(null);
                 }
 
-                i++;
-            }
+                try{
+                    if (d.get("torque") != null)
+                        trim.setTorque(!StringUtils.isAllEmpty(d.get("torque").toString().trim()) ? Float.parseFloat(d.get("torque").toString().trim()) : null);
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                }
 
-            br.close();
+                if (d.get("code_a") != null)
+                    trim.setCodaA(d.get("code_a").toString().trim());
+
+
+                if (d.get("weight") != null)
+                    trim.setWeight(!StringUtils.isAllEmpty(d.get("weight").toString().trim()) ? Float.parseFloat(d.get("weight").toString().trim()) : null);
+
+                if (d.get("engine_hp") != null)
+                    trim.setEngineHp(!StringUtils.isAllEmpty(d.get("engine_hp").toString().trim()) ? Float.parseFloat(d.get("engine_hp").toString().trim()) : null);
+
+                if (d.get("traction") != null)
+                    trim.setTraction(tractionTypeConverter.categorizeTraction(d.get("traction").toString().trim()));
+
+                if (d.get("qt_doors") != null)
+                    trim.setQtoors(!StringUtils.isAllEmpty(d.get("qt_doors").toString().trim()) ? Short.parseShort(d.get("qt_doors").toString().trim()) : null);
+
+                if (d.get("seats") != null)
+                    trim.setSeats(!StringUtils.isAllEmpty(d.get("seats").toString().trim()) ? Short.parseShort(d.get("seats").toString().trim()) : null);
+
+
+                if (d.get("body_type") != null)
+                    trim.setBodyType(bodyTypeConverter.categorizeBodyType(Integer.parseInt(d.get("body_type").toString().trim())));
+
+
+                if (d.get("transmission") != null){
+                    trim.setTransmissionType(transmissionConverter.fromString(d.get("transmission").toString().trim()));
+                }
+
+                if (d.get("fuel") != null){
+                    trim.setTransmissionType(transmissionConverter.fromString(d.get("fuel").toString().trim()));
+                }
+
+                if (trim.getModel() != null)
+                    trimRepository.save(trim);
+            });
+
+            System.out.println("FIM");
 
         } catch (Exception e) {
             e.printStackTrace();
-        }*/
+        }
 
     }
+
+
 }
