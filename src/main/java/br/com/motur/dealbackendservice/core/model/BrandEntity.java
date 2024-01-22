@@ -23,6 +23,10 @@ public class BrandEntity {
 
     @Transient
     public String[] getSynonymsArray() {
-        return synonyms.split(",");
+        var synonyms = this.synonyms != null ? this.synonyms.split(",") : new String[0];
+        for (int i = 0; i < synonyms.length; i++) {
+            synonyms[i] = synonyms[i].trim().toLowerCase();
+        }
+        return synonyms;
     }
 }

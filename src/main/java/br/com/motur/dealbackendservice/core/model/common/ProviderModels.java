@@ -14,6 +14,9 @@ public class ProviderModels {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "external_id", length = 64, nullable = false)
+    private String externalId;
+
     @Column(name = "name", length = 50, nullable = false)
     private String name;
 
