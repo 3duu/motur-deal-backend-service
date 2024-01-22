@@ -48,5 +48,8 @@ public class EndpointConfig {
     @Column(name = "additional_params", columnDefinition = "jsonb")
     @Convert(converter = JsonNodeConverter.class)
     private JsonNode  additionalParams;// Parâmetros adicionais
+
+    @Column(name = "return_data", length = 100)
+    private String  returnData;// Dados de retorno
 }
 

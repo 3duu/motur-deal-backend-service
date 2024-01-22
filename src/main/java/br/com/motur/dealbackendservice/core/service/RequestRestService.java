@@ -6,12 +6,12 @@ import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderRep
 import br.com.motur.dealbackendservice.core.model.AuthConfigEntity;
 import br.com.motur.dealbackendservice.core.model.EndpointConfig;
 import br.com.motur.dealbackendservice.core.model.ProviderEntity;
-import br.com.motur.dealbackendservice.core.model.common.AuthType;
-import br.com.motur.dealbackendservice.core.model.common.EndpointMethod;
+import br.com.motur.dealbackendservice.core.model.common.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -29,6 +29,8 @@ public class RequestRestService {
 
     private final AuthConfigRepository authConfigRepository;
     private final ObjectMapper objectMapper;
+
+    private static final String API_KEY = "X-API-Key";
 
     public RequestRestService(ProviderRepository providerRepository, RestTemplate restTemplate, EndpointConfigRepository endpointConfigRepository, AuthConfigRepository authConfigRepository, ObjectMapper objectMapper) {
         this.providerRepository = providerRepository;
@@ -58,16 +60,18 @@ public class RequestRestService {
         return execute(endpointConfig.getUrl(), HttpMethod.valueOf(endpointConfig.getMethod().name()), endpointConfig.getAdditionalParams(), endpointConfig.getHeaders(), endpointConfig.getPayload(), null);
     }
 
-    private Object execute(String url, final HttpMethod httpMethod, final JsonNode additionalParams, final JsonNode headers, final JsonNode payload, final AuthConfigEntity authConfig) {
+    private Object execute(String url, final HttpMethod httpMethod, JsonNode additionalParams, final JsonNode headers, final JsonNode payload, final AuthConfigEntity authConfig) {
+
+        final HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setAll(headers != null ? objectMapper.convertValue(headers, Map.class) : new HashMap());
 
         if (authConfig != null){
 
             if (AuthType.API_KEY == authConfig.getAuthType()){
-
+                ApiKeyAuthConfig apiKeyAuthConfig = objectMapper.convertValue(authConfig.getDetails(), ApiKeyAuthConfig.class);
+                httpHeaders.set(API_KEY, apiKeyAuthConfig.getApiKey());
             }
             else if (AuthType.QUERY_PARAMS == authConfig.getAuthType()){
-
-                //if ()
 
                 if (!url.endsWith("?")){
                     url = url.concat("?");
@@ -80,7 +84,41 @@ public class RequestRestService {
                 }
 
             }
+            else if (AuthType.CUSTOM == authConfig.getAuthType()){
+                Map<String, Object> customAuthConfig = objectMapper.convertValue(authConfig.getDetails(), Map.class);
+            }
+            else if (AuthType.BASIC == authConfig.getAuthType()){
+                BasicAuthConfig basicAuthConfig = objectMapper.convertValue(authConfig.getDetails(), BasicAuthConfig.class);
+            }
+            else if (AuthType.OAUTH2 == authConfig.getAuthType()){
+                OAuth2AuthConfig oAuth2AuthConfig = objectMapper.convertValue(authConfig.getDetails(), OAuth2AuthConfig.class);
+            }
+            else if (AuthType.BEARER_TOKEN == authConfig.getAuthType()){
+                BearerTokenAuthConfig bearerTokenAuthConfig = objectMapper.convertValue(authConfig.getDetails(), BearerTokenAuthConfig.class);
+            }
+            else if (AuthType.DIGEST == authConfig.getAuthType()){
+                DigestAuthConfig digestAuthConfig = objectMapper.convertValue(authConfig.getDetails(), DigestAuthConfig.class);
+            }
+            else if (AuthType.JWT == authConfig.getAuthType()){
+                //JwtAuthConfig jwtAuthConfig = objectMapper.convertValue(authConfig.getDetails(), JwtAuthConfig.class);
+            }
+            else if (AuthType.SAML == authConfig.getAuthType()){
+                //SamlAuthConfig samlAuthConfig = objectMapper.convertValue(authConfig.getDetails(), SamlAuthConfig.class);
+            }
+            else if (AuthType.OPENID_CONNECT == authConfig.getAuthType()){
+                //OpenIdConnectAuthConfig openIdConnectAuthConfig = objectMapper.convertValue(authConfig.getDetails(), OpenIdConnectAuthConfig.class);
+            }
+            else if (AuthType.NTLM == authConfig.getAuthType()){
+                //NtlmAuthConfig ntlmAuthConfig = objectMapper.convertValue(authConfig.getDetails(), NtlmAuthConfig.class);
+            }
         }
+
+        /*StringBuilder body = new StringBuilder();
+        body.append("code=" + code);
+        body.append("&client_id=" + clientId);
+        body.append("&client_secret=" + clientSecret);
+        body.append("&redirect_uri=" + callbackUrl);
+        body.append("&grant_type=authorization_code");*/
 
         Map<String, Object> response = null;
         if (httpMethod == null || httpMethod.equals(HttpMethod.GET)) {
@@ -90,27 +128,21 @@ public class RequestRestService {
                     url = url.concat("?");
                 }
 
-
-                for (JsonNode additionalParam : additionalParams) {
-                    url = url.concat(additionalParam.get("key").asText()).concat("=").concat(additionalParam.get("value").asText()).concat("&");
+                Iterator<Map.Entry<String, JsonNode>> fields = additionalParams.fields();
+                while (fields.hasNext()) {
+                    Map.Entry<String, JsonNode> field = fields.next();
+                    url = url.concat(field.getKey()).concat("=").concat(field.getValue().asText()).concat("&");
                 }
             }
-            RequestEntity requestEntity = RequestEntity.get(url).build();
+            RequestEntity requestEntity = RequestEntity.get(url).headers(httpHeaders).build();
 
             response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Map.class).getBody();
 
-        } else if (httpMethod.equals(EndpointMethod.POST)) {
-
-            final HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setAll(headers != null ? objectMapper.convertValue(headers, Map.class) : new HashMap());
+        } else if (httpMethod.equals(HttpMethod.POST)) {
 
             RequestEntity requestEntity = RequestEntity.post(url)
-                    //.contentType(contentType)
                     .headers(httpHeaders)
-                    //.accept(MediaType.APPLICATION_JSON)
                     .body(payload);
-            //.build();
-
 
             response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Map.class).getBody();
         } else {

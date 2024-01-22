@@ -12,9 +12,17 @@ public class BrandEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "name")
+    @Column(name = "name", length = 25)
     private String name;
+
+    @Column(name = "synonyms", length = 100)
+    private String synonyms;
 
     @Column(name = "priority_order")
     private Integer order;
+
+    @Transient
+    public String[] getSynonymsArray() {
+        return synonyms.split(",");
+    }
 }
