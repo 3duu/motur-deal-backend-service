@@ -9,6 +9,8 @@ import br.com.motur.dealbackendservice.core.model.common.ApiType;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.util.Arrays;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -40,82 +42,16 @@ public class CatalogDownloadService {
         this.brandRepository = brandRepository;
     }
 
+    //@EventListener(ApplicationReadyEvent.class)
     public void downloadCatalogData() {
 
         final List<ProviderEntity> providers = providerRepository.findAll();
         for (ProviderEntity provider : providers) {
 
-            List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
-            List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
-            for (EndpointConfig endpointConfig : catalogEndpoints) {
-                //requestRestService.execute(provider, endpointConfig, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
-                Map<String, Object> brands = (Map)requestRestService.execute(provider, endpointConfig,null);
-                if(brands != null && !brands.isEmpty()){
+            final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
+            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
 
-                    if (endpointConfig.getReturnData() != null){
-
-                        final List<BrandEntity> brandEntities = brandRepository.findAll();
-                        final Object list = getValueFromNestedMap(brands, endpointConfig.getReturnData());
-                        final List<ProviderBrands> providerBrands = providerBrandsRepository.findAll();
-
-                        if (list instanceof List){
-                            ((List) list).forEach(brand -> {
-                                System.out.println(brand);
-                            });
-                        }
-                        else if (list instanceof Map){
-
-                            final Map<Object, Object> data = (Map<Object, Object>) list;
-                            if (!data.isEmpty()){
-
-                                if (data.keySet().toArray()[0] instanceof String){
-
-                                    data.forEach((key, value) -> {
-
-                                        brandEntities.stream().filter(brandEntity -> brandEntity.getName().trim().toLowerCase().equals(key.toString().trim().toLowerCase())
-                                                || ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString().trim().toLowerCase())).findFirst().ifPresent(brandEntity -> {
-
-                                            final String externalId = value.toString().trim();
-                                            final ProviderBrands providerBrand = providerBrands.stream().filter(p -> p.getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
-                                            providerBrand.setProvider(provider);
-                                            providerBrand.setName(key.toString().trim());
-                                            providerBrand.setExternalId(externalId);
-                                            providerBrand.setBaseBrand(brandEntity);
-                                            providerBrandsRepository.save(providerBrand);
-                                        });
-
-                                    });
-                                }
-                                else {
-                                    data.forEach((key, value) -> {
-
-                                        brandEntities.stream().filter(brandEntity -> brandEntity.getName().trim().toLowerCase().equals(key.toString().trim().toLowerCase())
-                                                || ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString().trim().toLowerCase())).findFirst().ifPresent(brandEntity -> {
-
-                                            final String externalId = key.toString().trim();
-                                            final ProviderBrands providerBrand = providerBrands.stream().filter(p -> p.getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
-                                            providerBrand.setProvider(provider);
-                                            providerBrand.setName(value.toString().trim());
-                                            providerBrand.setExternalId(externalId);
-                                            providerBrand.setBaseBrand(brandEntity);
-                                            providerBrandsRepository.save(providerBrand);
-                                        });
-
-
-                                    });
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-            }
         }
-
-
     }
 
     private Object getValueFromNestedMap(Map<String, Object> map, final String keys) {
@@ -127,6 +63,144 @@ public class CatalogDownloadService {
             }
         }
         return map.get(splitKeys[splitKeys.length - 1]);
+    }
+
+    private void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
+        final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
+        for (EndpointConfig endpointConfig : catalogEndpoints) {
+            Map<String, Object> brands = (Map) requestRestService.execute(provider, endpointConfig, null);
+            if (brands != null && !brands.isEmpty()) {
+                processAndSaveBrands(brands, endpointConfig, provider);
+
+            }
+        }
+    }
+
+    private void processAndSaveBrands(Map<String, Object> brands, final EndpointConfig endpointConfig, final ProviderEntity provider) {
+
+        if (brands != null && !brands.isEmpty()){
+
+            final List<BrandEntity> brandEntities = brandRepository.findAll();
+            final Object list = getValueFromNestedMap(brands, endpointConfig.getReturnData());
+            final List<ProviderBrands> providerBrands = providerBrandsRepository.findAllByProvider(provider);
+
+            if (list instanceof List){
+
+                final List brandList = (List) list;
+                if (!brandList.isEmpty() && brandList.get(0) instanceof Map){
+
+                    brandList.forEach(brand -> {
+
+                        final Map<Object, Object> data = (Map<Object, Object>) brand;
+                        if (!data.isEmpty()) {
+
+                            if (data.keySet().toArray()[0] instanceof String) {
+
+                                data.forEach((key, value) -> {
+
+                                    brandEntities.stream().filter(brandEntity -> brandEntity.getName().trim().toLowerCase().equals(key.toString().trim().toLowerCase())
+                                            || ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString().trim().toLowerCase())).findFirst().ifPresent(brandEntity -> {
+
+                                        final String externalId = value.toString().trim();
+                                        final ProviderBrands providerBrand = providerBrands.stream().filter(p -> p.getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
+                                        providerBrand.setProvider(provider);
+                                        providerBrand.setName(key.toString().trim());
+                                        providerBrand.setExternalId(externalId);
+                                        providerBrand.setBaseBrand(brandEntity);
+                                        providerBrandsRepository.save(providerBrand);
+                                    });
+
+                                });
+                            } else {
+                                data.forEach((key, value) -> {
+
+                                    brandEntities.stream().filter(brandEntity -> brandEntity.getName().trim().toLowerCase().equals(key.toString().trim().toLowerCase())
+                                            || ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString().trim().toLowerCase())).findFirst().ifPresent(brandEntity -> {
+
+                                        final String externalId = key.toString().trim();
+                                        final ProviderBrands providerBrand = providerBrands.stream().filter(p -> p.getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
+                                        providerBrand.setProvider(provider);
+                                        providerBrand.setName(value.toString().trim());
+                                        providerBrand.setExternalId(externalId);
+                                        providerBrand.setBaseBrand(brandEntity);
+                                        providerBrandsRepository.save(providerBrand);
+                                    });
+                                });
+                            }
+                        }
+                    });
+                }
+
+            }
+            else if (list instanceof Map){
+
+                final Map<Object, Object> data = (Map<Object, Object>) list;
+                if (!data.isEmpty()){
+
+                    if (data.keySet().toArray()[0] instanceof String){
+
+                        data.forEach((key, value) -> {
+
+                            brandEntities.stream().filter(brandEntity -> brandEntity.getName().trim().toLowerCase().equals(key.toString().trim().toLowerCase())
+                                    || ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString().trim().toLowerCase())).findFirst().ifPresent(brandEntity -> {
+
+                                final String externalId = value.toString().trim();
+                                final ProviderBrands providerBrand = providerBrands.stream().filter(p -> p.getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
+                                providerBrand.setProvider(provider);
+                                providerBrand.setName(key.toString().trim());
+                                providerBrand.setExternalId(externalId);
+                                providerBrand.setBaseBrand(brandEntity);
+                                providerBrandsRepository.save(providerBrand);
+                            });
+
+                        });
+                    }
+                    else {
+                        data.forEach((key, value) -> {
+
+                            brandEntities.stream().filter(brandEntity -> brandEntity.getName().trim().toLowerCase().equals(key.toString().trim().toLowerCase())
+                                    || ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString().trim().toLowerCase())).findFirst().ifPresent(brandEntity -> {
+
+                                final String externalId = key.toString().trim();
+                                final ProviderBrands providerBrand = providerBrands.stream().filter(p -> p.getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
+                                providerBrand.setProvider(provider);
+                                providerBrand.setName(value.toString().trim());
+                                providerBrand.setExternalId(externalId);
+                                providerBrand.setBaseBrand(brandEntity);
+                                providerBrandsRepository.save(providerBrand);
+                            });
+
+
+                        });
+                    }
+
+                }
+
+            }
+
+        }
+    }
+
+    /**
+     * Método responsável por extrair a lista de marcas dos dados retornados pelo endpoint
+     * @param brandData
+     * @param endpointConfig
+     * @return
+     */
+    /*private List<Map<String, Object>> extractBrandList(final Map<String, Object> brandData, final EndpointConfig endpointConfig){
+
+    }
+
+    private List<Map<String, Object>> extractModelsList(Map<String, Object> modelsData, EndpointConfig endpointConfig) {
+
+    }*/
+
+    private void downloadModelsCatalog(){
+
+    }
+
+    private void downloadTrimsCatalog(){
+
     }
 
 }
