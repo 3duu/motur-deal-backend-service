@@ -1,6 +1,6 @@
 package br.com.motur.dealbackendservice.core.dataproviders.repository;
 
-import br.com.motur.dealbackendservice.core.model.common.ProviderModels;
+import br.com.motur.dealbackendservice.core.model.ProviderModels;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

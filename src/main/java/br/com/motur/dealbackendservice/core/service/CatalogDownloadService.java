@@ -1,19 +1,16 @@
 package br.com.motur.dealbackendservice.core.service;
 
 import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
-import br.com.motur.dealbackendservice.core.model.BrandEntity;
-import br.com.motur.dealbackendservice.core.model.EndpointConfig;
-import br.com.motur.dealbackendservice.core.model.ProviderBrands;
-import br.com.motur.dealbackendservice.core.model.ProviderEntity;
+import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.model.common.ApiType;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
 import org.apache.commons.lang3.ArrayUtils;
-import org.bouncycastle.util.Arrays;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,10 +52,10 @@ public class CatalogDownloadService {
         }
     }
 
-    private Object getValueFromNestedMap(Map<String, Object> map, final String keys) {
+    private Object getValueFromNestedMap(Map<Object, Object> map, final String keys) {
         String[] splitKeys = keys.split("\\.");
         for (int i = 0; i < splitKeys.length - 1; i++) {
-            map = (Map<String, Object>) map.get(splitKeys[i]);
+            map = (Map<Object, Object>) map.get(splitKeys[i]);
             if (map == null) {
                 return null;
             }
@@ -69,7 +66,7 @@ public class CatalogDownloadService {
     private void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
         final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
         for (EndpointConfig endpointConfig : catalogEndpoints) {
-            Map<String, Object> brands = (Map) requestRestService.execute(provider, endpointConfig, null);
+            Map<Object, Object> brands = (Map) requestRestService.execute(provider, endpointConfig, null);
             if (brands != null && !brands.isEmpty()) {
                 processAndSaveBrands(brands, endpointConfig, provider);
 
@@ -182,40 +179,43 @@ public class CatalogDownloadService {
         }
     }*/
 
-    private void processAndSaveBrands(Map<String, Object> brands, EndpointConfig endpointConfig, final ProviderEntity provider) {
-        if (endpointConfig.getReturnData() != null) {
-            List<BrandEntity> brandEntities = brandRepository.findAll();
-            Object list = getValueFromNestedMap(brands, endpointConfig.getReturnData());
+    private void processAndSaveBrands(final Map<Object, Object> brands, final EndpointConfig endpointConfig, final ProviderEntity provider) {
 
-            if (list instanceof List) {
+        final List<BrandEntity> brandEntities = brandRepository.findAll();
+        final Object list = getValueFromNestedMap(brands, endpointConfig.getReturnData());
 
-                final List brandList = (List) list;
-                if (!brandList.isEmpty() && brandList.get(0) instanceof Map){
+        if (list instanceof List) {
 
-                    List<Map<String, Object>> listMap = (List<Map<String, Object>>) list;
+            final List brandList = (List) list;
+            if (!brandList.isEmpty() && brandList.get(0) instanceof Map){
 
-                    Map<String, Object> mapList = listMap.stream()
-                            .flatMap(m -> m.entrySet().stream())
-                            .collect(Collectors.toMap(
-                                    Map.Entry::getKey,
-                                    Map.Entry::getValue,
-                                    (v1, v2) -> v1
-                            ));
+                final List<Map<Object, Object>> listMap = (List<Map<Object, Object>>) list;
 
-
-                    brandList.forEach(brandMap -> processBrandMap(mapList, brandEntities, provider));
-                }
+                final Map<Object, Object> mapList = listMap.stream()
+                        .flatMap(m -> m.entrySet().stream())
+                        .collect(Collectors.toMap(
+                                entry -> entry.getKey(),  // replaced Map.Entry::getKey with lambda
+                                entry -> entry.getValue(),  // replaced Map.Entry::getValue with lambda
+                                (v1, v2) -> v1
+                        ));
 
 
-            } else if (list instanceof Map) {
-                processBrandMap((Map<String, Object>) list, brandEntities, provider);
+                brandList.forEach(brandMap -> processBrandMap(mapList, brandEntities, provider));
             }
+
+
+        } else if (list instanceof Map) {
+            processBrandMap((Map<Object, Object>) list, brandEntities, provider);
         }
+
     }
 
-    private void processBrandMap(final Map<String, Object> brandMap, final List<BrandEntity> brandEntities, final ProviderEntity provider) {
+    private void processBrandMap(final Map<Object, Object> brandMap, final List<BrandEntity> brandEntities, final ProviderEntity provider) {
 
         final List<ProviderBrands> providerBrands = providerBrandsRepository.findAllByProvider(provider);
+
+        var keyset = brandMap.keySet().toArray();
+
 
         brandMap.forEach((key, value) -> {
             brandEntities.stream()
@@ -223,9 +223,16 @@ public class CatalogDownloadService {
                             ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString()))
                     .findFirst()
                     .ifPresent(brandEntity -> {
-                        String externalId = value.toString();
-                        final ProviderBrands providerBrand = findOrCreateProviderBrand(externalId, providerBrands);
-                        providerBrand.setName(key.toString());
+
+                        String name = value.toString();
+                        String externalId = key.toString();
+                        if (keyset.length > 0 && keyset[0] instanceof String){
+                            externalId  = value.toString();
+                            name = key.toString();
+                        }
+
+                        final ProviderBrands providerBrand = (ProviderBrands) findOrCreateProviderCatalog(externalId, providerBrands.toArray());
+                        providerBrand.setName(name);
                         providerBrand.setExternalId(externalId);
                         providerBrand.setBaseBrand(brandEntity);
                         providerBrandsRepository.save(providerBrand);
@@ -233,23 +240,10 @@ public class CatalogDownloadService {
         });
     }
 
-    private ProviderBrands findOrCreateProviderBrand(String externalId, final List<ProviderBrands> providerBrands) {
-        return providerBrands.stream().filter(p -> p.getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
+    private BaseProviderCatalogEntity findOrCreateProviderCatalog(String externalId, final Object[] providerBrands) {
+        return (BaseProviderCatalogEntity) Arrays.stream(providerBrands).toList().stream().filter(p ->((BaseProviderCatalogEntity) p).getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
     }
 
-    /**
-     * Método responsável por extrair a lista de marcas dos dados retornados pelo endpoint
-     * @param brandData
-     * @param endpointConfig
-     * @return
-     */
-    /*private List<Map<String, Object>> extractBrandList(final Map<String, Object> brandData, final EndpointConfig endpointConfig){
-
-    }
-
-    private List<Map<String, Object>> extractModelsList(Map<String, Object> modelsData, EndpointConfig endpointConfig) {
-
-    }*/
 
     private void downloadModelsCatalog(){
 
