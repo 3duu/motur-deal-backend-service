@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CatalogDownloadService {
@@ -76,7 +77,7 @@ public class CatalogDownloadService {
         }
     }
 
-    private void processAndSaveBrands(Map<String, Object> brands, final EndpointConfig endpointConfig, final ProviderEntity provider) {
+    /*private void processAndSaveBrands(Map<String, Object> brands, final EndpointConfig endpointConfig, final ProviderEntity provider) {
 
         if (brands != null && !brands.isEmpty()){
 
@@ -179,6 +180,61 @@ public class CatalogDownloadService {
             }
 
         }
+    }*/
+
+    private void processAndSaveBrands(Map<String, Object> brands, EndpointConfig endpointConfig, final ProviderEntity provider) {
+        if (endpointConfig.getReturnData() != null) {
+            List<BrandEntity> brandEntities = brandRepository.findAll();
+            Object list = getValueFromNestedMap(brands, endpointConfig.getReturnData());
+
+            if (list instanceof List) {
+
+                final List brandList = (List) list;
+                if (!brandList.isEmpty() && brandList.get(0) instanceof Map){
+
+                    List<Map<String, Object>> listMap = (List<Map<String, Object>>) list;
+
+                    Map<String, Object> mapList = listMap.stream()
+                            .flatMap(m -> m.entrySet().stream())
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    Map.Entry::getValue,
+                                    (v1, v2) -> v1
+                            ));
+
+
+                    brandList.forEach(brandMap -> processBrandMap(mapList, brandEntities, provider));
+                }
+
+
+            } else if (list instanceof Map) {
+                processBrandMap((Map<String, Object>) list, brandEntities, provider);
+            }
+        }
+    }
+
+    private void processBrandMap(final Map<String, Object> brandMap, final List<BrandEntity> brandEntities, final ProviderEntity provider) {
+
+        final List<ProviderBrands> providerBrands = providerBrandsRepository.findAllByProvider(provider);
+
+        brandMap.forEach((key, value) -> {
+            brandEntities.stream()
+                    .filter(brandEntity -> brandEntity.getName().equalsIgnoreCase(key.toString()) ||
+                            ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString()))
+                    .findFirst()
+                    .ifPresent(brandEntity -> {
+                        String externalId = value.toString();
+                        final ProviderBrands providerBrand = findOrCreateProviderBrand(externalId, providerBrands);
+                        providerBrand.setName(key.toString());
+                        providerBrand.setExternalId(externalId);
+                        providerBrand.setBaseBrand(brandEntity);
+                        providerBrandsRepository.save(providerBrand);
+                    });
+        });
+    }
+
+    private ProviderBrands findOrCreateProviderBrand(String externalId, final List<ProviderBrands> providerBrands) {
+        return providerBrands.stream().filter(p -> p.getExternalId().equals(externalId)).findFirst().orElse(new ProviderBrands());
     }
 
     /**
