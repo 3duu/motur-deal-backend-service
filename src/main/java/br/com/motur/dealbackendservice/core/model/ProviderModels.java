@@ -1,8 +1,5 @@
 package br.com.motur.dealbackendservice.core.model;
 
-import br.com.motur.dealbackendservice.core.model.BaseProviderCatalogEntity;
-import br.com.motur.dealbackendservice.core.model.ModelEntity;
-import br.com.motur.dealbackendservice.core.model.ProviderBrands;
 import jakarta.persistence.*;
 import lombok.Data;
 

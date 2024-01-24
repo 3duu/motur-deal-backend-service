@@ -2,8 +2,10 @@ package br.com.motur.dealbackendservice.core.model;
 
 
 import br.com.motur.dealbackendservice.core.converter.JsonNodeConverter;
+import br.com.motur.dealbackendservice.core.converter.ReturnMappingConverter;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
 import br.com.motur.dealbackendservice.core.model.common.EndpointMethod;
+import br.com.motur.dealbackendservice.core.model.common.ReturnMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -49,7 +51,8 @@ public class EndpointConfig {
     @Convert(converter = JsonNodeConverter.class)
     private JsonNode  additionalParams;// Parâmetros adicionais
 
-    @Column(name = "return_data", length = 100)
-    private String  returnData;// Dados de retorno
+    @Column(name = "return_mapping", columnDefinition = "jsonb")
+    @Convert(converter = ReturnMappingConverter.class)
+    private ReturnMapping returnMapping;// Dados de retorno
 }
 

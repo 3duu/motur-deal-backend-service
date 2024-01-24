@@ -4,6 +4,7 @@ import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.model.common.ApiType;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
+import br.com.motur.dealbackendservice.core.model.common.ReturnMapping;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -52,15 +53,25 @@ public class CatalogDownloadService {
         }
     }
 
-    private Object getValueFromNestedMap(Map<Object, Object> map, final String keys) {
-        String[] splitKeys = keys.split("\\.");
-        for (int i = 0; i < splitKeys.length - 1; i++) {
-            map = (Map<Object, Object>) map.get(splitKeys[i]);
-            if (map == null) {
-                return null;
-            }
+    private Object getValueFromNestedMap(final EndpointConfig endpoint, Map<Object, Object> origin, final List<BrandEntity> destination) {
+
+        if (endpoint == null || endpoint.getReturnMapping() == null) {
+            return null;
         }
-        return map.get(splitKeys[splitKeys.length - 1]);
+
+        endpoint.getReturnMapping().getFieldMappings().forEach(config -> {
+
+            final String[] path = config.getOriginPath().split("\\.");
+            if (path.length > 1) {
+
+                final Map<Object, Object> nestedMap = (Map<Object, Object>) origin.get(path[0]);
+                if (nestedMap != null) {
+                    //origin = nestedMap;
+                }
+            }
+        });
+
+        return origin;
     }
 
     private void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
@@ -182,7 +193,7 @@ public class CatalogDownloadService {
     private void processAndSaveBrands(final Map<Object, Object> brands, final EndpointConfig endpointConfig, final ProviderEntity provider) {
 
         final List<BrandEntity> brandEntities = brandRepository.findAll();
-        final Object list = getValueFromNestedMap(brands, endpointConfig.getReturnData());
+        final Object list = getValueFromNestedMap(endpointConfig, brands, brandEntities);
 
         if (list instanceof List) {
 
@@ -215,18 +226,18 @@ public class CatalogDownloadService {
         final List<ProviderBrands> providerBrands = providerBrandsRepository.findAllByProvider(provider);
 
         var keyset = brandMap.keySet().toArray();
-
+        boolean keyIsString = keyset.length > 0 && keyset[0] instanceof String;
 
         brandMap.forEach((key, value) -> {
             brandEntities.stream()
-                    .filter(brandEntity -> brandEntity.getName().equalsIgnoreCase(key.toString()) ||
-                            ArrayUtils.contains(brandEntity.getSynonymsArray(), key.toString()))
+                    .filter(brandEntity -> brandEntity.getName().equalsIgnoreCase(keyIsString ? key.toString() : value.toString()) ||
+                            ArrayUtils.contains(brandEntity.getSynonymsArray(), keyIsString ? key.toString() : value.toString()))
                     .findFirst()
                     .ifPresent(brandEntity -> {
 
                         String name = value.toString();
                         String externalId = key.toString();
-                        if (keyset.length > 0 && keyset[0] instanceof String){
+                        if (keyIsString){
                             externalId  = value.toString();
                             name = key.toString();
                         }
@@ -235,6 +246,7 @@ public class CatalogDownloadService {
                         providerBrand.setName(name);
                         providerBrand.setExternalId(externalId);
                         providerBrand.setBaseBrand(brandEntity);
+                        providerBrand.setProvider(provider);
                         providerBrandsRepository.save(providerBrand);
                     });
         });
