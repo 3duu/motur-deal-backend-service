@@ -15,10 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,9 +31,11 @@ public class CatalogDownloadService {
     private final ProviderTrimsRepository providerTrimsRepository;
     private final BrandRepository brandRepository;
 
+    private final ModelRepository modelRepository;
+
     private final ObjectMapper objectMapper;
 
-    public CatalogDownloadService(ProviderRepository providerRepository, RestTemplate restTemplate, EndpointConfigRepository endpointConfigRepository, RequestRestService requestRestService, RequestSoapService requestSoapService, ProviderBrandsRepository providerBrandsRepository, ProviderModelsRepository providerModelsRepository, ProviderTrimsRepository providerTrimsRepository, BrandRepository brandRepository, ObjectMapper objectMapper) {
+    public CatalogDownloadService(ProviderRepository providerRepository, RestTemplate restTemplate, EndpointConfigRepository endpointConfigRepository, RequestRestService requestRestService, RequestSoapService requestSoapService, ProviderBrandsRepository providerBrandsRepository, ProviderModelsRepository providerModelsRepository, ProviderTrimsRepository providerTrimsRepository, BrandRepository brandRepository, ModelRepository modelRepository, ObjectMapper objectMapper) {
         this.providerRepository = providerRepository;
         this.restTemplate = restTemplate;
         this.endpointConfigRepository = endpointConfigRepository;
@@ -46,17 +45,22 @@ public class CatalogDownloadService {
         this.providerModelsRepository = providerModelsRepository;
         this.providerTrimsRepository = providerTrimsRepository;
         this.brandRepository = brandRepository;
+        this.modelRepository = modelRepository;
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Download the catalog data from all providers
+     */
     public void downloadCatalogData() {
 
         final List<ProviderEntity> providers = providerRepository.findAll();
         for (ProviderEntity provider : providers) {
 
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
-            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
 
+            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
+            //downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
         }
     }
 
@@ -77,20 +81,91 @@ public class CatalogDownloadService {
         return origin.get(splitKeys[splitKeys.length - 1]);
     }
 
+    /**
+     * Download the brands catalog from the provider
+     * @param provider
+     * @param authEndpoint
+     */
     private void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
         final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
         for (EndpointConfig endpointConfig : catalogEndpoints) {
-            Map<Object, Object> brands = (Map) requestRestService.execute(provider, endpointConfig, null);
-            if (brands != null && !brands.isEmpty()) {
-                processAndSaveCatalog(brands, endpointConfig, provider, brandRepository.findAll(), BrandEntity.class, ProviderBrands.class, providerBrandsRepository);
+            Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
+            if (results != null && !results.isEmpty()) {
+                processAndSaveCatalog(results, endpointConfig, provider, brandRepository.findAll(), providerBrandsRepository.findAllByProvider(provider), BrandEntity.class, ProviderBrands.class, providerBrandsRepository);
             }
+        }
+    }
+
+    private void downloadModelsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
+        final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_MODELS, provider);
+        for (EndpointConfig endpointConfig : catalogEndpoints) {
+
+            var brands = providerBrandsRepository.findAll();
+
+
+            brands.forEach(brand -> {
+
+                //set the brand id in the url
+                endpointConfig.setUrl(endpointConfig.getUrl().replace("{brandId}", brand.getExternalId()));
+
+                //set the brand id in the headers
+                final Map<Object,Object> headers = new HashMap<>();
+                if (endpointConfig.getHeaders() != null){
+
+                    Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getHeaders().fields();
+                    while (fieldsIterator.hasNext()) {
+                        Map.Entry<String, JsonNode> field = fieldsIterator.next();
+                        headers.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
+                    }
+                    headers.put("brandId", brand.getExternalId());
+                    endpointConfig.setHeaders(objectMapper.valueToTree(headers));
+                }
+
+                //set the brand id in the additional params
+                if(endpointConfig.getAdditionalParams() != null){
+
+                    final Map<Object,Object> additionalParams = new HashMap<>();
+                    Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getAdditionalParams().fields();
+                    while (fieldsIterator.hasNext()) {
+                        Map.Entry<String, JsonNode> field = fieldsIterator.next();
+                        additionalParams.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
+                    }
+                    additionalParams.put("brandId", brand.getExternalId());
+                    endpointConfig.setAdditionalParams(objectMapper.valueToTree(additionalParams));
+                }
+
+                //set the brand id in the payload
+                if (endpointConfig.getPayload() != null){
+
+                    final Map<Object,Object> payload = new HashMap<>();
+                    Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getPayload().fields();
+                    while (fieldsIterator.hasNext()) {
+                        Map.Entry<String, JsonNode> field = fieldsIterator.next();
+                        payload.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
+                    }
+                    payload.put("brandId", brand.getExternalId());
+                    endpointConfig.setPayload(objectMapper.valueToTree(payload));
+                }
+
+                Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
+                if (results != null && !results.isEmpty()) {
+                    processAndSaveCatalog(results, endpointConfig, provider, modelRepository.findAllByBrand(brand.getBaseCatalog()), providerModelsRepository.findAllByBaseCatalog(brand.getBaseCatalog()), ModelEntity.class, ProviderModels.class, providerModelsRepository);
+                }
+            });
+
+            /*Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
+            if (results != null && !results.isEmpty()) {
+
+                processAndSaveCatalog(results, endpointConfig, provider, modelRepository.findAll(), ModelEntity.class, ProviderModels.class, providerModelsRepository);
+            }*/
         }
     }
 
     private void processAndSaveCatalog(final Map<Object, Object> brands,
                                        final EndpointConfig endpointConfig,
                                        final ProviderEntity provider,
-                                       final List brandEntities,
+                                       final List<? extends CatalogEntity> catalogEntities,
+                                       final List<? extends ProviderCatalogEntity> providerCatalogList,
                                        final Class<? extends CatalogEntity> catalogEntityClass,
                                        final Class<? extends ProviderCatalogEntity> providerCatalogEntityClass,
                                        final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
@@ -115,12 +190,12 @@ public class CatalogDownloadService {
                                     (v1, v2) -> v1
                             ));
 
-                    brandList.forEach(brandMap -> processReturnMap(mapList, brandEntities, provider, endpointConfig.getReturnMapping().getFieldMappings(), catalogEntityClass, providerCatalogEntityClass, providerCatalogRepository));
+                    brandList.forEach(brandMap -> processReturnMap(mapList, catalogEntities, providerCatalogList, provider, endpointConfig.getReturnMapping().getFieldMappings(), catalogEntityClass, providerCatalogEntityClass, providerCatalogRepository));
                 }
 
             } else if (root.getOriginDatatype() == DataType.MAP) {
 
-                processReturnMap((Map<Object, Object>) list, brandEntities, provider, endpointConfig.getReturnMapping().getFieldMappings(), catalogEntityClass, providerCatalogEntityClass, providerCatalogRepository);
+                processReturnMap((Map<Object, Object>) list, catalogEntities, providerCatalogList, provider, endpointConfig.getReturnMapping().getFieldMappings(), catalogEntityClass, providerCatalogEntityClass, providerCatalogRepository);
             } else if (root.getOriginDatatype() == DataType.JSON) {
 
                 JsonNode jsonNode = null;
@@ -149,7 +224,7 @@ public class CatalogDownloadService {
                                     (v1, v2) -> v1
                             ));
 
-                    processReturnMap(mapList, brandEntities, provider, endpointConfig.getReturnMapping().getFieldMappings(), catalogEntityClass, providerCatalogEntityClass, providerCatalogRepository);
+                    processReturnMap(mapList, catalogEntities, providerCatalogList, provider, endpointConfig.getReturnMapping().getFieldMappings(), catalogEntityClass, providerCatalogEntityClass, providerCatalogRepository);
                 }
 
             }
@@ -161,8 +236,10 @@ public class CatalogDownloadService {
 
     /**
      * Process the return map from the provider and save the data in the database
+     *
      * @param brandMap
      * @param catalogEntityList
+     * @param providerCatalogList
      * @param provider
      * @param fieldMappings
      * @param catalogEntityClass
@@ -170,14 +247,12 @@ public class CatalogDownloadService {
      * @param providerCatalogRepository
      */
     private void processReturnMap(final Map<Object, Object> brandMap,
-                                  final List<CatalogEntity> catalogEntityList,
-                                  final ProviderEntity provider,
+                                  final List<? extends CatalogEntity> catalogEntityList,
+                                  List<? extends ProviderCatalogEntity> providerCatalogList, final ProviderEntity provider,
                                   final List<ReturnMapping.Config> fieldMappings,
                                   final Class<? extends CatalogEntity> catalogEntityClass,
                                   final Class<? extends ProviderCatalogEntity> providerCatalogEntityClass,
                                   final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
-
-        final List<ProviderBrands> providerBrands = providerBrandsRepository.findAllByProvider(provider);
 
         final ReturnMapping.Config externalIDConfig = fieldMappings.stream().filter(config -> config.getDestination() == ReturnMapping.FieldMapping.EXTERNAL_ID).findFirst().orElse(null);
         final ReturnMapping.Config nameConfig = fieldMappings.stream().filter(config -> config.getDestination() == ReturnMapping.FieldMapping.NAME).findFirst().orElse(null);
@@ -228,7 +303,7 @@ public class CatalogDownloadService {
 
                         }
 
-                        final ProviderCatalogEntity providerCatalog = findOrCreateProviderCatalog(externalId, providerBrands.toArray(), providerCatalogEntityClass);
+                        final ProviderCatalogEntity providerCatalog = findOrCreateProviderCatalog(externalId, providerCatalogList.toArray(), providerCatalogEntityClass);
                         providerCatalog.setName(name);
                         providerCatalog.setExternalId(externalId);
                         providerCatalog.setBaseCatalog(brandEntity);
