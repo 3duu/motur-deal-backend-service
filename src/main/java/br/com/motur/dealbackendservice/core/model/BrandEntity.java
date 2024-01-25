@@ -35,4 +35,9 @@ public class BrandEntity implements CatalogEntity {
         }
         return synonymsArray;
     }
+
+    @Override
+    public CatalogEntity getBaseParentCatalog() {
+        return null;
+    }
 }

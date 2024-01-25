@@ -21,7 +21,7 @@ public class ProviderModels implements ProviderCatalogEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_brand_id", nullable = false)
-    private ProviderBrands baseCatalog;
+    private ProviderBrands parentProviderCatalog;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "base_model_id", nullable = false)
@@ -31,12 +31,19 @@ public class ProviderModels implements ProviderCatalogEntity {
     private String externalId;
 
     @Override
-    public CatalogEntity getBaseCatalog() {
-        return (CatalogEntity) baseCatalog;
+    public ProviderCatalogEntity getParentProviderCatalog() {
+        return this.parentProviderCatalog;
+    }
+
+    @Override
+    public void setParentProviderCatalog(ProviderCatalogEntity parentProviderCatalog) {
+        this.parentProviderCatalog = (ProviderBrands) parentProviderCatalog;
     }
 
     @Override
     public void setBaseCatalog(CatalogEntity baseCatalog) {
-
+        baseModel = (ModelEntity) baseCatalog;
     }
+
+
 }

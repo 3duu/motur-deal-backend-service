@@ -7,4 +7,6 @@ public interface CatalogEntity {
     void setName(String name);
 
     String[] getSynonymsArray();
+
+    CatalogEntity getBaseParentCatalog();
 }

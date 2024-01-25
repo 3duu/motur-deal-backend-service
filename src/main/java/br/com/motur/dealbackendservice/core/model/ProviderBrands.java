@@ -27,7 +27,19 @@ public class ProviderBrands implements ProviderCatalogEntity {
     private String externalId;
 
     @Override
+    public ProviderCatalogEntity getParentProviderCatalog() {
+        return null;
+    }
+
+    @Override
+    public void setParentProviderCatalog(ProviderCatalogEntity parentProviderCatalog) {
+
+    }
+
+    @Override
     public void setBaseCatalog(CatalogEntity baseCatalog) {
         this.baseCatalog = (BrandEntity) baseCatalog;
     }
+
+
 }

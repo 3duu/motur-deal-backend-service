@@ -17,8 +17,10 @@ public interface ProviderCatalogEntity extends Serializable {
 
     void setProvider(ProviderEntity provider);
 
-    CatalogEntity getBaseCatalog();
+
+    ProviderCatalogEntity getParentProviderCatalog();
+
+    void setParentProviderCatalog(ProviderCatalogEntity parentProviderCatalog);
 
     void setBaseCatalog(CatalogEntity baseCatalog);
-
 }

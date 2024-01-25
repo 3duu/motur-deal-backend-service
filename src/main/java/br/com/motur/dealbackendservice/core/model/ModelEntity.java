@@ -29,4 +29,9 @@ public class ModelEntity implements CatalogEntity {
     public String[] getSynonymsArray() {
         return new String[0];
     }
+
+    @Override
+    public CatalogEntity getBaseParentCatalog() {
+        return brand;
+    }
 }

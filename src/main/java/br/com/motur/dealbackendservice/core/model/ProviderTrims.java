@@ -21,7 +21,7 @@ public class ProviderTrims implements ProviderCatalogEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_model_id", nullable = false)
-    private ProviderModels model;
+    private ProviderModels parentProviderCatalog;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "base_trim_id", nullable = false)
@@ -34,5 +34,16 @@ public class ProviderTrims implements ProviderCatalogEntity {
     public void setBaseCatalog(CatalogEntity baseCatalog) {
         this.baseCatalog = (TrimEntity) baseCatalog;
     }
+
+    @Override
+    public ProviderCatalogEntity getParentProviderCatalog() {
+        return this.parentProviderCatalog;
+    }
+
+    @Override
+    public void setParentProviderCatalog(ProviderCatalogEntity parentProviderCatalog) {
+        this.parentProviderCatalog = (ProviderModels) parentProviderCatalog;
+    }
+
 }
 
