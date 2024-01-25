@@ -6,7 +6,7 @@ import lombok.Data;
 @Entity
 @Data
 @Table(name = "model")
-public class ModelEntity {
+public class ModelEntity implements CatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,4 +25,8 @@ public class ModelEntity {
     @JoinColumn(name = "brand_id")
     private BrandEntity brand;
 
+    @Override
+    public String[] getSynonymsArray() {
+        return new String[0];
+    }
 }

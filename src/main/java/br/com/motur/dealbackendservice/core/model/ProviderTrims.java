@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 @Data
 @Entity
 @Table(name = "provider_trims")
-public class ProviderTrims extends BaseProviderCatalogEntity {
+public class ProviderTrims implements ProviderCatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,22 +16,23 @@ public class ProviderTrims extends BaseProviderCatalogEntity {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "provider_id", nullable = false)
+    private ProviderEntity provider;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_model_id", nullable = false)
     private ProviderModels model;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "base_trim_id", nullable = false)
-    private TrimEntity baseTrim;
+    private TrimEntity baseCatalog;
 
     @Column(name = "external_id", length = 64, nullable = false)
     private String externalId;
 
-    public String getExternalId() {
-        return externalId;
-    }
-
-    public void setExternalId(String externalId) {
-        this.externalId = externalId;
+    @Override
+    public void setBaseCatalog(CatalogEntity baseCatalog) {
+        this.baseCatalog = (TrimEntity) baseCatalog;
     }
 }
 

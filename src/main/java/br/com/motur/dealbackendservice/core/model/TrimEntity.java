@@ -10,7 +10,7 @@ import lombok.Data;
 @Entity
 @Data
 @Table(name = "trim")
-public class TrimEntity {
+public class TrimEntity implements CatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,4 +64,9 @@ public class TrimEntity {
     @Column(name = "transmission_id")
     @Enumerated(EnumType.STRING)
     private TransmissionType transmissionType;
+
+    @Override
+    public String[] getSynonymsArray() {
+        return new String[0];
+    }
 }

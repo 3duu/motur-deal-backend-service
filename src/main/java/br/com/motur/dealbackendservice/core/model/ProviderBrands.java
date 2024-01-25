@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "provider_brands")
-public class ProviderBrands extends BaseProviderCatalogEntity {
+public class ProviderBrands implements ProviderCatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,17 +21,13 @@ public class ProviderBrands extends BaseProviderCatalogEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "base_brand_id", nullable = false)
-    private BrandEntity baseBrand;
+    private BrandEntity baseCatalog;
 
     @Column(name = "external_id", length = 64, nullable = false)
     private String externalId;
 
-    public String getExternalId() {
-        return externalId;
+    @Override
+    public void setBaseCatalog(CatalogEntity baseCatalog) {
+        this.baseCatalog = (BrandEntity) baseCatalog;
     }
-
-    public void setExternalId(String externalId) {
-        this.externalId = externalId;
-    }
-
 }

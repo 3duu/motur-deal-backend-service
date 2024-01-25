@@ -1,12 +1,12 @@
 package br.com.motur.dealbackendservice.core.model.common;
 
-import br.com.motur.dealbackendservice.core.model.BaseProviderCatalogEntity;
+import br.com.motur.dealbackendservice.core.model.ProviderCatalogEntity;
 import br.com.motur.dealbackendservice.core.model.ProviderModels;
 import br.com.motur.dealbackendservice.core.model.ProviderTrims;
 
 public enum EndpointCategory {
     AUTHENTICATION("Autenticação", null),
-    CATALOG_BRANDS("Catálogo de Marcas", BaseProviderCatalogEntity.class),
+    CATALOG_BRANDS("Catálogo de Marcas", ProviderCatalogEntity.class),
     CATALOG_MODELS("Catálogo de Modelos", ProviderModels.class),
     CATALOG_VERSIONS("Catálogo de Versões", ProviderTrims.class),
     LISTING("Listagem", null),
