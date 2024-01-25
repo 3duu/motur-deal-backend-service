@@ -15,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ReturnMapping implements java.io.Serializable {
 
+    private Config root;
     private List<Config> fieldMappings;
     @Data
     @NoArgsConstructor
@@ -34,7 +35,8 @@ public class ReturnMapping implements java.io.Serializable {
 
         NAME("name"),
         SYNONYMS("synonyms"),
-        EXTERNAL_ID("externalId");
+        EXTERNAL_ID("externalId"),
+        CONTENT("content");
 
         private final String value;
 

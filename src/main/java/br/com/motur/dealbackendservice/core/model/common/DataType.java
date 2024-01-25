@@ -1,10 +1,13 @@
 package br.com.motur.dealbackendservice.core.model.common;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Id;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 public enum DataType {
@@ -21,8 +24,12 @@ public enum DataType {
     LOCAL_DATETIME("LocalDateTime", LocalDateTime.class),//10
     BIG_DECIMAL("BigDecimal", BigDecimal.class),//11
     LIST("List", List.class),//12
-    JSON("JSON", Object.class),//13
-    ID("byte", Id.class);//14
+    JSON("JSON", JsonNode.class),//13
+
+    ID("ID", Id.class),//14
+
+    MAP("Map", HashMap.class);//15
+
 
     private final String displayName;
     final Class<?> clazz;
