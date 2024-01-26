@@ -1,6 +1,5 @@
 package br.com.motur.dealbackendservice.core.dataproviders.repository;
 
-import br.com.motur.dealbackendservice.core.model.BrandEntity;
 import br.com.motur.dealbackendservice.core.model.ProviderBrands;
 import br.com.motur.dealbackendservice.core.model.ProviderModels;
 import org.springframework.data.jpa.repository.JpaRepository;
