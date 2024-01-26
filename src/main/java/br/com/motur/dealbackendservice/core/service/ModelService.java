@@ -95,7 +95,7 @@ public class ModelService {
         }*/
 
 
-        String path = "C:\\Users\\Eduardo\\Desktop\\trims_marca_modelo_versao_202401201505.json"; // Substitua pelo caminho do seu arquivo
+        /*String path = "C:\\Users\\Eduardo\\Desktop\\trims_marca_modelo_versao_202401201505.json"; // Substitua pelo caminho do seu arquivo
         String line = "";
 
         System.out.println("INICIO");
@@ -176,7 +176,7 @@ public class ModelService {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
 
     }
 

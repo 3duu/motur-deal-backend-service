@@ -25,9 +25,19 @@ public class ModelEntity implements CatalogEntity {
     @JoinColumn(name = "brand_id")
     private BrandEntity brand;
 
-    @Override
+    private String[] synonymsArray;
+
+    @Transient
     public String[] getSynonymsArray() {
-        return new String[0];
+
+        if (this.synonymsArray != null) {
+            return this.synonymsArray;
+        }
+        synonymsArray = this.synonym != null ? this.synonym.split(",") : new String[0];
+        for (int i = 0; i < synonymsArray.length; i++) {
+            synonymsArray[i] = synonymsArray[i].trim().toLowerCase();
+        }
+        return synonymsArray;
     }
 
     @Override
