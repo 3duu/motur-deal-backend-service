@@ -64,7 +64,7 @@ public class CatalogDownloadService {
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
             downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
-            downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
+            //downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
         }
     }
 
@@ -100,13 +100,13 @@ public class CatalogDownloadService {
         for (EndpointConfig endpointConfig : catalogEndpoints) {
             Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
             if (results != null && !results.isEmpty()) {
-                processAndSaveCatalog(results, endpointConfig, provider, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), ProviderBrands.class, providerBrandsRepository);
+                processAndSaveCatalog(results, endpointConfig, provider, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), providerBrandsRepository);
             }
         }
     }
 
     /**
-     * Download the models catalog from the fornecedor
+     * Download dos modelos do catalog do fornecedor
      * @param provider Provedor
      * @param authEndpoint Endpoint de autenticação
      */
@@ -163,7 +163,7 @@ public class CatalogDownloadService {
 
                 Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
                 if (results != null && !results.isEmpty()) {
-                    processAndSaveCatalog(results, endpointConfig, provider, modelRepository.findAllByBrand(brand.getBaseCatalog()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), ProviderModels.class, providerModelsRepository);
+                    processAndSaveCatalog(results, endpointConfig, provider, modelRepository.findAllByBrand(brand.getBaseCatalog()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
                 }
             });
 
@@ -177,6 +177,8 @@ public class CatalogDownloadService {
      * @param endpointConfig      Endpoint de autenticação
      * @param provider            Provedor
      * @param providerCatalogList Lista de dos itens do catalogo do fornecedor
+     * @param parentProviderCatalog Item pai do catalogo do fornecedor
+     * @param providerCatalogRepository Repositorio do item do catalogo do fornecedor
      */
     private void processAndSaveCatalog(final Map<Object, Object> data,
                                        final EndpointConfig endpointConfig,
@@ -184,7 +186,6 @@ public class CatalogDownloadService {
                                        final List<? extends CatalogEntity> catalogEntities,
                                        final ProviderCatalogEntity parentProviderCatalog,
                                        final List<? extends ProviderCatalogEntity> providerCatalogList,
-                                       final Class<? extends ProviderCatalogEntity> providerCatalogEntityClass,
                                        final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
 
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
@@ -208,12 +209,12 @@ public class CatalogDownloadService {
                                     (v1, v2) -> v1
                             ));
 
-                    brandList.forEach(brandMap -> processReturnMap(mapList, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getReturnMapping().getFieldMappings(), providerCatalogRepository));
+                    brandList.forEach(brandMap -> processReturnMap(endpointConfig, mapList, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getReturnMapping().getFieldMappings(), providerCatalogRepository));
                 }
 
             } else if (root.getOriginDatatype() == DataType.MAP) {
 
-                processReturnMap((Map<Object, Object>) list, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getReturnMapping().getFieldMappings(), providerCatalogRepository);
+                processReturnMap(endpointConfig, (Map<Object, Object>) list, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getReturnMapping().getFieldMappings(), providerCatalogRepository);
             } else if (root.getOriginDatatype() == DataType.JSON) {
 
                 JsonNode jsonNode = null;
@@ -242,7 +243,7 @@ public class CatalogDownloadService {
                                     (v1, v2) -> v1
                             ));
 
-                    processReturnMap(mapList, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getReturnMapping().getFieldMappings(), providerCatalogRepository);
+                    processReturnMap(endpointConfig, mapList, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getReturnMapping().getFieldMappings(), providerCatalogRepository);
                 }
 
             }
@@ -255,15 +256,17 @@ public class CatalogDownloadService {
     /**
      * Process the return map from the provider and save the data in the database
      *
-     * @param brandMap
-     * @param catalogEntityList
-     * @param providerCatalogList
-     * @param parentProviderCatalog
-     * @param provider
-     * @param fieldMappings
-     * @param providerCatalogRepository
+     * @param endpointConfig Endpoint de autenticação
+     * @param brandMap Mapa de retorno do fornecedor
+     * @param catalogEntityList Lista de dos itens do catalogo do fornecedor
+     * @param providerCatalogList Lista de dos itens do catalogo do fornecedor
+     * @param parentProviderCatalog Item pai do catalogo do fornecedor
+     * @param provider Fornecedor
+     * @param fieldMappings Lista de mapeamentos de campos
+     * @param providerCatalogRepository Repositorio do item do catalogo do fornecedor
      */
-    private void processReturnMap(final Map<Object, Object> brandMap,
+    private void processReturnMap(final EndpointConfig endpointConfig,
+                                  final Map<Object, Object> brandMap,
                                   final List<? extends CatalogEntity> catalogEntityList,
                                   final List<? extends ProviderCatalogEntity> providerCatalogList,
                                   final ProviderCatalogEntity parentProviderCatalog, final ProviderEntity provider,
@@ -276,8 +279,7 @@ public class CatalogDownloadService {
         brandMap.forEach((key, value) -> {
 
             catalogEntityList.stream()
-                    .filter(brandEntity -> brandEntity.getName().trim().equalsIgnoreCase(nameConfig.getOriginPath().contains("#key") ? key.toString().trim() : value.toString().trim()) ||
-                            ArrayUtils.contains(brandEntity.getSynonymsArray(), nameConfig.getOriginPath().contains("#key") ? key.toString().trim() : value.toString().trim()))
+                    .filter(entity -> endpointConfig.getCategory().getFinderInstance().find(entity, nameConfig.getOriginPath().contains("#key") ? key.toString().trim() : value.toString().trim()))
                     .findFirst()
                     .ifPresent(entity -> {
 
