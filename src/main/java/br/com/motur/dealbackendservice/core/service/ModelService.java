@@ -11,6 +11,8 @@ import br.com.motur.dealbackendservice.core.model.common.BodyType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -34,6 +36,8 @@ public class ModelService {
     private final TractionTypeConverter tractionTypeConverter;
     private final BodyTypeConverter bodyTypeConverter;
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     @Autowired
     public ModelService(ModelRepository modelRepository, BrandService brandService, TrimRepository trimRepository, TransmissionConverter transmissionConverter, TractionTypeConverter tractionTypeConverter, BodyTypeConverter bodyTypeConverter) {
         this.modelRepository = modelRepository;
@@ -53,7 +57,7 @@ public class ModelService {
     /**
      * Este método é executado após o início do aplicativo.
      */
-    @EventListener(ApplicationReadyEvent.class)
+    //@EventListener(ApplicationReadyEvent.class)
     public void doSomethingAfterStartup() {
 
         /*String path = "C:\\Users\\Eduardo\\Desktop\\models__select_m_nome_brand_m2_nome_name_m2_sinonimo_m2_indicebusca_m2__202401111120.csv"; // Substitua pelo caminho do seu arquivo
@@ -95,7 +99,7 @@ public class ModelService {
         }*/
 
 
-        /*String path = "C:\\Users\\Eduardo\\Desktop\\trims_marca_modelo_versao_202401201505.json"; // Substitua pelo caminho do seu arquivo
+        String path = "C:\\Users\\Eduardo\\Desktop\\trims_marca_modelo_versao_202401261043.json"; // Substitua pelo caminho do seu arquivo
         String line = "";
 
         System.out.println("INICIO");
@@ -176,7 +180,7 @@ public class ModelService {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }*/
+        }
 
     }
 

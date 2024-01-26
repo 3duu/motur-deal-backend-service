@@ -3,6 +3,8 @@ package br.com.motur.dealbackendservice.core.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.text.Normalizer;
+
 @Entity
 @Data
 @Table(name = "model")
@@ -36,7 +38,7 @@ public class ModelEntity implements CatalogEntity {
         }
         synonymsArray = this.synonym != null ? this.synonym.split(",") : new String[0];
         for (int i = 0; i < synonymsArray.length; i++) {
-            synonymsArray[i] = synonymsArray[i].trim().toLowerCase();
+            synonymsArray[i] = Normalizer.normalize(synonymsArray[i].trim().toLowerCase(), Normalizer.Form.NFD);
         }
         return synonymsArray;
     }

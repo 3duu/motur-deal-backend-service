@@ -15,7 +15,7 @@ public enum EndpointCategory {
     AUTHENTICATION("Autenticação", null, null),
     CATALOG_BRANDS("Catálogo de Marcas", ProviderBrands.class, new BrandsFinder()),
     CATALOG_MODELS("Catálogo de Modelos", ProviderModels.class, new ModelsFinder()),
-    CATALOG_VERSIONS("Catálogo de Versões", ProviderTrims.class, new TrimsFinder()),
+    CATALOG_TRIMS("Catálogo de Versões", ProviderTrims.class, new TrimsFinder()),
     LISTING("Listagem", null, null),
     DETAILS("Detalhes", null, null),
     CREATION("Criação", null, null),

@@ -36,6 +36,8 @@ public class CatalogDownloadService {
 
     private final ModelRepository modelRepository;
 
+    private final TrimRepository trimRepository;
+
     private final ObjectMapper objectMapper;
 
     private final ModelMapper modelMapper;
@@ -46,7 +48,7 @@ public class CatalogDownloadService {
                                   RequestRestService requestRestService, RequestSoapService requestSoapService,
                                   ProviderBrandsRepository providerBrandsRepository, ProviderModelsRepository providerModelsRepository,
                                   ProviderTrimsRepository providerTrimsRepository, BrandRepository brandRepository,
-                                  ModelRepository modelRepository, ObjectMapper objectMapper, ModelMapper modelMapper) {
+                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper) {
         this.providerRepository = providerRepository;
         this.endpointConfigRepository = endpointConfigRepository;
         this.requestRestService = requestRestService;
@@ -56,6 +58,7 @@ public class CatalogDownloadService {
         this.providerTrimsRepository = providerTrimsRepository;
         this.brandRepository = brandRepository;
         this.modelRepository = modelRepository;
+        this.trimRepository = trimRepository;
         this.objectMapper = objectMapper;
         this.modelMapper = modelMapper;
     }
@@ -65,14 +68,18 @@ public class CatalogDownloadService {
      */
     public void downloadCatalogData() {
 
+        logger.info("Downloading catalog data from providers");
         final List<ProviderEntity> providers = providerRepository.findAll();
         for (ProviderEntity provider : providers) {
 
+            logger.info("Downloading catalog from provider: " + provider.getName());
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
-            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
-            downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
-            logger.info("Downloaded models from provider: " + provider.getName());
+            /*downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
+            downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);*/
+            downloadTrimsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
+
+            logger.info("Downloaded catalog from provider: " + provider.getName());
         }
     }
 
@@ -191,6 +198,90 @@ public class CatalogDownloadService {
     }
 
     /**
+     * Download the versões catalogo do fornecedor
+     *
+     * @param provider Provedor/Fornecedor
+     * @param authEndpoint Endpoint de autenticação (opcional)
+     */
+    private void downloadTrimsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint){
+
+            final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_TRIMS, provider);
+            for (final EndpointConfig originalEndpointConfig : catalogEndpoints) {
+
+                //Busca todos os modelos
+                final List<ProviderModels> models = providerModelsRepository.findAllByProviderId(provider.getId());
+
+                models.forEach(model -> {
+
+                    EndpointConfig endpointConfig = null;
+                    try {
+                        endpointConfig = objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfig), EndpointConfig.class);
+                    } catch (JsonProcessingException e) {
+                        logger.error("Error parsing endpoint config: " + e.getMessage(), e);
+                        endpointConfig = modelMapper.map(originalEndpointConfig, EndpointConfig.class);
+                    }
+
+                    logger.info("Downloading trims from model: " + model.getName());
+
+                    //set the brand id in the url
+                    endpointConfig.setUrl(endpointConfig.getUrl().replace("{modelId}", model.getExternalId()));
+                    endpointConfig.setUrl(endpointConfig.getUrl().replace("{brandId}", model.getParentProviderCatalog().getExternalId()));
+
+                    //set the brand id in the headers
+                    final Map<Object,Object> headers = new HashMap<>();
+                    if (endpointConfig.getHeaders() != null){
+
+                        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getHeaders().fields();
+                        while (fieldsIterator.hasNext()) {
+                            Map.Entry<String, JsonNode> field = fieldsIterator.next();
+                            headers.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
+                        }
+                        headers.put("modelId", model.getExternalId());
+                        headers.put("brandId", model.getParentProviderCatalog().getExternalId());
+                        endpointConfig.setHeaders(objectMapper.valueToTree(headers));
+                    }
+
+                    //set the brand id in the additional params
+                    if(endpointConfig.getAdditionalParams() != null){
+
+                        final Map<Object,Object> additionalParams = new HashMap<>();
+                        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getAdditionalParams().fields();
+                        while (fieldsIterator.hasNext()) {
+                            Map.Entry<String, JsonNode> field = fieldsIterator.next();
+                            additionalParams.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
+                        }
+                        additionalParams.put("modelId", model.getExternalId());
+                        additionalParams.put("brandId", model.getParentProviderCatalog().getExternalId());
+                        endpointConfig.setAdditionalParams(objectMapper.valueToTree(additionalParams));
+                    }
+
+                    //set the brand id in the payload
+                    if (endpointConfig.getPayload() != null){
+
+                        final Map<Object,Object> payload = new HashMap<>();
+                        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getPayload().fields();
+                        while (fieldsIterator.hasNext()) {
+                            Map.Entry<String, JsonNode> field = fieldsIterator.next();
+                            payload.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
+                        }
+                        payload.put("modelId", model.getExternalId());
+                        payload.put("brandId", model.getParentProviderCatalog().getExternalId());
+                        endpointConfig.setPayload(objectMapper.valueToTree(payload));
+                    }
+
+                    final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
+                    if (results != null && !results.isEmpty()) {
+                        processAndSaveCatalog(results, endpointConfig, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
+                    }
+
+                    logger.info("Downloaded models from brand: " + model.getName());
+
+                });
+
+            }
+    }
+
+    /**
      * Download the trims catalog from the fornecedor
      *
      * @param data                Dados recebidos do fornecedor
@@ -209,6 +300,8 @@ public class CatalogDownloadService {
                                        final ProviderCatalogEntity parentProviderCatalog,
                                        final List<? extends ProviderCatalogEntity> providerCatalogList,
                                        final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
+
+        logger.info("Processing and saving catalog data from provider: " + provider.getName());
 
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
         final Object list = getValueFromNestedMap(endpointConfig.getReturnMapping().getRoot(), data);
@@ -271,6 +364,8 @@ public class CatalogDownloadService {
             }
 
         }
+
+        logger.info("Processed and saved catalog data from provider: " + provider.getName());
 
     }
 
