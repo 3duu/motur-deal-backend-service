@@ -21,6 +21,7 @@ public class BrandEntity implements CatalogEntity {
     @Column(name = "priority_order")
     private Integer order;
 
+    @Transient
     private String[] synonymsArray;
 
     @Transient

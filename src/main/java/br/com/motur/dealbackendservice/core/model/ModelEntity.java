@@ -25,6 +25,7 @@ public class ModelEntity implements CatalogEntity {
     @JoinColumn(name = "brand_id")
     private BrandEntity brand;
 
+    @Transient
     private String[] synonymsArray;
 
     @Transient
