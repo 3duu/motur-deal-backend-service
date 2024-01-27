@@ -75,8 +75,8 @@ public class CatalogDownloadService {
             logger.info("Downloading catalog from provider: " + provider.getName());
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
-            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
-            downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
+            /*downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
+            downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);*/
             downloadTrimsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
 
             logger.info("Downloaded catalog from provider: " + provider.getName());
@@ -134,7 +134,7 @@ public class CatalogDownloadService {
 
             brands.forEach(brand -> {
 
-                EndpointConfig endpointConfig = null;    //modelMapper.map(originalEndpointConfig, EndpointConfig.class);
+                EndpointConfig endpointConfig = null;
                 try {
                     endpointConfig = objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfig), EndpointConfig.class);
                 } catch (JsonProcessingException e) {
@@ -148,29 +148,15 @@ public class CatalogDownloadService {
                 endpointConfig.setUrl(endpointConfig.getUrl().replace("{brandId}", brand.getExternalId()));
 
                 //set the brand id in the headers
-                final Map<Object,Object> headers = new HashMap<>();
                 if (endpointConfig.getHeaders() != null){
 
-                    Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getHeaders().fields();
-                    while (fieldsIterator.hasNext()) {
-                        Map.Entry<String, JsonNode> field = fieldsIterator.next();
-                        headers.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
-                    }
-                    headers.put("brandId", brand.getExternalId());
-                    endpointConfig.setHeaders(objectMapper.valueToTree(headers));
+                    endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), Map.of("brandId", brand.getExternalId())));
                 }
 
                 //set the brand id in the additional params
                 if(endpointConfig.getAdditionalParams() != null){
 
-                    final Map<Object,Object> additionalParams = new HashMap<>();
-                    Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getAdditionalParams().fields();
-                    while (fieldsIterator.hasNext()) {
-                        Map.Entry<String, JsonNode> field = fieldsIterator.next();
-                        additionalParams.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
-                    }
-                    additionalParams.put("brandId", brand.getExternalId());
-                    endpointConfig.setAdditionalParams(objectMapper.valueToTree(additionalParams));
+                    endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), Map.of("brandId", brand.getExternalId())));
                 }
 
                 //set the brand id in the payload
@@ -190,6 +176,11 @@ public class CatalogDownloadService {
         }
     }
 
+    /**
+     * Formata um campo json com os campos informados
+     * @param json Json a ser formatado
+     * @param fields Campos a serem adicionados
+     */
     private JsonNode formatJsonField(final JsonNode json, final Map<String,Object> fields) {
         final Map<Object,Object> payload = new HashMap<>();
         Iterator<Map.Entry<String, JsonNode>> fieldsIterator = json.fields();
@@ -235,46 +226,38 @@ public class CatalogDownloadService {
                     endpointConfig.setUrl(endpointConfig.getUrl().replace("{modelId}", model.getExternalId()));
                     endpointConfig.setUrl(endpointConfig.getUrl().replace("{brandId}", model.getParentProviderCatalog().getExternalId()));
 
+
                     //set the brand id in the headers
-                    final Map<Object,Object> headers = new HashMap<>();
                     if (endpointConfig.getHeaders() != null){
 
-                        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getHeaders().fields();
-                        while (fieldsIterator.hasNext()) {
-                            Map.Entry<String, JsonNode> field = fieldsIterator.next();
-                            headers.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
-                        }
-                        headers.put("modelId", model.getExternalId());
-                        headers.put("brandId", model.getParentProviderCatalog().getExternalId());
-                        endpointConfig.setHeaders(objectMapper.valueToTree(headers));
+                        endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), new HashMap<>(){
+                            {
+                                put("modelId", model.getExternalId());
+                                put("brandId", model.getParentProviderCatalog().getExternalId());
+                            }
+                        }));
                     }
 
                     //set the brand id in the additional params
                     if(endpointConfig.getAdditionalParams() != null){
 
-                        final Map<Object,Object> additionalParams = new HashMap<>();
-                        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getAdditionalParams().fields();
-                        while (fieldsIterator.hasNext()) {
-                            Map.Entry<String, JsonNode> field = fieldsIterator.next();
-                            additionalParams.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
-                        }
-                        additionalParams.put("modelId", model.getExternalId());
-                        additionalParams.put("brandId", model.getParentProviderCatalog().getExternalId());
-                        endpointConfig.setAdditionalParams(objectMapper.valueToTree(additionalParams));
+                        endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), new HashMap<>(){
+                            {
+                                put("modelId", model.getExternalId());
+                                put("brandId", model.getParentProviderCatalog().getExternalId());
+                            }
+                        }));
                     }
 
                     //set the brand id in the payload
                     if (endpointConfig.getPayload() != null){
 
-                        final Map<Object,Object> payload = new HashMap<>();
-                        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getPayload().fields();
-                        while (fieldsIterator.hasNext()) {
-                            Map.Entry<String, JsonNode> field = fieldsIterator.next();
-                            payload.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
-                        }
-                        payload.put("modelId", model.getExternalId());
-                        payload.put("brandId", model.getParentProviderCatalog().getExternalId());
-                        endpointConfig.setPayload(objectMapper.valueToTree(payload));
+                        endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), new HashMap<>(){
+                            {
+                                put("modelId", model.getExternalId());
+                                put("brandId", model.getParentProviderCatalog().getExternalId());
+                            }
+                        }));
                     }
 
                     final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);

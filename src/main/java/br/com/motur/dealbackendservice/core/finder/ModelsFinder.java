@@ -15,30 +15,16 @@ public class ModelsFinder extends CatalogFinder<ModelEntity> {
 
     @Override
     public boolean find(final ModelEntity model, String nameInProvider) {
-        String normalizedModelName = normalizeName(model, model.getName());
-        String normalizedProviderName = normalizeName(model, nameInProvider);
+        String normalizedModelName = normalizeName(model.getName());
+        String normalizedProviderName = normalizeName(nameInProvider);
 
         boolean match = model.getName().trim().toLowerCase().equals(nameInProvider.trim().toLowerCase()) || normalizedModelName.equals(normalizedProviderName)
-                || ArrayUtils.contains(model.getSynonymsArray(), nameInProvider.toLowerCase()) || ArrayUtils.contains(model.getSynonymsArray(), normalizeName(null, nameInProvider));
+                || ArrayUtils.contains(model.getSynonymsArray(), nameInProvider.toLowerCase()) || ArrayUtils.contains(model.getSynonymsArray(), normalizeName(nameInProvider));
 
         LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
         int distance = levenshteinDistance.apply(normalizedModelName, normalizedProviderName);
         int threshold = 1; // Defina um limiar adequado
 
-        //return distance <= threshold;
-
         return match || distance <= threshold;
-    }
-
-    private String normalizeName(final ModelEntity model, final String name) {
-        if (name == null) {
-            return "";
-        }
-
-        return Normalizer.normalize(name.trim()
-                .replaceAll("\\s+", "")
-                .replaceAll("[^a-zA-Z0-9]", "")
-                .replace(model != null ? normalizeName(null, model.getBrand().getName()) : "", "")
-                .toLowerCase(), Normalizer.Form.NFD);
     }
 }
