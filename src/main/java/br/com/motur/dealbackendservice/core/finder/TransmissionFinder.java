@@ -1,11 +1,11 @@
-package br.com.motur.dealbackendservice.core.converter;
+package br.com.motur.dealbackendservice.core.finder;
 
 import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TransmissionConverter {
+public class TransmissionFinder {
 
     public TransmissionType fromString(String tipo) {
 

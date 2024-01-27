@@ -6,8 +6,11 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.Normalizer;
 
+/**
+ * Essa classe é responsável por encontrar entidades de catálogo local
+ * @param <T>
+ */
 
 public class ModelsFinder extends CatalogFinder<ModelEntity> {
 

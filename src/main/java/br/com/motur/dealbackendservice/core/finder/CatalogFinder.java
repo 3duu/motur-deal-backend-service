@@ -8,6 +8,10 @@ import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Essa classe é responsável por encontrar entidades de catálogo local
+ * @param <T>
+ */
 public abstract class CatalogFinder<T extends CatalogEntity> {
 
 

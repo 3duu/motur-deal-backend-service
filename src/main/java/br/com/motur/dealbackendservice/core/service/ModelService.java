@@ -1,17 +1,15 @@
 package br.com.motur.dealbackendservice.core.service;
 
-import br.com.motur.dealbackendservice.core.converter.BodyTypeConverter;
-import br.com.motur.dealbackendservice.core.converter.TractionTypeConverter;
-import br.com.motur.dealbackendservice.core.converter.TransmissionConverter;
+import br.com.motur.dealbackendservice.core.finder.BodyTypeFinder;
+import br.com.motur.dealbackendservice.core.finder.TractionTypeFinder;
+import br.com.motur.dealbackendservice.core.finder.TransmissionFinder;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.ModelRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.TrimRepository;
 import br.com.motur.dealbackendservice.core.model.ModelEntity;
 import br.com.motur.dealbackendservice.core.model.TrimEntity;
-import br.com.motur.dealbackendservice.core.model.common.BodyType;
 import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +18,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -36,20 +33,20 @@ public class ModelService {
 
     private final TrimRepository trimRepository;
 
-    private final TransmissionConverter transmissionConverter;
+    private final TransmissionFinder transmissionFinder;
 
-    private final TractionTypeConverter tractionTypeConverter;
-    private final BodyTypeConverter bodyTypeConverter;
+    private final TractionTypeFinder tractionTypeFinder;
+    private final BodyTypeFinder bodyTypeConverter;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public ModelService(ModelRepository modelRepository, BrandService brandService, TrimRepository trimRepository, TransmissionConverter transmissionConverter, TractionTypeConverter tractionTypeConverter, BodyTypeConverter bodyTypeConverter) {
+    public ModelService(ModelRepository modelRepository, BrandService brandService, TrimRepository trimRepository, TransmissionFinder transmissionFinder, TractionTypeFinder tractionTypeFinder, BodyTypeFinder bodyTypeConverter) {
         this.modelRepository = modelRepository;
         this.brandService = brandService;
         this.trimRepository = trimRepository;
-        this.transmissionConverter = transmissionConverter;
-        this.tractionTypeConverter = tractionTypeConverter;
+        this.transmissionFinder = transmissionFinder;
+        this.tractionTypeFinder = tractionTypeFinder;
         this.bodyTypeConverter = bodyTypeConverter;
     }
 
@@ -213,10 +210,10 @@ public class ModelService {
                 if (trim.getTransmissionType() != null && trim.getTransmissionType() == TransmissionType.NONE){
 
                     var dt = data.stream().filter(d -> d.get("name").equals(trim.getName()) && d.get("year_from").toString().equals(trim.getYearFrom().toString()) && d.get("year_to").toString().equals(trim.getYearTo().toString())).findFirst().orElse(new HashMap()).get("transmission");
-                    trim.setTransmissionType(transmissionConverter.fromString(dt != null ? dt.toString().trim() : null));
+                    trim.setTransmissionType(transmissionFinder.fromString(dt != null ? dt.toString().trim() : null));
 
                     if (trim.getTransmissionType() == TransmissionType.NONE || trim.getTransmissionType() == null)
-                        trim.setTransmissionType(transmissionConverter.fromString(trim.getName().trim()));
+                        trim.setTransmissionType(transmissionFinder.fromString(trim.getName().trim()));
                 }
             });
 

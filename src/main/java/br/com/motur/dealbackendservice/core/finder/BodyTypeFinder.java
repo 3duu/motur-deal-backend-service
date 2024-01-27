@@ -1,10 +1,10 @@
-package br.com.motur.dealbackendservice.core.converter;
+package br.com.motur.dealbackendservice.core.finder;
 
 import br.com.motur.dealbackendservice.core.model.common.BodyType;
 import org.springframework.stereotype.Component;
 
 @Component
-public class BodyTypeConverter {
+public class BodyTypeFinder {
 
         public BodyType categorizeBodyType(String tipo) {
             tipo = tipo.toLowerCase();

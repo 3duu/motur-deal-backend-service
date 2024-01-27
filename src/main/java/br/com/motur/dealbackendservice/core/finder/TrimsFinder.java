@@ -10,7 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+/**
+ * Essa classe é responsável por encontrar entidades de catálogo local
+ * @param <T>
+ */
 public class TrimsFinder extends CatalogFinder<TrimEntity> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());

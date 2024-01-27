@@ -1,10 +1,13 @@
-package br.com.motur.dealbackendservice.core.converter;
+package br.com.motur.dealbackendservice.core.finder;
 
 import br.com.motur.dealbackendservice.core.model.common.VehicleTractionType;
 import org.springframework.stereotype.Component;
 
+/**
+ * Essa classe é responsável por encontrar o tipo de tração do veículo
+ */
 @Component
-public class TractionTypeConverter {
+public class TractionTypeFinder {
 
     public VehicleTractionType categorizeTraction(String tipo) {
         tipo = tipo.toLowerCase();
