@@ -34,9 +34,9 @@ public class TrimsFinder extends CatalogFinder<TrimEntity> {
 
         if (!match || distance <= threshold){
 
-            double similarity = calculateSimilarity(normalizedModelName, normalizedProviderName);
+            double similarity = normalizedModelName.length() >= normalizedProviderName.length() ? calculateSimilarity(normalizedModelName, normalizedProviderName) : calculateSimilarity(normalizedProviderName, normalizedModelName);
             //logger.info("Similarity: " + similarity + " - " + normalizedModelName + " - " + normalizedProviderName);
-            propsMatch = similarity > 65 /*|| extractEngineSize(normalizedModelName).equals(extractEngineSize(normalizedProviderName))
+            propsMatch = similarity >= 65 /*|| extractEngineSize(normalizedModelName).equals(extractEngineSize(normalizedProviderName))
                     || extractValveCount(normalizedModelName).equals(extractValveCount(normalizedProviderName))
                     ||  extractModelName(trim).equals(extractModelName(normalizedProviderName))*/;
         }

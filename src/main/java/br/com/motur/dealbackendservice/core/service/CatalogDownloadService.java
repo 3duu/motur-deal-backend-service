@@ -176,14 +176,7 @@ public class CatalogDownloadService {
                 //set the brand id in the payload
                 if (endpointConfig.getPayload() != null){
 
-                    final Map<Object,Object> payload = new HashMap<>();
-                    Iterator<Map.Entry<String, JsonNode>> fieldsIterator = endpointConfig.getPayload().fields();
-                    while (fieldsIterator.hasNext()) {
-                        Map.Entry<String, JsonNode> field = fieldsIterator.next();
-                        payload.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
-                    }
-                    payload.put("brandId", brand.getExternalId());
-                    endpointConfig.setPayload(objectMapper.valueToTree(payload));
+                    endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), Map.of("brandId", brand.getExternalId())));
                 }
 
                 final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
@@ -195,6 +188,21 @@ public class CatalogDownloadService {
             });
 
         }
+    }
+
+    private JsonNode formatJsonField(final JsonNode json, final Map<String,Object> fields) {
+        final Map<Object,Object> payload = new HashMap<>();
+        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = json.fields();
+        while (fieldsIterator.hasNext()) {
+            final Map.Entry<String, JsonNode> field = fieldsIterator.next();
+            payload.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
+        }
+
+        fields.forEach((key, value) -> {
+            payload.put(key, value);
+        });
+
+        return objectMapper.valueToTree(payload);
     }
 
     /**
@@ -274,7 +282,7 @@ public class CatalogDownloadService {
                         processAndSaveCatalog(results, endpointConfig, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
                     }
 
-                    logger.info("Downloaded models from brand: " + model.getName());
+                    logger.info("Downloaded trims from model: " + model.getName());
 
                 });
 
