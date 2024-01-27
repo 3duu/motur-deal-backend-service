@@ -11,7 +11,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 /**
- *
+ * Essa classe representa o uma configuração de endpoint de um fornecedor.
  */
 @Data
 @Entity

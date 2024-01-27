@@ -8,6 +8,7 @@ import br.com.motur.dealbackendservice.core.dataproviders.repository.TrimReposit
 import br.com.motur.dealbackendservice.core.model.ModelEntity;
 import br.com.motur.dealbackendservice.core.model.TrimEntity;
 import br.com.motur.dealbackendservice.core.model.common.BodyType;
+import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
@@ -18,7 +19,11 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +62,7 @@ public class ModelService {
     /**
      * Este método é executado após o início do aplicativo.
      */
-    //@EventListener(ApplicationReadyEvent.class)
+    @EventListener(ApplicationReadyEvent.class)
     public void doSomethingAfterStartup() {
 
         /*String path = "C:\\Users\\Eduardo\\Desktop\\models__select_m_nome_brand_m2_nome_name_m2_sinonimo_m2_indicebusca_m2__202401111120.csv"; // Substitua pelo caminho do seu arquivo
@@ -102,9 +107,9 @@ public class ModelService {
         String path = "C:\\Users\\Eduardo\\Desktop\\trims_marca_modelo_versao_202401261043.json"; // Substitua pelo caminho do seu arquivo
         String line = "";
 
-        System.out.println("INICIO");
+        logger.info("INICIO");
 
-        try {
+        /*try {
 
             Map<String, Object> map = new ObjectMapper().readValue(new File(path),
                     new TypeReference<HashMap<String, Object>>() {});
@@ -177,6 +182,48 @@ public class ModelService {
             });
 
             System.out.println("FIM");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+
+
+        try {
+
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            Map<String, Object> map = null;
+
+            try (InputStream inputStream = classLoader.getResourceAsStream("trims_marca_modelo_versao_202401261043.json");
+                 InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+                 BufferedReader reader = new BufferedReader(streamReader)) {
+
+                map = new ObjectMapper().readValue(reader,
+                        new TypeReference<HashMap<String, Object>>() {});
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+            final List<TrimEntity> list = trimRepository.findAll();
+
+            final List<Map> data = (List<Map>) map.get("data");
+
+            list.forEach(trim -> {
+
+                if (trim.getTransmissionType() != null && trim.getTransmissionType() == TransmissionType.NONE){
+
+                    var dt = data.stream().filter(d -> d.get("name").equals(trim.getName()) && d.get("year_from").toString().equals(trim.getYearFrom().toString()) && d.get("year_to").toString().equals(trim.getYearTo().toString())).findFirst().orElse(new HashMap()).get("transmission");
+                    trim.setTransmissionType(transmissionConverter.fromString(dt != null ? dt.toString().trim() : null));
+
+                    if (trim.getTransmissionType() == TransmissionType.NONE || trim.getTransmissionType() == null)
+                        trim.setTransmissionType(transmissionConverter.fromString(trim.getName().trim()));
+                }
+            });
+
+            logger.info("Salvando");
+            trimRepository.saveAll(list);
+
+            logger.info("FIM");
 
         } catch (Exception e) {
             e.printStackTrace();

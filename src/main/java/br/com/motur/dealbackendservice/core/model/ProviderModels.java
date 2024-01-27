@@ -3,6 +3,9 @@ package br.com.motur.dealbackendservice.core.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+/**
+ * Essa classe representa o um modelo de um veículo no catálogo do fornecedor.
+ */
 @Data
 @Entity
 @Table(name = "provider_models")

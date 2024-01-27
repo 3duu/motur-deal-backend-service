@@ -6,6 +6,9 @@ import lombok.Data;
 
 import java.io.Serializable;
 
+/**
+ * Essa entidade representa o mapeamento de um campo de um anúncio do fornecedor para um campo do anúncio local.
+ */
 @Data
 @Entity
 @Table(name = "field_mapping")

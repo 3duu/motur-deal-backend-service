@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.text.Normalizer;
 
+/**
+ * Essa classe representa o um modelo de um veículo no catálogo do fornecedor.
+ */
 @Entity
 @Data
 @Table(name = "model")

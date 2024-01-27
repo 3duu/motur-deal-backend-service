@@ -10,6 +10,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Essa entidade representa um veículo.
+ */
 @Table(name = "vehicle")
 @Entity
 @Data

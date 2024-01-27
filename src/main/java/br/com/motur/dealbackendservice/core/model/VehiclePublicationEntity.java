@@ -7,6 +7,9 @@ import lombok.Data;
 import java.util.Date;
 import jakarta.persistence.*;
 
+/**
+ * Essa classe representa o uma publicação de um veículo. Ela é responsável por guardar informações sobre a publicação de um veículo que já foi publicado.
+ */
 @Entity
 @Table(name = "vehicle_publication")
 @Data
@@ -17,7 +20,7 @@ public class VehiclePublicationEntity {
     private Long id;
 
     @Column(name = "external_id")
-    private String externalId;
+    private String externalId; // Id da publicação no fornecedor
 
     @ManyToOne
     @JoinColumn(name = "vehicle_id", nullable = false)
@@ -27,8 +30,12 @@ public class VehiclePublicationEntity {
     @JoinColumn(name = "provider_id", nullable = false)
     private ProviderEntity provider;
 
+    @ManyToOne
+    @JoinColumn(name = "provider_trims_id", nullable = false)
+    private ProviderTrims providerTrims;
+
     @Column(name = "plan_id")
-    private String planId;
+    private String planId; //Id do plano de publicação selecionado
 
     @Column(name = "status")
     private String status;

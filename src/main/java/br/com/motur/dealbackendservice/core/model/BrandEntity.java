@@ -3,6 +3,9 @@ package br.com.motur.dealbackendservice.core.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+/**
+ * Essa classe representa o uma marca de um veículo no catálogo local.
+ */
 @Entity
 @Data
 @Table(name = "brand")

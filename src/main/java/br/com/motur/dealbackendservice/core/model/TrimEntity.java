@@ -7,6 +7,9 @@ import br.com.motur.dealbackendservice.core.model.common.VehicleTractionType;
 import jakarta.persistence.*;
 import lombok.Data;
 
+/**
+ * Entidade que representa uma versão de veículo
+ */
 @Entity
 @Data
 @Table(name = "trim")

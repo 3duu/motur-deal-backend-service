@@ -6,6 +6,9 @@ import br.com.motur.dealbackendservice.core.model.common.ApiType;
 import jakarta.persistence.*;
 import lombok.Data;
 
+/**
+ * Essa classe representa o um fornecedor de anúncios.
+ */
 @Entity
 @Data
 @Table(name = "provider")

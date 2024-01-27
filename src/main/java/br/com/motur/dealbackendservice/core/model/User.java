@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.util.Date;
 
+/**
+ * Essa classe representa o um usuário do sistema.
+ */
 @Entity
 @Table(name = "Users")
 @Data

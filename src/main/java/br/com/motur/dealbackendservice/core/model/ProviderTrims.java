@@ -3,6 +3,10 @@ package br.com.motur.dealbackendservice.core.model;
 import lombok.Data;
 import jakarta.persistence.*;
 
+/**
+ * Essa classe representa o uma versão de uum veículo no catálogo do fornecedor.
+ */
+
 @Data
 @Entity
 @Table(name = "provider_trims")

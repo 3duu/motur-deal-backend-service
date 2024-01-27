@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.util.Date;
 
+/**
+ * Essa classe representa uma revenda de veículos.
+ */
 @Data
 @Entity
 @Table(name = "dealer")

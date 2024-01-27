@@ -9,6 +9,9 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
+/**
+ * Essa entidade representa um anúncio local de um veículo.
+ */
 @Entity
 @Data
 @Table(name = "ad")

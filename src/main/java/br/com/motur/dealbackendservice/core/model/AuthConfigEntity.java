@@ -24,7 +24,7 @@ public class AuthConfigEntity {
 
     @ManyToOne
     @JoinColumn(name = "provider_id", nullable = false)
-    private ProviderEntity provider;
+    private ProviderEntity provider; // Referência ao ID do provedor associado
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 15)
