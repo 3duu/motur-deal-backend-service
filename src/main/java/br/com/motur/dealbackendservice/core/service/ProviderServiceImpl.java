@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- *
+ * Essa classe é responsável por implementar os métodos de serviço de provedor
  */
 @Service
 public class ProviderServiceImpl {

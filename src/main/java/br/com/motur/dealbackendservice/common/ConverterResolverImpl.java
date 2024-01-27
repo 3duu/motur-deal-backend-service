@@ -7,6 +7,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 
+/**
+ * Essa classe é responsável por resolver o conversor de acordo com o tipo de objeto
+ */
 @Service
 public class ConverterResolverImpl implements ConverterResolver {
 

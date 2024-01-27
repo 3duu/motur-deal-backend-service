@@ -29,7 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
+/**
+ * Essa classe é responsável por executar integrações de anúncio com provedores
+ */
 @Service
 public class IntegrationService {
 
@@ -49,6 +51,13 @@ public class IntegrationService {
         this.objectMapper = objectMapper;
     }
 
+
+    /**
+     * Envia o veículo para o provedor.
+     *
+     * @param vehicle    O veículo a ser enviado.
+     * @param provider Fornecedor para o qual o veículo deve ser enviado.
+     */
     public void integrateVehicle(VehicleEntity vehicle, final ProviderEntity provider) throws Exception {
         // Encontrar a configuração de autenticação e mapeamento de campos para o provedor
         //AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
@@ -80,6 +89,13 @@ public class IntegrationService {
         return adaptedVehicle;
     }
 
+    /**
+     * Obtém o valor de um campo privado de um objeto.
+     *
+     * @param vehicle   O objeto do qual o valor do campo deve ser obtido.
+     * @param fieldName O nome do campo.
+     * @return O valor do campo.
+     */
     private Object getFieldValue(final VehicleEntity vehicle, final String fieldName) {
         try {
             Field field = VehicleEntity.class.getDeclaredField(fieldName);
@@ -93,6 +109,13 @@ public class IntegrationService {
     }
 
 
+    /**
+     * Converte um valor para um tipo de dados.
+     *
+     * @param value O valor a ser convertido.
+     * @param type  O tipo de dados para o qual o valor deve ser convertido.
+     * @return O valor convertido.
+     */
     private Object convertValueToType(Object value, DataType type) {
         if (value == null) {
             return null;
@@ -136,12 +159,16 @@ public class IntegrationService {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            // Lide com a exceção ou retorne null
             return null;
         }
     }
 
-
+    /**
+     * Autentica com o provedor e retorna o token de autenticação.
+     *
+     * @param authConfig A configuração de autenticação para o provedor.
+     * @return O token de autenticação.
+     */
     public String authenticateWithProvider(final AuthConfigEntity authConfig) throws Exception {
         switch (authConfig.getAuthType()) {
             case OAUTH2:
@@ -171,6 +198,11 @@ public class IntegrationService {
         }
     }
 
+    /**
+     * Autentica com o provedor usando OAuth 2.0.
+     * @param authConfig
+     * @return
+     */
     private String authenticateWithOAuth(AuthConfigEntity authConfig) {
 
         final OAuth2AuthConfig details = objectMapper.convertValue(authConfig.getDetails(), OAuth2AuthConfig.class);

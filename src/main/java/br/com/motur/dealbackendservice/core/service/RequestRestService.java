@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Essa classe é responsável por executar requisições REST
+ */
 @Service
 public class RequestRestService {
 

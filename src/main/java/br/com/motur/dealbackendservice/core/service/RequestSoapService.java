@@ -6,6 +6,9 @@ import br.com.motur.dealbackendservice.core.model.EndpointConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
+/**
+ * Essa classe é responsável por executar requisições SOAP
+ */
 @Service
 public class RequestSoapService {
 

@@ -7,6 +7,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Essa anotação é responsável por mapear os campos do arquivo de catálogo para os campos da entidade
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface FieldMappingInfo {

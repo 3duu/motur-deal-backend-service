@@ -11,6 +11,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Classe abstrata para conversão de objetos
+ * @param <T> Tipo de objeto de origem
+ * @param <E> Tipo de objeto de destino
+ */
 public abstract class ValueObjectConverter<T, E> implements Converter<T, E> {
 
     public List<E> convertList(List<T> list){
