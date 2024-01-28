@@ -185,7 +185,7 @@ public class ModelService {
         }*/
 
 
-        try {
+        /*try {
 
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             Map<String, Object> map = null;
@@ -209,8 +209,8 @@ public class ModelService {
 
                 if (trim.getTransmissionType() != null && trim.getTransmissionType() == TransmissionType.NONE){
 
-                    var dt = data.stream().filter(d -> d.get("name").equals(trim.getName()) && d.get("year_from").toString().equals(trim.getYearFrom().toString()) && d.get("year_to").toString().equals(trim.getYearTo().toString())).findFirst().orElse(new HashMap()).get("transmission");
-                    trim.setTransmissionType(transmissionFinder.fromString(dt != null ? dt.toString().trim() : null));
+                    var dt = data.stream().filter(d -> d.get("name").equals(trim.getName()) && d.get("year_from").toString().equals(trim.getYearFrom().toString()) && d.get("year_to").toString().equals(trim.getYearTo().toString())).findFirst().orElse(new HashMap());
+                    trim.setTransmissionType(transmissionFinder.fromString(dt.get("transmission").toString().trim()));
 
                     if (trim.getTransmissionType() == TransmissionType.NONE || trim.getTransmissionType() == null)
                         trim.setTransmissionType(transmissionFinder.fromString(trim.getName().trim()));
@@ -224,7 +224,7 @@ public class ModelService {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
 
     }
 

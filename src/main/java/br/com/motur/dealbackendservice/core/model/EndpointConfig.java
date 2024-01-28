@@ -15,7 +15,7 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "EndpointConfig", uniqueConstraints = {
+@Table(name = "endpoint_config", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"provider_id", "category"})
 })
 public class EndpointConfig {
@@ -23,6 +23,9 @@ public class EndpointConfig {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "execution_order", columnDefinition = "smallint", nullable = false)
+    private Short executionOrder;// Ordem de execução
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_id", nullable = false)

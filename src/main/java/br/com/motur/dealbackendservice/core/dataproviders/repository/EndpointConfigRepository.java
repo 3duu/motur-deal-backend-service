@@ -12,6 +12,7 @@ import java.util.List;
 @Repository
 public interface EndpointConfigRepository extends JpaRepository<EndpointConfig, Integer> {
 
-    @Query("SELECT ec FROM EndpointConfig ec inner join fetch ec.provider p where ec.category = ?1 and p = ?2")
+    @Query("SELECT ec FROM EndpointConfig ec inner join fetch ec.provider p where ec.category = ?1 and p = ?2 order by ec.executionOrder asc")
     List<EndpointConfig> findByCategoryAndProvider(EndpointCategory endpointCategory, ProviderEntity provider);
+
 }

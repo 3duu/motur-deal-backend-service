@@ -28,4 +28,10 @@ public class ProviderEntity {
     @Enumerated(EnumType.STRING)
     private ApiType apiType;
 
+    @Column(name = "active", nullable = false)
+    private Boolean active;
+
+    @Column(name = "auto_download_catalog", nullable = false)
+    private Boolean autoDownloadCatalog;
+
 }

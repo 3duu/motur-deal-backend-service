@@ -69,15 +69,15 @@ public class CatalogDownloadService {
     public void downloadCatalogData() {
 
         logger.info("Downloading catalog data from providers");
-        final List<ProviderEntity> providers = providerRepository.findAll();
+        final List<ProviderEntity> providers = providerRepository.findAllAutoDownloadCatalog();
         for (ProviderEntity provider : providers) {
 
             logger.info("Downloading catalog from provider: " + provider.getName());
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
-            /*downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
+            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
             downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
-            downloadTrimsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);*/
+            downloadTrimsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
 
             logger.info("Downloaded catalog from provider: " + provider.getName());
         }

@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -139,7 +138,7 @@ public class RequestRestService {
             }
             RequestEntity requestEntity = RequestEntity.get(url).headers(httpHeaders).build();
 
-            response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Map.class).getBody();
+            response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Map.class).getBody();
 
         } else if (httpMethod.equals(HttpMethod.POST)) {
 
