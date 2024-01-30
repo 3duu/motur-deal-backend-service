@@ -91,12 +91,12 @@ public class CatalogDownloadService {
 
     /**
      * Obter o valor de um campo de um HashMap aninhado
-     * @param fieldConfig Configuração do campo
+     * @param mapping Configuração do campos
      * @param origin Mapa aninhado de origem
      */
-    private Object getValueFromNestedMap(final ResponseMapping.Config fieldConfig, Map<Object, Object> origin) {
+    private Object getValueFromNestedMap(final ResponseMapping mapping, Map<Object, Object> origin) {
 
-        if (fieldConfig == null) {
+        /*if (fieldConfig == null) {
             return origin;
         }
 
@@ -108,7 +108,11 @@ public class CatalogDownloadService {
             }
         }
 
-        return origin.get(splitKeys[splitKeys.length - 1]);
+        return origin.get(splitKeys[splitKeys.length - 1])*/;
+
+        responseProcessor.processAsHashMap(origin, mapping.getFieldMappings());
+
+        return null;
     }
 
     /**
@@ -119,7 +123,7 @@ public class CatalogDownloadService {
     private void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
         final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
         for (EndpointConfig endpointConfig : catalogEndpoints) {
-            Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
+            Map<Object, Object> results = requestRestService.getAsMap(provider, endpointConfig, null);
             if (results != null && !results.isEmpty()) {
                 processAndSaveCatalog(results, endpointConfig, provider, ProviderBrands.class, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), providerBrandsRepository);
             }
@@ -301,7 +305,7 @@ public class CatalogDownloadService {
         logger.info("Processing and saving catalog data from provider: " + provider.getName());
 
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
-        final Object list = getValueFromNestedMap(/*endpointConfig.getResponseMapping().getRoot()*/null, data);
+        final Object list = getValueFromNestedMap(endpointConfig.getResponseMapping(), data);
 
         if (endpointConfig.getResponseMapping() != null /*&& endpointConfig.getResponseMapping().getRoot() != null*/) {
 
@@ -403,7 +407,7 @@ public class CatalogDownloadService {
                         String externalId = null;
                         String name = null;
 
-                        if (externalIDConfig != null) {
+                        /*if (externalIDConfig != null) {
 
                             DataType datatype = externalIDConfig.getOriginDatatype();
                             if (datatype != null) {
@@ -436,7 +440,7 @@ public class CatalogDownloadService {
                                 }
                             }
 
-                        }
+                        }*/
 
                         final ProviderCatalogEntity providerCatalog = findOrCreateProviderCatalog(externalId, (List<ProviderCatalogEntity>) providerCatalogList, providerCatalogClassType);
                         providerCatalog.setName(name);

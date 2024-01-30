@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Essa classe é responsável por executar requisições REST
@@ -54,7 +56,7 @@ public class RequestRestService {
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
 
-            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getDestination().equals(DataType.MAP)){
+            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getOriginDatatype().equals(DataType.MAP)){
                 return (Map)execute(provider, endpointConfig, autenticationEndpointConfig);
             }
             else
@@ -75,7 +77,7 @@ public class RequestRestService {
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
 
-            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getDestination().equals(DataType.LIST)){
+            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getOriginDatatype().equals(DataType.LIST)){
                 return (List)execute(provider, endpointConfig, autenticationEndpointConfig);
             }
             else
@@ -96,7 +98,7 @@ public class RequestRestService {
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
 
-            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getDestination().equals(DataType.JSON)){
+            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getOriginDatatype().equals(DataType.JSON)){
                 return (JsonNode)execute(provider, endpointConfig, autenticationEndpointConfig);
             }
             else
@@ -117,7 +119,7 @@ public class RequestRestService {
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
 
-            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getDestination().equals(DataType.STRING)){
+            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getOriginDatatype().equals(DataType.STRING)){
                 return (String)execute(provider, endpointConfig, autenticationEndpointConfig);
             }
             else
@@ -125,6 +127,29 @@ public class RequestRestService {
         }
 
         return (String)execute(provider, endpointConfig, autenticationEndpointConfig);
+    }
+
+    public Map<Object, Object> getAsMap(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig){
+
+        if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
+
+                final DataType dataType = endpointConfig.getResponseMapping().getFieldMappings().get(0).getOriginDatatype();
+
+                switch (dataType) {
+                    case MAP:
+                        return getMap(provider, endpointConfig, autenticationEndpointConfig);
+                    case LIST:
+                        var list = getList(provider, endpointConfig, autenticationEndpointConfig);
+                        return IntStream.range(0, list.size())
+                            .boxed()
+                            .collect(Collectors.toMap(i -> i, list::get));
+                    case JSON:
+                        return null;
+                    case STRING:
+                        return null;
+                }
+        }
+        return getMap(provider, endpointConfig, autenticationEndpointConfig);
     }
 
     /**
