@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,7 +44,91 @@ public class RequestRestService {
     }
 
     /**
-     *
+     * Executa uma requisição REST retornando um HashMap
+     * @param provider Provedor
+     * @param endpointConfig Configuração do endpoint
+     * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
+     * @return
+     */
+    public Map<Object,Object> getMap(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
+
+        if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
+
+            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getDestination().equals(DataType.MAP)){
+                return (Map)execute(provider, endpointConfig, autenticationEndpointConfig);
+            }
+            else
+                return null;
+        }
+
+        return (Map)execute(provider, endpointConfig, autenticationEndpointConfig);
+    }
+
+    /**
+     * Executa uma requisição REST retornando uma lista
+     * @param provider Provedor
+     * @param endpointConfig Configuração do endpoint
+     * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
+     * @return
+     */
+    public List<Object> getList(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
+
+        if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
+
+            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getDestination().equals(DataType.LIST)){
+                return (List)execute(provider, endpointConfig, autenticationEndpointConfig);
+            }
+            else
+                return null;
+        }
+
+        return (List)execute(provider, endpointConfig, autenticationEndpointConfig);
+    }
+
+    /**
+     * Executa uma requisição REST retornando um JsonNode
+     * @param provider Provedor
+     * @param endpointConfig Configuração do endpoint
+     * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
+     * @return
+     */
+    public JsonNode getObject(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
+
+        if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
+
+            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getDestination().equals(DataType.JSON)){
+                return (JsonNode)execute(provider, endpointConfig, autenticationEndpointConfig);
+            }
+            else
+                return null;
+        }
+
+        return (JsonNode)execute(provider, endpointConfig, autenticationEndpointConfig);
+    }
+
+    /**
+     * Executa uma requisição REST retornando uma String
+     * @param provider Provedor
+     * @param endpointConfig Configuração do endpoint
+     * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
+     * @return
+     */
+    public String getString(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
+
+        if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
+
+            if (endpointConfig.getResponseMapping().getFieldMappings().get(0).getDestination().equals(DataType.STRING)){
+                return (String)execute(provider, endpointConfig, autenticationEndpointConfig);
+            }
+            else
+                return null;
+        }
+
+        return (String)execute(provider, endpointConfig, autenticationEndpointConfig);
+    }
+
+    /**
+     * Executa uma requisição REST
      * @param provider Provedor
      * @param endpointConfig Configuração do endpoint
      * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
@@ -115,14 +200,7 @@ public class RequestRestService {
             }
         }
 
-        /*StringBuilder body = new StringBuilder();
-        body.append("code=" + code);
-        body.append("&client_id=" + clientId);
-        body.append("&client_secret=" + clientSecret);
-        body.append("&redirect_uri=" + callbackUrl);
-        body.append("&grant_type=authorization_code");*/
-
-        Map<String, Object> response = null;
+        Object response = null;
         if (httpMethod == null || httpMethod.equals(HttpMethod.GET)) {
 
             if (additionalParams != null){
@@ -138,7 +216,7 @@ public class RequestRestService {
             }
             RequestEntity requestEntity = RequestEntity.get(url).headers(httpHeaders).build();
 
-            response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Map.class).getBody();
+            response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Object.class).getBody();
 
         } else if (httpMethod.equals(HttpMethod.POST)) {
 
@@ -146,7 +224,7 @@ public class RequestRestService {
                     .headers(httpHeaders)
                     .body(payload);
 
-            response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Map.class).getBody();
+            response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Object.class).getBody();
         } else {
             throw new RuntimeException("Método não suportado: " + httpMethod);
         }

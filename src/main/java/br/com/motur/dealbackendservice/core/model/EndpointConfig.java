@@ -3,9 +3,10 @@ package br.com.motur.dealbackendservice.core.model;
 
 import br.com.motur.dealbackendservice.core.converter.JsonNodeConverter;
 import br.com.motur.dealbackendservice.core.converter.ReturnMappingConverter;
+import br.com.motur.dealbackendservice.core.model.common.DataType;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
 import br.com.motur.dealbackendservice.core.model.common.EndpointMethod;
-import br.com.motur.dealbackendservice.core.model.common.ReturnMapping;
+import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -54,8 +55,12 @@ public class EndpointConfig {
     @Convert(converter = JsonNodeConverter.class)
     private JsonNode  additionalParams;// Parâmetros adicionais
 
-    @Column(name = "return_mapping", columnDefinition = "jsonb")
+    @Column(name = "response_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private DataType responseType;// Tipo de resposta
+
+    @Column(name = "response_mapping", columnDefinition = "jsonb")
     @Convert(converter = ReturnMappingConverter.class)
-    private ReturnMapping returnMapping;// Dados de retorno
+    private ResponseMapping responseMapping;// Dados de retorno
 }
 

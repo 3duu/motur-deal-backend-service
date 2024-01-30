@@ -1,16 +1,14 @@
 package br.com.motur.dealbackendservice.core.converter;
 
-import br.com.motur.dealbackendservice.core.model.common.ReturnMapping;
+import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
-
 @Converter
-public class ReturnMappingConverter implements AttributeConverter<ReturnMapping, String> {
+public class ReturnMappingConverter implements AttributeConverter<ResponseMapping, String> {
 
     private final ObjectMapper objectMapper;
 
@@ -20,7 +18,7 @@ public class ReturnMappingConverter implements AttributeConverter<ReturnMapping,
     }
 
     @Override
-    public String convertToDatabaseColumn(final ReturnMapping jsonNode) {
+    public String convertToDatabaseColumn(final ResponseMapping jsonNode) {
         try {
             return jsonNode != null ? objectMapper.writeValueAsString(jsonNode) : null;
         } catch (JsonProcessingException e) {
@@ -29,9 +27,9 @@ public class ReturnMappingConverter implements AttributeConverter<ReturnMapping,
     }
 
     @Override
-    public ReturnMapping convertToEntityAttribute(final String json) {
+    public ResponseMapping convertToEntityAttribute(final String json) {
         try {
-            return json != null ? objectMapper.readValue(json, ReturnMapping.class) : null;
+            return json != null ? objectMapper.readValue(json, ResponseMapping.class) : null;
         } catch (Exception e) {
             throw new RuntimeException("JSON reading error", e);
         }

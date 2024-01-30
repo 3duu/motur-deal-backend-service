@@ -1,7 +1,7 @@
 package br.com.motur.dealbackendservice.core.jobs;
 
 import br.com.motur.dealbackendservice.core.service.CatalogDownloadService;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,7 +16,8 @@ public class ScheduledCatalogDownloadTask {
         this.catalogDownloadService = catalogDownloadService;
     }
 
-    @Scheduled(fixedRate = 800000) // Defina a frequência conforme necessário
+    @EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    //@Scheduled(fixedRate = 800000) // Defina a frequência conforme necessário
     public void executeDownloadTask() {
         catalogDownloadService.downloadCatalogData();
     }
