@@ -25,6 +25,9 @@ public class ResponseMapping implements java.io.Serializable {
         @Enumerated(EnumType.STRING)
         private DataType originDatatype;
 
+        @Enumerated(EnumType.STRING)
+        private DataType returnDatatype;
+
         private String originPath;
 
         @Enumerated(EnumType.STRING)

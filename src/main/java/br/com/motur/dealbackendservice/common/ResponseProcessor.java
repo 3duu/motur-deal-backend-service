@@ -28,150 +28,110 @@ public class ResponseProcessor {
         this.mapper = mapper;
     }
 
-    public Object processResponse(String jsonResponse, ResponseMapping mapping) {
-
-        try {
-            JsonNode rootNode = mapper.readTree(jsonResponse);
-            JsonNode dataNode = rootNode.path(mapping.getFieldMappings().get(0).getOriginPath());
-
-            if (dataNode.isObject()) {
-                return processAsObject(dataNode, mapping.getFieldMappings().get(0));
-            } else if (dataNode.isArray()) {
-                return processAsList(dataNode, mapping.getFieldMappings().get(0));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     /**
      * Processa a resposta de uma requisição e retorna um objeto do tipo especificado.
      *
      * @param jsonResponse A resposta da requisição
-     * @param configs      A lista de configurações de mapeamento
+     * @param config      Configurações de mapeamento
      * @return O objeto de retorno
      */
-    public JsonNode processAsHashMap(Map<Object, Object> jsonResponse, List<ResponseMapping.Config> configs) {
+    public Map<ResponseMapping.FieldMapping, Object> processAsHashMap(final Object jsonResponse, final ResponseMapping.Config config) {
+        final Map<ResponseMapping.FieldMapping, Object> resultMap = new HashMap<>();
 
-        final ObjectNode resultNode = mapper.createObjectNode();
-        final Map<ResponseMapping.FieldMapping, Object> resultMap = new HashMap();
+        Object value = null;
+        if (config.getOriginDatatype() == DataType.LIST) {
+            if (config.getOriginPath().startsWith("[") && config.getOriginPath().endsWith("]")) {
+                Integer index = Integer.parseInt(config.getOriginPath().replaceAll("[\\[\\]]", ""));
+                if (jsonResponse instanceof List<?>) {
+                    value = ((List)jsonResponse).get(index);
+                }
+                else if (jsonResponse instanceof Map<?,?>) {
+                    value = ((Map<Integer, Object>)jsonResponse).get(index);
+                }
+            } else {
 
-        if (configs.isEmpty())
-            return resultNode;
+                if (jsonResponse instanceof List<?>) {
 
-        for (var config : configs){
+                    final List<Object> list = new ArrayList<>();
 
-            final Object returns = resultMap.keySet().stream().filter(c -> ResponseMapping.FieldMapping.RETURNS.equals(c)).findAny().isPresent() ?  resultMap.get(ResponseMapping.FieldMapping.RETURNS) : null;
-            if (returns != null){
-                // Processamento recursivo
-                JsonNode subNode = processAsHashMap((Map<Object, Object>) returns, List.of(config.getReturns()));
-                resultNode.set(config.getDestination().name(), subNode);
-            }
-            else {
+                    if (!((List)jsonResponse).isEmpty()){
 
-                // Verifica se o originPath é um identificador especial como "#key" ou "#value"
-                if (config.getOriginPath().startsWith("#")) {
-                    for (Map.Entry<Object, Object> entry : jsonResponse.entrySet()) {
-                        if (config.getOriginPath().equals("#key")) {
-                            resultMap.put(config.getDestination(), entry.getKey());
-                            resultNode.put(config.getDestination().name(), String.valueOf(entry.getKey()));
-                        } else if (config.getOriginPath().equals("#value")) {
-                            resultMap.put(config.getDestination(), entry.getValue());
-                            resultNode.put(config.getDestination().name(), String.valueOf(entry.getValue()));
+                        if (((List)jsonResponse).get(0) instanceof Map<?,?>) {
+
+                            ((List)jsonResponse).forEach(item -> {
+                                Map<Object,Object> map = (Map<Object, Object>) item;
+                                list.add(map.get(config.getOriginPath()));
+                            });
                         }
-                    }
-                } else if (!config.getOriginPath().contains("[")) {
-                    // Tratamento de uma chave simples de HashMap
-                    String key = config.getOriginPath();
-                    Object value = jsonResponse.get(key);
-                    if (value != null) {
-                        resultNode.put(config.getDestination().name(), String.valueOf(value));
-                        resultMap.put(config.getDestination(), value);
+
+                        value = list;
                     }
                 }
-                else if (config.getOriginPath().startsWith("[")) {
-                    // Lógica para processar índices específicos, ex: "[0]"
-                    int index = Integer.parseInt(config.getOriginPath().replaceAll("[\\[\\]]", ""));
-                    Object itemNode = jsonResponse.get(index);
-                    resultMap.put(config.getDestination(), itemNode);
-                    resultNode.put(config.getDestination().name(), itemNode.toString());
-                }
             }
-        }
 
-        return resultNode;
-    }
 
-    private JsonNode processAsJsonObject(JsonNode dataNode, ResponseMapping.Config config) {
 
-        ObjectNode resultNode = mapper.createObjectNode();
-
-        if (config.getOriginPath().startsWith("#")) {
-            // Processamento especial para "#key" e "#value"
-            dataNode.fields().forEachRemaining(entry -> {
-                if (config.getOriginPath().equals("#key")) {
-                    resultNode.put(config.getDestination().name(), entry.getKey());
-                } else if (config.getOriginPath().equals("#value")) {
-                    resultNode.put(config.getDestination().name(), entry.getValue().asText()); // Assumindo que o valor é um texto
-                }
-            });
-        } else if (!config.getOriginPath().contains("[")) {
-            // Tratamento de uma chave simples de HashMap
-            String key = config.getOriginPath();
-            JsonNode valueNode = dataNode.path(key);
-            if (!valueNode.isMissingNode()) {
-                resultNode.put(config.getDestination().name(), valueNode.asText()); // Assumindo que o valor é um texto
-            }
-        }
-        return resultNode;
-    }
-
-    private static MyEntity processAsObject(JsonNode dataNode, ResponseMapping.Config config) {
-        MyEntity entity = new MyEntity();
-        dataNode.fields().forEachRemaining(entry -> {
+        } else if (config.getOriginDatatype() == DataType.MAP) {
             if (config.getOriginPath().equals("#key")) {
-                entity.setName(entry.getKey());
+                value = ((Map<Object, Object>)jsonResponse).keySet();
             } else if (config.getOriginPath().equals("#value")) {
-                entity.setId(entry.getValue().asLong());
+                value = ((Map<Object, Object>)jsonResponse).values();
+            } else {
+                value = ((Map<Object, Object>)jsonResponse).get(config.getOriginPath());
             }
-            else if (!config.getOriginPath().contains("[")) {
-                // Tratamento de uma chave simples de HashMap
-                String key = config.getOriginPath();
-                JsonNode valueNode = dataNode.path(key);
-                if (!valueNode.isMissingNode()) {
-                    mapToEntity(entity, valueNode, config.getDestination());
+        }
+        else if (config.getOriginDatatype() == DataType.JSON) {
+
+            value = ((JsonNode)jsonResponse).get(config.getOriginPath());
+        }
+        else if (config.getOriginDatatype() == DataType.STRING || config.getOriginDatatype() == DataType.INT
+                || config.getOriginDatatype() == DataType.LONG || config.getOriginDatatype() == DataType.FLOAT
+                || config.getOriginDatatype() == DataType.BOOLEAN || config.getOriginDatatype() == DataType.BIG_DECIMAL
+                || config.getOriginDatatype() == DataType.DATE
+                || config.getOriginDatatype() == DataType.LOCAL_DATETIME
+                || config.getOriginDatatype() == DataType.CHAR || config.getOriginDatatype() == DataType.SHORT) {
+
+            value = jsonResponse.toString();
+        }
+
+        if (config.getReturns() != null && ResponseMapping.FieldMapping.RETURNS.equals(config.getDestination()) && value != null) {
+            value = processAsHashMap(value, config.getReturns());
+        }
+
+        resultMap.put(config.getDestination(), value);
+
+        return resultMap;
+    }
+
+
+    public Map<ResponseMapping.FieldMapping, Object> getValues(final Object jsonResponse, final List<ResponseMapping.Config> configs) {
+
+        final Map<ResponseMapping.FieldMapping, Object> resultMap = new HashMap<>();
+
+        for (var item : configs) {
+
+            Map<ResponseMapping.FieldMapping, Object> result = processAsHashMap(jsonResponse, item);
+
+            for (ResponseMapping.FieldMapping value : ResponseMapping.FieldMapping.values()) {
+
+                if (ResponseMapping.FieldMapping.RETURNS.equals(value)) {
+                    continue;
+                }
+                Map<ResponseMapping.FieldMapping, Object> currentMap = result;
+                var contentValue = result.get(value);
+                while (contentValue == null /*&& contentValue instanceof HashMap*/) {
+                    currentMap = currentMap != null ? (HashMap<ResponseMapping.FieldMapping, Object>) currentMap.get(ResponseMapping.FieldMapping.RETURNS) : (HashMap<ResponseMapping.FieldMapping, Object>) currentMap.get(value);
                 }
             }
-            // Adicione mais lógica conforme necessário
-        });
-        return entity;
+
+            return result;
+        }
+
+        return resultMap;
     }
 
-    private static void mapToEntity(MyEntity entity, JsonNode valueNode, ResponseMapping.FieldMapping destination) {
-        switch (destination) {
-            case NAME:
-                entity.setName(valueNode.asText());
-                break;
-            case EXTERNAL_ID:
-                entity.setId(valueNode.asLong());
-                break;
-            // Adicione casos para outros mapeamentos conforme necessário
-        }
-    }
 
-    private static List<MyEntity> processAsList(JsonNode dataNode, ResponseMapping.Config config) {
-        List<MyEntity> entities = new ArrayList<>();
-        if (config.getOriginPath().startsWith("[")) {
-            // Lógica para processar índices específicos, ex: "[0]"
-            int index = Integer.parseInt(config.getOriginPath().replaceAll("[\\[\\]]", ""));
-            JsonNode itemNode = dataNode.get(index);
-            entities.add(processAsObject(itemNode, config));
-        } else {
-            dataNode.forEach(node -> entities.add(processAsObject(node, config)));
-        }
-        return entities;
-    }
+
 
     @Data
     public static class MyEntity {

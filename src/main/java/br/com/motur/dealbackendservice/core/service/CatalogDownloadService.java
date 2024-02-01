@@ -109,10 +109,7 @@ public class CatalogDownloadService {
         }
 
         return origin.get(splitKeys[splitKeys.length - 1])*/;
-
-        responseProcessor.processAsHashMap(origin, mapping.getFieldMappings());
-
-        return null;
+        return responseProcessor.getValues(origin, mapping.getFieldMappings());
     }
 
     /**
