@@ -117,14 +117,16 @@ public class ResponseProcessor {
                 if (ResponseMapping.FieldMapping.RETURNS.equals(value)) {
                     continue;
                 }
+
                 Map<ResponseMapping.FieldMapping, Object> currentMap = result;
-                var contentValue = result.get(value);
-                while (contentValue == null /*&& contentValue instanceof HashMap*/) {
-                    currentMap = currentMap != null ? (HashMap<ResponseMapping.FieldMapping, Object>) currentMap.get(ResponseMapping.FieldMapping.RETURNS) : (HashMap<ResponseMapping.FieldMapping, Object>) currentMap.get(value);
+                while (currentMap.get(ResponseMapping.FieldMapping.RETURNS) != null) {
+                    currentMap = (HashMap<ResponseMapping.FieldMapping, Object>) currentMap.get(ResponseMapping.FieldMapping.RETURNS);
+                }
+
+                if(currentMap.get(value) != null){
+                    resultMap.put(value, currentMap.get(value));
                 }
             }
-
-            return result;
         }
 
         return resultMap;
