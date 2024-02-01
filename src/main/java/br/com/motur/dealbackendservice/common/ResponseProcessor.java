@@ -4,7 +4,6 @@ import br.com.motur.dealbackendservice.core.model.common.DataType;
 import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -104,7 +103,14 @@ public class ResponseProcessor {
     }
 
 
-    public Map<ResponseMapping.FieldMapping, Object> getValues(final Object jsonResponse, final List<ResponseMapping.Config> configs) {
+    /**
+     * Processa a resposta de uma requisição e retorna um HashMap com os valores mapeados.
+     *
+     * @param jsonResponse A resposta da requisição
+     * @param configs      Configurações de mapeamento
+     * @return O objeto de retorno
+     */
+    public Map<ResponseMapping.FieldMapping, Object> getMappingValues(final Object jsonResponse, final List<ResponseMapping.Config> configs) {
 
         final Map<ResponseMapping.FieldMapping, Object> resultMap = new HashMap<>();
 

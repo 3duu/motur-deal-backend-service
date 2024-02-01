@@ -96,20 +96,7 @@ public class CatalogDownloadService {
      */
     private Object getValueFromNestedMap(final ResponseMapping mapping, Map<Object, Object> origin) {
 
-        /*if (fieldConfig == null) {
-            return origin;
-        }
-
-        final String[] splitKeys = fieldConfig.getOriginPath().trim().replace("#key","").replace("#value","").split("\\.");
-        for (int i = 0; i < splitKeys.length - 1; i++) {
-            origin = (Map<Object, Object>) origin.get(splitKeys[i]);
-            if (origin == null) {
-                return origin;
-            }
-        }
-
-        return origin.get(splitKeys[splitKeys.length - 1])*/;
-        return responseProcessor.getValues(origin, mapping.getFieldMappings());
+        return responseProcessor.getMappingValues(origin, mapping.getFieldMappings());
     }
 
     /**
