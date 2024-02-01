@@ -96,7 +96,24 @@ public class CatalogDownloadService {
      */
     private Object getValueFromNestedMap(final ResponseMapping mapping, Map<Object, Object> origin) {
 
-        return responseProcessor.getMappingValues(origin, mapping.getFieldMappings());
+        final Map<ResponseMapping.FieldMapping, Object> fieldMappings = responseProcessor.getMappingValues(origin, mapping.getFieldMappings());
+
+        var externalIds = fieldMappings.get(ResponseMapping.FieldMapping.EXTERNAL_ID);
+        var names = fieldMappings.get(ResponseMapping.FieldMapping.NAME);
+
+        if (externalIds == null || names == null || ((List)externalIds).size() != ((List)names).size()) {
+            logger.error("External IDs and Names lists are not the same size");
+        } else {
+            // Merging the lists into a HashMap
+            HashMap<Object, Object> map = new HashMap<>();
+            for (int i = 0; i < ((List)externalIds).size(); i++) {
+                map.put(((List)externalIds).get(i), ((List)names).get(i));
+            }
+
+            return map;
+        }
+
+        return new HashMap<>();
     }
 
     /**
