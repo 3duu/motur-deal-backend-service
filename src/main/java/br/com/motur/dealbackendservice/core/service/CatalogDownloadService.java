@@ -3,7 +3,6 @@ package br.com.motur.dealbackendservice.core.service;
 import br.com.motur.dealbackendservice.common.ResponseProcessor;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.model.*;
-import br.com.motur.dealbackendservice.core.model.common.DataType;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
 import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,6 +19,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static br.com.motur.dealbackendservice.core.model.common.IntegrationFields.BRAND_ID;
+import static br.com.motur.dealbackendservice.core.model.common.IntegrationFields.MODEL_ID;
 
 /**
  * Serviço responsável por realizar o download dos dados do catalogo dos fornecedores
@@ -105,7 +107,7 @@ public class CatalogDownloadService {
             logger.error("External IDs and Names lists are not the same size");
         } else {
             // Merging the lists into a HashMap
-            HashMap<Object, Object> map = new HashMap<>();
+            Map<Object, Object> map = new HashMap<>();
             for (int i = 0; i < ((List)externalIds).size(); i++) {
                 map.put(((List)externalIds).get(i), ((List)names).get(i));
             }
@@ -156,24 +158,24 @@ public class CatalogDownloadService {
                 logger.info("Downloading models from brand: " + brand.getName());
 
                 //set the brand id in the url
-                endpointConfig.setUrl(endpointConfig.getUrl().replace("{brandId}", brand.getExternalId()));
+                endpointConfig.setUrl(endpointConfig.getUrl().replace(BRAND_ID.getValue(), brand.getExternalId()));
 
                 //set the brand id in the headers
                 if (endpointConfig.getHeaders() != null){
 
-                    endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), Map.of("brandId", brand.getExternalId())));
+                    endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
                 }
 
                 //set the brand id in the additional params
                 if(endpointConfig.getAdditionalParams() != null){
 
-                    endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), Map.of("brandId", brand.getExternalId())));
+                    endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
                 }
 
                 //set the brand id in the payload
                 if (endpointConfig.getPayload() != null){
 
-                    endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), Map.of("brandId", brand.getExternalId())));
+                    endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
                 }
 
                 final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
@@ -231,11 +233,11 @@ public class CatalogDownloadService {
                         endpointConfig = modelMapper.map(originalEndpointConfig, EndpointConfig.class);
                     }
 
-                    logger.info("Downloading trims from model: " + model.getName());
+                    logger.info("Downloading trims from model: ".concat(model.getName()));
 
                     //set the brand id in the url
-                    endpointConfig.setUrl(endpointConfig.getUrl().replace("{modelId}", model.getExternalId()));
-                    endpointConfig.setUrl(endpointConfig.getUrl().replace("{brandId}", model.getParentProviderCatalog().getExternalId()));
+                    endpointConfig.setUrl(endpointConfig.getUrl().replace(MODEL_ID.getValue(), model.getExternalId()));
+                    endpointConfig.setUrl(endpointConfig.getUrl().replace(BRAND_ID.getValue(), model.getParentProviderCatalog().getExternalId()));
 
 
                     //set the brand id in the headers
@@ -243,8 +245,8 @@ public class CatalogDownloadService {
 
                         endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), new HashMap<>(){
                             {
-                                put("modelId", model.getExternalId());
-                                put("brandId", model.getParentProviderCatalog().getExternalId());
+                                put(MODEL_ID.getNormalizedValue(), model.getExternalId());
+                                put(BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId());
                             }
                         }));
                     }
@@ -254,8 +256,8 @@ public class CatalogDownloadService {
 
                         endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), new HashMap<>(){
                             {
-                                put("modelId", model.getExternalId());
-                                put("brandId", model.getParentProviderCatalog().getExternalId());
+                                put(MODEL_ID.getNormalizedValue(), model.getExternalId());
+                                put(BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId());
                             }
                         }));
                     }
@@ -265,8 +267,8 @@ public class CatalogDownloadService {
 
                         endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), new HashMap<>(){
                             {
-                                put("modelId", model.getExternalId());
-                                put("brandId", model.getParentProviderCatalog().getExternalId());
+                                put(MODEL_ID.getNormalizedValue(), model.getExternalId());
+                                put(BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId());
                             }
                         }));
                     }
@@ -308,61 +310,54 @@ public class CatalogDownloadService {
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
         final Object list = getValueFromNestedMap(endpointConfig.getResponseMapping(), data);
 
-        if (endpointConfig.getResponseMapping() != null /*&& endpointConfig.getResponseMapping().getRoot() != null*/) {
+        if (list instanceof List && !((List)list).isEmpty() && ((List)list).get(0) instanceof Map){
 
-            final ResponseMapping.Config root = /*endpointConfig.getResponseMapping().getRoot();*/null;
-            if (root.getOriginDatatype() == DataType.LIST) {
+            final List brandList = (List) list;
+            final List<Map<Object, Object>> listMap = (List<Map<Object, Object>>) list;
 
-                final List brandList = (List) list;
-                if (!brandList.isEmpty() && brandList.get(0) instanceof Map){
+            final Map<Object, Object> mapList = listMap.stream()
+                    .flatMap(m -> m.entrySet().stream())
+                    .collect(Collectors.toMap(
+                            entry -> entry.getKey(),
+                            entry -> entry.getValue(),
+                            (v1, v2) -> v1
+                    ));
 
-                    final List<Map<Object, Object>> listMap = (List<Map<Object, Object>>) list;
+            brandList.forEach(brandMap -> processReturnMap(endpointConfig, mapList, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository));
 
-                    final Map<Object, Object> mapList = listMap.stream()
-                            .flatMap(m -> m.entrySet().stream())
-                            .collect(Collectors.toMap(
-                                    entry -> entry.getKey(),
-                                    entry -> entry.getValue(),
-                                    (v1, v2) -> v1
-                            ));
+        } else if (list instanceof Map) {
 
-                    brandList.forEach(brandMap -> processReturnMap(endpointConfig, mapList, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getResponseMapping().getFieldMappings(), providerCatalogRepository));
-                }
+            processReturnMap(endpointConfig, (Map<Object, Object>) list, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
 
-            } else if (root.getOriginDatatype() == DataType.MAP) {
+        } else if (list instanceof JsonNode) {
 
-                processReturnMap(endpointConfig, (Map<Object, Object>) list, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getResponseMapping().getFieldMappings(), providerCatalogRepository);
-            } else if (root.getOriginDatatype() == DataType.JSON) {
+            JsonNode jsonNode = null;
 
-                JsonNode jsonNode = null;
-
+            try {
+                jsonNode = (JsonNode) list;
+            }
+            catch (ClassCastException e){
                 try {
-                    jsonNode = (JsonNode) list;
-                }
-                catch (ClassCastException e){
+                    jsonNode = objectMapper.readValue(list.toString(), JsonNode.class);
+                } catch (JsonProcessingException ex) {
                     try {
-                        jsonNode = objectMapper.readValue(list.toString(), JsonNode.class);
-                    } catch (JsonProcessingException ex) {
-                        try {
-                            jsonNode = objectMapper.readValue(objectMapper.writeValueAsString(list), JsonNode.class);
-                        } catch (JsonProcessingException exc) {
-                            logger.error("Error parsing json node: " + exc.getMessage(), exc);
-                        }
+                        jsonNode = objectMapper.readValue(objectMapper.writeValueAsString(list), JsonNode.class);
+                    } catch (JsonProcessingException exc) {
+                        logger.error("Error parsing json node: " + exc.getMessage(), exc);
                     }
                 }
+            }
 
-                if (jsonNode != null){
+            if (jsonNode != null){
 
-                    final Map<Object, Object> mapList = ((Map<Object, Object>)objectMapper.convertValue(jsonNode, Map.class)).entrySet().stream()
-                            .collect(Collectors.toMap(
-                                    entry -> entry.getKey(),
-                                    entry -> entry.getValue(),
-                                    (v1, v2) -> v1
-                            ));
+                final Map<Object, Object> mapList = ((Map<Object, Object>)objectMapper.convertValue(jsonNode, Map.class)).entrySet().stream()
+                        .collect(Collectors.toMap(
+                                entry -> entry.getKey(),
+                                entry -> entry.getValue(),
+                                (v1, v2) -> v1
+                        ));
 
-                    processReturnMap(endpointConfig, mapList, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, endpointConfig.getResponseMapping().getFieldMappings(), providerCatalogRepository);
-                }
-
+                processReturnMap(endpointConfig, mapList, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
             }
 
         }
@@ -382,7 +377,6 @@ public class CatalogDownloadService {
      * @param providerCatalogList Lista de dos itens do catalogo do fornecedor
      * @param parentProviderCatalog Item pai do catalogo do fornecedor
      * @param provider Fornecedor
-     * @param fieldMappings Lista de mapeamentos de campos
      * @param providerCatalogRepository Repositorio do item do catalogo do fornecedor
      */
     private void processReturnMap(final EndpointConfig endpointConfig,
@@ -392,56 +386,18 @@ public class CatalogDownloadService {
                                   final List<? extends ProviderCatalogEntity> providerCatalogList,
                                   final ProviderCatalogEntity parentProviderCatalog,
                                   final ProviderEntity provider,
-                                  final List<ResponseMapping.Config> fieldMappings,
                                   final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
 
-        final ResponseMapping.Config externalIDConfig = fieldMappings.stream().filter(config -> config.getDestination() == ResponseMapping.FieldMapping.EXTERNAL_ID).findFirst().orElse(null);
-        final ResponseMapping.Config nameConfig = fieldMappings.stream().filter(config -> config.getDestination() == ResponseMapping.FieldMapping.NAME).findFirst().orElse(null);
 
         brandMap.forEach((key, value) -> {
 
             catalogEntityList.stream()
-                    .filter(entity -> endpointConfig.getCategory().getFinderInstance().find(entity, nameConfig.getOriginPath().contains("#key") ? key.toString().trim() : value.toString().trim()))
+                    .filter(entity -> endpointConfig.getCategory().getFinderInstance().find(entity,  value.toString().trim()))
                     .findFirst()
                     .ifPresent(entity -> {
 
-                        String externalId = null;
-                        String name = null;
-
-                        /*if (externalIDConfig != null) {
-
-                            DataType datatype = externalIDConfig.getOriginDatatype();
-                            if (datatype != null) {
-
-                                if (datatype == DataType.MAP) {
-                                    var returnValue = getValueFromNestedMap(externalIDConfig, externalIDConfig.getOriginPath().contains("#key") ? (Map<Object, Object>) key : (externalIDConfig.getOriginPath().contains("#value") ? (Map<Object, Object>) value : new HashMap<>()));
-                                    externalId = returnValue != null ? returnValue.toString() : null;
-
-                                } else if (datatype == DataType.JSON) {
-
-                                } else if (datatype == DataType.STRING || datatype == DataType.INT || datatype == DataType.LONG || datatype == DataType.CHAR || datatype == DataType.SHORT) {
-                                    externalId = externalIDConfig.getOriginPath().contains("#key") ? key.toString() : (externalIDConfig.getOriginPath().contains("#value") ? value.toString() : null);
-                                }
-                            }
-
-                            if (nameConfig != null) {
-
-                                datatype = nameConfig.getOriginDatatype();
-                                if (datatype != null) {
-
-                                    if (datatype == DataType.MAP) {
-                                        var returnValue = getValueFromNestedMap(nameConfig, nameConfig.getOriginPath().contains("#key") ? (Map<Object, Object>) key : (nameConfig.getOriginPath().contains("#value") ? (Map<Object, Object>) value : new HashMap<>()));
-                                        name = returnValue != null ? returnValue.toString() : null;
-
-                                    } else if (datatype == DataType.JSON) {
-
-                                    } else if (datatype == DataType.STRING || datatype == DataType.INT || datatype == DataType.LONG || datatype == DataType.CHAR || datatype == DataType.SHORT) {
-                                        name = nameConfig.getOriginPath().contains("#key") ? key.toString() : (nameConfig.getOriginPath().contains("#value") ? value.toString() : null);
-                                    }
-                                }
-                            }
-
-                        }*/
+                        String externalId = key.toString();
+                        String name = value.toString();
 
                         final ProviderCatalogEntity providerCatalog = findOrCreateProviderCatalog(externalId, (List<ProviderCatalogEntity>) providerCatalogList, providerCatalogClassType);
                         providerCatalog.setName(name);

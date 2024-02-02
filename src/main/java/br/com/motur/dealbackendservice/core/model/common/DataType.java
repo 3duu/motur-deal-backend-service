@@ -24,22 +24,27 @@ public enum DataType {
     LOCAL_DATETIME("LocalDateTime", LocalDateTime.class),//10
     BIG_DECIMAL("BigDecimal", BigDecimal.class),//11
     LIST("List", List.class),//12
+
     JSON("JSON", JsonNode.class),//13
 
     ID("ID", Id.class),//14
 
     MAP("Map", HashMap.class);//15
 
-
     private final String displayName;
-    final Class<?> clazz;
 
-    DataType(String displayName, Class<?> clazz) {
+    private final Class<?> classType;
+
+    DataType(String displayName, Class<?> classType) {
         this.displayName = displayName;
-        this.clazz = clazz;
+        this.classType = classType;
     }
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public Class<?> getClassType() {
+        return classType;
     }
 }
