@@ -108,6 +108,13 @@ public class TrimsFinder extends CatalogFinder<TrimEntity> {
         return (trimName.toLowerCase().contains(" automatico ") || trimName.toLowerCase().contains(" aut ") || trimName.toLowerCase().contains(" aut.")) && trim.getTransmissionType().equals(TransmissionType.AUTOMATIC);
     }
 
+
+    /**
+     * Find the entity in the catalog
+     * @param entities the entities to be found
+     * @param term the term to be found
+     * @return the entity found
+     */
     @Override
     public TrimEntity find(final List<TrimEntity> entities, final String term) {
 

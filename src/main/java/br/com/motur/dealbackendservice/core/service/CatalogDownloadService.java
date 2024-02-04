@@ -131,7 +131,7 @@ public class CatalogDownloadService {
      * @param provider
      * @param authEndpoint Endpoint de autenticação
      */
-    private void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
+    public void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
         final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
         for (EndpointConfig endpointConfig : catalogEndpoints) {
             Map<Object, Object> results = requestRestService.getAsMap(provider, endpointConfig, null);
@@ -146,7 +146,7 @@ public class CatalogDownloadService {
      * @param provider Provedor
      * @param authEndpoint Endpoint de autenticação
      */
-    private void downloadModelsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
+    public void downloadModelsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
         final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_MODELS, provider);
         for (final EndpointConfig originalEndpointConfig : catalogEndpoints) {
 
@@ -198,32 +198,12 @@ public class CatalogDownloadService {
     }
 
     /**
-     * Formata um campo json com os campos informados
-     * @param json Json a ser formatado
-     * @param fields Campos a serem adicionados
-     */
-    private JsonNode formatJsonField(final JsonNode json, final Map<String,Object> fields) {
-        final Map<Object,Object> payload = new HashMap<>();
-        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = json.fields();
-        while (fieldsIterator.hasNext()) {
-            final Map.Entry<String, JsonNode> field = fieldsIterator.next();
-            payload.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
-        }
-
-        fields.forEach((key, value) -> {
-            payload.put(key, value);
-        });
-
-        return objectMapper.valueToTree(payload);
-    }
-
-    /**
      * Download the versões catalogo do fornecedor
      *
      * @param provider Provedor/Fornecedor
      * @param authEndpoint Endpoint de autenticação (opcional)
      */
-    private void downloadTrimsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint){
+    public void downloadTrimsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint){
 
             final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_TRIMS, provider);
             for (final EndpointConfig originalEndpointConfig : catalogEndpoints) {
@@ -291,6 +271,26 @@ public class CatalogDownloadService {
                 });
 
             }
+    }
+
+    /**
+     * Formata um campo json com os campos informados
+     * @param json Json a ser formatado
+     * @param fields Campos a serem adicionados
+     */
+    private JsonNode formatJsonField(final JsonNode json, final Map<String,Object> fields) {
+        final Map<Object,Object> payload = new HashMap<>();
+        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = json.fields();
+        while (fieldsIterator.hasNext()) {
+            final Map.Entry<String, JsonNode> field = fieldsIterator.next();
+            payload.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
+        }
+
+        fields.forEach((key, value) -> {
+            payload.put(key, value);
+        });
+
+        return objectMapper.valueToTree(payload);
     }
 
     /**
@@ -396,11 +396,12 @@ public class CatalogDownloadService {
                                   final ProviderEntity provider,
                                   final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
 
+        final List<ProviderCatalogEntity> providerCatalogsToSave = new ArrayList<>();
 
         brandMap.forEach((key, value) -> {
 
-            String externalId = key.toString();
-            String name = value.toString();
+            final String externalId = key.toString();
+            final String name = value.toString();
 
             final CatalogEntity entity = endpointConfig.getCategory().getFinderInstance().find(catalogEntityList, name);
             if (entity != null) {
@@ -410,27 +411,11 @@ public class CatalogDownloadService {
                 providerCatalog.setBaseCatalog(entity);
                 providerCatalog.setParentProviderCatalog(parentProviderCatalog);
                 providerCatalog.setProvider(provider);
-                ((JpaRepository)providerCatalogRepository).save(providerCatalog);
+                providerCatalogsToSave.add(providerCatalog);
             }
-
-            /*catalogEntityList.stream()
-                    .filter(entity -> endpointConfig.getCategory().getFinderInstance().find(entity,  name.toString().trim()))
-                    .findFirst()
-                    .ifPresent(entity -> {
-
-                        String externalId = key.toString();
-                        String name = value.toString();
-
-                        final ProviderCatalogEntity providerCatalog = findOrCreateProviderCatalog(externalId, (List<ProviderCatalogEntity>) providerCatalogList, providerCatalogClassType);
-                        providerCatalog.setName(name);
-                        providerCatalog.setExternalId(externalId);
-                        providerCatalog.setBaseCatalog(entity);
-                        providerCatalog.setParentProviderCatalog(parentProviderCatalog);
-                        providerCatalog.setProvider(provider);
-                        ((JpaRepository)providerCatalogRepository).save(providerCatalog);
-                    });*/
         });
 
+        ((JpaRepository)providerCatalogRepository).saveAll(providerCatalogsToSave);
     }
 
     private ProviderCatalogEntity findOrCreateProviderCatalog(final String externalId, final List<ProviderCatalogEntity> providerCatalogs, final Class<? extends ProviderCatalogEntity> classType) {
