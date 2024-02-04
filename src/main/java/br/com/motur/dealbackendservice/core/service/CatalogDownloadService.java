@@ -72,22 +72,22 @@ public class CatalogDownloadService {
     }
 
     /**
-     * Download the catalog data from all providers
+     * Baixando catálogo de todos os fornecedores
      */
     public void downloadCatalogData() {
 
-        logger.info("Downloading catalog data from providers");
+        logger.info("Baixando catálogo de todos os fornecedores");
         final List<ProviderEntity> providers = providerRepository.findAllAutoDownloadCatalog();
         for (ProviderEntity provider : providers) {
 
-            logger.info("Downloading catalog from provider: " + provider.getName());
+            logger.info("Baixando catálogo do fornecedor: " + provider.getName());
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
             downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
             downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
             downloadTrimsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
 
-            logger.info("Downloaded catalog from provider: " + provider.getName());
+            logger.info("Catalogo do " + provider.getName() + " foi baixado");
         }
     }
 
@@ -112,7 +112,7 @@ public class CatalogDownloadService {
         }
 
         if (externalIds == null || names == null || ((List)externalIds).size() != ((List)names).size()) {
-            logger.error("External IDs and Names lists are not the same size");
+            logger.error("O External ID e o Name não foram encontrados ou não possuem o mesmo tamanho. External ID: " + externalIds + " - Name: " + names);
         } else {
             // Merging the lists into a HashMap
             Map<Object, Object> map = new HashMap<>();
@@ -159,30 +159,27 @@ public class CatalogDownloadService {
                 try {
                     endpointConfig = objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfig), EndpointConfig.class);
                 } catch (JsonProcessingException e) {
-                    logger.error("Error parsing endpoint config: " + e.getMessage(), e);
+                    logger.error("Erro ao fazer o parse do endpoint config: " + e.getMessage(), e);
                     endpointConfig = modelMapper.map(originalEndpointConfig, EndpointConfig.class);
                 }
 
-                logger.info("Downloading models from brand: " + brand.getName());
+                logger.info("Baindo modelos da marca: " + brand.getName());
 
                 //set the brand id in the url
                 endpointConfig.setUrl(endpointConfig.getUrl().replace(BRAND_ID.getValue(), brand.getExternalId()));
 
                 //set the brand id in the headers
                 if (endpointConfig.getHeaders() != null){
-
                     endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
                 }
 
                 //set the brand id in the additional params
                 if(endpointConfig.getAdditionalParams() != null){
-
                     endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
                 }
 
                 //set the brand id in the payload
                 if (endpointConfig.getPayload() != null){
-
                     endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
                 }
 
@@ -217,11 +214,11 @@ public class CatalogDownloadService {
                     try {
                         endpointConfig = objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfig), EndpointConfig.class);
                     } catch (JsonProcessingException e) {
-                        logger.error("Error parsing endpoint config: " + e.getMessage(), e);
+                        logger.error("Erro ao fazer o parse do endpoint config: " + e.getMessage(), e);
                         endpointConfig = modelMapper.map(originalEndpointConfig, EndpointConfig.class);
                     }
 
-                    logger.info("Downloading trims from model: ".concat(model.getName()));
+                    logger.info("Baixando versões do modelo: " + model.getName());
 
                     //set the brand id in the url
                     endpointConfig.setUrl(endpointConfig.getUrl().replace(MODEL_ID.getValue(), model.getExternalId()));
@@ -313,7 +310,7 @@ public class CatalogDownloadService {
                                        final List<? extends ProviderCatalogEntity> providerCatalogList,
                                        final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
 
-        logger.info("Processing and saving catalog data from provider: " + provider.getName());
+        logger.info("Processando e salvando dados do catalogo do fornecedor: " + provider.getName());
 
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
         final Object list = getValueFromNestedMap(endpointConfig.getResponseMapping(), data);
@@ -351,7 +348,7 @@ public class CatalogDownloadService {
                     try {
                         jsonNode = objectMapper.readValue(objectMapper.writeValueAsString(list), JsonNode.class);
                     } catch (JsonProcessingException exc) {
-                        logger.error("Error parsing json node: " + exc.getMessage(), exc);
+                        logger.error("Erro ao processar o retorno do fornecedor: " + exc.getMessage(), exc);
                     }
                 }
             }
@@ -370,13 +367,13 @@ public class CatalogDownloadService {
 
         }
 
-        logger.info("Processed and saved catalog data from provider: " + provider.getName());
+        logger.info("Dados do catalogo do fornecedor " + provider.getName() + " foram processados e salvos");
 
     }
 
 
     /**
-     * Process the return map from the provider and save the data in the database
+     * Processa o mapa de retorno do fornecedor
      *
      * @param endpointConfig Endpoint de autenticação
      * @param brandMap Mapa de retorno do fornecedor
