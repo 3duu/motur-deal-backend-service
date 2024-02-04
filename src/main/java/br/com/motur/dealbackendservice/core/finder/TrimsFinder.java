@@ -27,7 +27,7 @@ public class TrimsFinder extends CatalogFinder<TrimEntity> {
         final String normalizedProviderName = normalizeName(nameInProvider);
 
         final boolean match = trim.getName().trim().toLowerCase().equals(nameInProvider.trim().toLowerCase()) || normalizedModelName.equals(normalizedProviderName)
-                || ArrayUtils.contains(trim.getSynonymsArray(), nameInProvider.toLowerCase()) || ArrayUtils.contains(trim.getSynonymsArray(), normalizeName(nameInProvider));
+                || ArrayUtils.contains(trim.getSynonymsArray(), normalizeName(nameInProvider));
 
         LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
         int distance = levenshteinDistance.apply(normalizedModelName, normalizedProviderName);
@@ -113,7 +113,6 @@ public class TrimsFinder extends CatalogFinder<TrimEntity> {
 
         final Map<TrimEntity, Double> odds = new HashMap<>();
         final String normalizedProviderName = normalizeName(term);
-        var str = normalizedProviderName.split(" ");
 
         if (entities.size() == 1){
             return entities.get(0);

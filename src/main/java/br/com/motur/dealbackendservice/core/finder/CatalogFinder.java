@@ -65,7 +65,6 @@ public abstract class CatalogFinder<T extends CatalogEntity> {
 
         final Map<T, Double> odds = new HashMap<>();
         final String normalizedProviderName = normalizeName(term);
-        var str = normalizedProviderName.split(" ");
 
         if (entities.size() == 1){
             return entities.get(0);
