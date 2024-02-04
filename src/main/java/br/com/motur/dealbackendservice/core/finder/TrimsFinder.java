@@ -7,6 +7,9 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -103,5 +106,46 @@ public class TrimsFinder extends CatalogFinder<TrimEntity> {
      */
     boolean isAutomatic(String trimName, TrimEntity trim) {
         return (trimName.toLowerCase().contains(" automatico ") || trimName.toLowerCase().contains(" aut ") || trimName.toLowerCase().contains(" aut.")) && trim.getTransmissionType().equals(TransmissionType.AUTOMATIC);
+    }
+
+    @Override
+    public TrimEntity find(final List<TrimEntity> entities, final String term) {
+
+        final Map<TrimEntity, Double> odds = new HashMap<>();
+        final String normalizedProviderName = normalizeName(term);
+        var str = normalizedProviderName.split(" ");
+
+        if (entities.size() == 1){
+            return entities.get(0);
+        }
+
+        for (final TrimEntity entity : entities) {
+            //VEICULO COM /
+            final String normalizedModelName = normalizeName(entity.getName());
+
+            int distance = levenshteinDistance.apply(normalizedModelName, normalizedProviderName);
+            if (distance <= 2 && ArrayUtils.contains(entity.getSynonymsArray(), normalizedProviderName)){
+                double similarity = normalizedModelName.length() >= normalizedProviderName.length() ? calculateSimilarity(normalizedModelName, normalizedProviderName) : calculateSimilarity(normalizedProviderName, normalizedModelName);
+                odds.put(entity, similarity);
+            }
+
+        }
+
+        // If no match is found, try to find a match with the engine size, valve count and model name
+        if (odds.isEmpty()) {
+
+            for (final TrimEntity entity : entities) {
+                //VEICULO COM /
+                if (find(entity, term)) {
+                    return entity;
+                }
+            }
+        }
+
+        var maxEntry = odds.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue()).orElse(null);
+
+        return maxEntry != null ? maxEntry.getKey() : entities.stream().filter(e -> find(e, normalizedProviderName)).findFirst().orElse(null);
     }
 }

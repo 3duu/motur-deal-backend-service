@@ -5,6 +5,8 @@ package br.com.motur.dealbackendservice.core.model;
  */
 public interface CatalogEntity {
 
+    Integer getId();
+
     String getName();
 
     void setName(String name);

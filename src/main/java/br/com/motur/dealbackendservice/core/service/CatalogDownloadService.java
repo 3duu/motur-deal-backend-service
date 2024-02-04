@@ -103,6 +103,14 @@ public class CatalogDownloadService {
         var externalIds = fieldMappings.get(ResponseMapping.FieldMapping.EXTERNAL_ID);
         var names = fieldMappings.get(ResponseMapping.FieldMapping.NAME);
 
+        if (externalIds != null && (externalIds  instanceof LinkedHashMap || externalIds instanceof SequencedCollection)) {
+            externalIds = objectMapper.convertValue(externalIds, List.class);
+        }
+
+        if (names != null && (names instanceof LinkedHashMap || names instanceof SequencedCollection)) {
+            names = objectMapper.convertValue(names, List.class);
+        }
+
         if (externalIds == null || names == null || ((List)externalIds).size() != ((List)names).size()) {
             logger.error("External IDs and Names lists are not the same size");
         } else {
@@ -391,8 +399,22 @@ public class CatalogDownloadService {
 
         brandMap.forEach((key, value) -> {
 
-            catalogEntityList.stream()
-                    .filter(entity -> endpointConfig.getCategory().getFinderInstance().find(entity,  value.toString().trim()))
+            String externalId = key.toString();
+            String name = value.toString();
+
+            final CatalogEntity entity = endpointConfig.getCategory().getFinderInstance().find(catalogEntityList, name);
+            if (entity != null) {
+                final ProviderCatalogEntity providerCatalog = findOrCreateProviderCatalog(externalId, (List<ProviderCatalogEntity>) providerCatalogList, providerCatalogClassType);
+                providerCatalog.setName(name);
+                providerCatalog.setExternalId(externalId);
+                providerCatalog.setBaseCatalog(entity);
+                providerCatalog.setParentProviderCatalog(parentProviderCatalog);
+                providerCatalog.setProvider(provider);
+                ((JpaRepository)providerCatalogRepository).save(providerCatalog);
+            }
+
+            /*catalogEntityList.stream()
+                    .filter(entity -> endpointConfig.getCategory().getFinderInstance().find(entity,  name.toString().trim()))
                     .findFirst()
                     .ifPresent(entity -> {
 
@@ -406,7 +428,7 @@ public class CatalogDownloadService {
                         providerCatalog.setParentProviderCatalog(parentProviderCatalog);
                         providerCatalog.setProvider(provider);
                         ((JpaRepository)providerCatalogRepository).save(providerCatalog);
-                    });
+                    });*/
         });
 
     }

@@ -2,9 +2,10 @@ package br.com.motur.dealbackendservice.core.finder;
 
 import br.com.motur.dealbackendservice.core.model.BrandEntity;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 
 public class BrandsFinder extends CatalogFinder<BrandEntity> {
@@ -14,11 +15,23 @@ public class BrandsFinder extends CatalogFinder<BrandEntity> {
     public boolean find(final BrandEntity entity, String term) {
         term = term.toLowerCase().trim();
 
-        LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
         int distance = levenshteinDistance.apply(normalizeName(entity.getName()), normalizeName(term));
         int threshold = 1; // Defina um limiar adequado
 
         return entity.getName().equals(term) || normalizeName(entity.getName()).equals(normalizeName(term))
                 || ArrayUtils.contains(entity.getSynonymsArray(), term.toLowerCase()) || ArrayUtils.contains(entity.getSynonymsArray(), normalizeName(term)) || distance <= threshold;
+    }
+
+    @Override
+    public BrandEntity find(final List<BrandEntity> entities, String term) {
+
+        for (BrandEntity entity : entities) {
+
+            if (find(entity, term)) {
+                return entity;
+            }
+        }
+
+       return null;
     }
 }

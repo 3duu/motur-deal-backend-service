@@ -2,6 +2,7 @@ package br.com.motur.dealbackendservice.core.finder;
 
 
 import br.com.motur.dealbackendservice.core.model.CatalogEntity;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
 import java.text.Normalizer;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
 public abstract class CatalogFinder<T extends CatalogEntity> {
 
 
-
+    protected LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
     /*protected void find(){
         List<RawData> listFrom = rawDataService.findAllBySegmentProviderType(segment, from, type);
         List<RawData> listTo = rawDataService.findAllBySegmentProviderType(segment, to, type);
@@ -47,11 +48,51 @@ public abstract class CatalogFinder<T extends CatalogEntity> {
 
     /**
      * Find the entity in the catalog
-     * @param providerCatalogEntity
+     * @param providerCatalogEntity The entity to be found
      * @param text
-     * @return
+     * @return true if the entity is found
      */
     public abstract boolean find(T providerCatalogEntity, String text);
+
+
+    /**
+     * Find the entity in the catalog
+     * @param entities
+     * @param term
+     * @return
+     */
+    public T find(final List<T> entities, final String term) {
+
+        final Map<T, Double> odds = new HashMap<>();
+        final String normalizedProviderName = normalizeName(term);
+        var str = normalizedProviderName.split(" ");
+
+        if (entities.size() == 1){
+            return entities.get(0);
+        }
+
+        for (T entity : entities) {
+            //VEICULO COM /
+            final String normalizedModelName = normalizeName(entity.getName());
+
+            int distance = levenshteinDistance.apply(normalizedModelName, normalizedProviderName);
+            if (distance <= 2 && ArrayUtils.contains(entity.getSynonymsArray(), normalizedProviderName)){
+                double similarity = normalizedModelName.length() >= normalizedProviderName.length() ? calculateSimilarity(normalizedModelName, normalizedProviderName) : calculateSimilarity(normalizedProviderName, normalizedModelName);
+                odds.put(entity, similarity);
+            }
+
+        }
+
+        if (odds.isEmpty()) {
+            return null;
+        }
+
+        var maxEntry = odds.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue()).orElse(null);
+
+        return maxEntry != null ? maxEntry.getKey() : entities.stream().filter(e -> find(e, normalizedProviderName)).findFirst().orElse(null);
+    }
 
     protected String normalizeName(final String name) {
         if (name == null) {
