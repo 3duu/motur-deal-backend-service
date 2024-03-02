@@ -21,6 +21,10 @@
 		<springdoc-openapi.version>1.7.0</springdoc-openapi.version>
 		<maven.compiler.source>20</maven.compiler.source>
 		<maven.compiler.target>20</maven.compiler.target>
+		<!-- Propriedades do SonarQube -->
+		<sonar.projectKey>motur</sonar.projectKey>
+		<sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.login>squ_d455f64b8122ab40b55bfc6fe4126c5a355f740b</sonar.login>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -294,6 +298,11 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>3.9.1.2184</version>
 			</plugin>
 		</plugins>
 	</build>

@@ -80,7 +80,7 @@ public class CatalogDownloadService {
         final List<ProviderEntity> providers = providerRepository.findAllAutoDownloadCatalog();
         for (ProviderEntity provider : providers) {
 
-            logger.info("Baixando catálogo do fornecedor: " + provider.getName());
+            logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
             downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando marcas
@@ -313,7 +313,7 @@ public class CatalogDownloadService {
                                        final List<? extends ProviderCatalogEntity> providerCatalogList,
                                        final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
 
-        logger.info("Processando e salvando dados do catalogo do fornecedor: " + provider.getName());
+        logger.info("Processando e salvando dados do catalogo do fornecedor: {}",provider.getName());
 
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
         final Object list = getValueFromNestedMap(endpointConfig.getResponseMapping(), data);
@@ -331,7 +331,14 @@ public class CatalogDownloadService {
                             (v1, v2) -> v1
                     ));
 
-            brandList.forEach(brandMap -> processReturnMap(endpointConfig, mapList, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository));
+            brandList.forEach(brandMap -> processReturnMap(endpointConfig,
+                    mapList,
+                    providerCatalogClassType,
+                    catalogEntities,
+                    providerCatalogList,
+                    parentProviderCatalog,
+                    provider,
+                    providerCatalogRepository));
 
         } else if (list instanceof Map) {
 
