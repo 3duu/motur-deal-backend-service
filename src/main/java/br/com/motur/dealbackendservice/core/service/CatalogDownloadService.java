@@ -83,11 +83,11 @@ public class CatalogDownloadService {
             logger.info("Baixando catálogo do fornecedor: " + provider.getName());
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
-            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
-            downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
-            downloadTrimsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null);
+            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando marcas
+            downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando modelos
+            downloadTrimsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando versões
 
-            logger.info("Catalogo do " + provider.getName() + " foi baixado");
+            logger.info("Catalogo do {} foi baixado", provider.getName());
         }
     }
 
@@ -98,21 +98,24 @@ public class CatalogDownloadService {
      */
     private Object getValueFromNestedMap(final ResponseMapping mapping, Map<Object, Object> origin) {
 
+        // Obtendo os valores mapeados
         final Map<ResponseMapping.FieldMapping, Object> fieldMappings = responseProcessor.getMappingValues(origin, mapping.getFieldMappings());
 
         var externalIds = fieldMappings.get(ResponseMapping.FieldMapping.EXTERNAL_ID);
         var names = fieldMappings.get(ResponseMapping.FieldMapping.NAME);
 
+        // Convertendo para lista se necessário
         if (externalIds != null && (externalIds  instanceof LinkedHashMap || externalIds instanceof SequencedCollection)) {
             externalIds = objectMapper.convertValue(externalIds, List.class);
         }
 
+        // Convertendo para lista se necessário
         if (names != null && (names instanceof LinkedHashMap || names instanceof SequencedCollection)) {
             names = objectMapper.convertValue(names, List.class);
         }
 
         if (externalIds == null || names == null || ((List)externalIds).size() != ((List)names).size()) {
-            logger.error("O External ID e o Name não foram encontrados ou não possuem o mesmo tamanho. External ID: " + externalIds + " - Name: " + names);
+            logger.error("O External ID e o Name não foram encontrados ou não possuem o mesmo tamanho. External ID:{} - Name: {}", externalIds, names);
         } else {
             // Merging the lists into a HashMap
             Map<Object, Object> map = new HashMap<>();
@@ -123,7 +126,7 @@ public class CatalogDownloadService {
             return map;
         }
 
-        return new HashMap<>();
+        return new HashMap<>(); // Retornando um mapa vazio se não for possível obter os valores
     }
 
     /**
@@ -134,7 +137,7 @@ public class CatalogDownloadService {
     public void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
         final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
         for (EndpointConfig endpointConfig : catalogEndpoints) {
-            Map<Object, Object> results = requestRestService.getAsMap(provider, endpointConfig, null);
+            Map<Object, Object> results = requestRestService.getAsMap(provider, endpointConfig, authEndpoint);
             if (results != null && !results.isEmpty()) {
                 processAndSaveCatalog(results, endpointConfig, provider, ProviderBrands.class, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), providerBrandsRepository);
             }
@@ -183,12 +186,12 @@ public class CatalogDownloadService {
                     endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
                 }
 
-                final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
+                final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, authEndpoint);
                 if (results != null && !results.isEmpty()) {
                     processAndSaveCatalog(results, endpointConfig, provider, ProviderModels.class, modelRepository.findAllByBrand(brand.getBaseCatalog().getId()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
                 }
 
-                logger.info("Downloaded models from brand: " + brand.getName());
+                logger.info("Downloaded models from brand: {}", brand.getName());
             });
 
         }
@@ -258,7 +261,7 @@ public class CatalogDownloadService {
                         }));
                     }
 
-                    final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, null);
+                    final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, authEndpoint);
                     if (results != null && !results.isEmpty()) {
                         processAndSaveCatalog(results, endpointConfig, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
                     }

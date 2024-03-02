@@ -4,7 +4,6 @@ import br.com.motur.dealbackendservice.core.model.common.DataType;
 import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -139,15 +138,5 @@ public class ResponseProcessor {
     }
 
 
-
-
-    @Data
-    public static class MyEntity {
-        private Long id;
-        private String name;
-        // Getters e Setters
-    }
-
-    // Suponha que ResponseMapping e suas classes internas estejam definidas conforme fornecido
 }
 

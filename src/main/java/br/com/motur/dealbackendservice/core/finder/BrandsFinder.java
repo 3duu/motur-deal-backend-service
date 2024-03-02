@@ -8,6 +8,10 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 
+/**
+ * Essa classe é responsável por encontrar entidades de catálogo local
+ * @param <T> Tipo da entidade de catálogo
+ */
 public class BrandsFinder extends CatalogFinder<BrandEntity> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
