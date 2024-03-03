@@ -8,6 +8,8 @@ import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +73,7 @@ public class CatalogDownloadService {
         this.responseProcessor = responseProcessor;
     }
 
+
     /**
      * Baixando catálogo de todos os fornecedores
      */
@@ -83,9 +86,9 @@ public class CatalogDownloadService {
             logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
             final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
-            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando marcas
-            downloadModelsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando modelos
-            downloadTrimsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando versões
+            downloadBrandsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando marcas
+            downloadModelsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando modelos
+            downloadTrimsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando versões
 
             logger.info("Catalogo do {} foi baixado", provider.getName());
         }
@@ -151,49 +154,43 @@ public class CatalogDownloadService {
      */
     public void downloadModelsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
         final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_MODELS, provider);
-        for (final EndpointConfig originalEndpointConfig : catalogEndpoints) {
+        catalogEndpoints.forEach(endpointConfig -> processCatalogEndpointForModels(provider, endpointConfig, authEndpoint));
+    }
 
-            //Busca todas as marcas
-            final List<ProviderBrands> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
+    private void processCatalogEndpointForModels(final ProviderEntity provider, final EndpointConfig originalEndpointConfig, final EndpointConfig authEndpoint) {
+        List<ProviderBrands> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
+        brands.forEach(brand -> updateAndProcessEndpointForBrand(provider, brand, cloneEndpointConfig(originalEndpointConfig), authEndpoint));
+    }
 
-            brands.forEach(brand -> {
+    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, EndpointConfig endpointConfig, final EndpointConfig authEndpoint) {
+        try {
+            updateEndpointConfigForBrand(endpointConfig, brand);
+            Map<Object, Object> results = (Map<Object, Object>) requestRestService.execute(provider, endpointConfig, authEndpoint);
+            if (results != null && !results.isEmpty()) {
+                processAndSaveCatalog(results, endpointConfig, provider, ProviderModels.class, modelRepository.findAllByBrand(brand.getBaseCatalog().getId()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
+            }
+        } catch (Exception e) {
+            logger.error("Error processing models for brand: {} - {}", brand.getName(), e.getMessage(), e);
+        }
+    }
 
-                EndpointConfig endpointConfig = null;
-                try {
-                    endpointConfig = objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfig), EndpointConfig.class);
-                } catch (JsonProcessingException e) {
-                    logger.error("Erro ao fazer o parse do endpoint config: " + e.getMessage(), e);
-                    endpointConfig = modelMapper.map(originalEndpointConfig, EndpointConfig.class);
-                }
+    private void updateEndpointConfigForBrand(EndpointConfig endpointConfig, ProviderBrands brand) {
+        String brandId = brand.getExternalId();
+        updateEndpointConfigFields(endpointConfig, BRAND_ID.getNormalizedValue(), brandId);
+    }
 
-                logger.info("Baindo modelos da marca: " + brand.getName());
-
-                //set the brand id in the url
-                endpointConfig.setUrl(endpointConfig.getUrl().replace(BRAND_ID.getValue(), brand.getExternalId()));
-
-                //set the brand id in the headers
-                if (endpointConfig.getHeaders() != null){
-                    endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
-                }
-
-                //set the brand id in the additional params
-                if(endpointConfig.getAdditionalParams() != null){
-                    endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
-                }
-
-                //set the brand id in the payload
-                if (endpointConfig.getPayload() != null){
-                    endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), Map.of(BRAND_ID.getNormalizedValue(), brand.getExternalId())));
-                }
-
-                final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, authEndpoint);
-                if (results != null && !results.isEmpty()) {
-                    processAndSaveCatalog(results, endpointConfig, provider, ProviderModels.class, modelRepository.findAllByBrand(brand.getBaseCatalog().getId()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
-                }
-
-                logger.info("Downloaded models from brand: {}", brand.getName());
-            });
-
+    // Utility method to update fields in the EndpointConfig
+    private void updateEndpointConfigFields(EndpointConfig endpointConfig, String key, String value) {
+        // Update URL, headers, additionalParams, and payload using the methods similar to those we discussed earlier
+        endpointConfig.setUrl(endpointConfig.getUrl().replace("{" + key + "}", value));
+        if (endpointConfig.getHeaders() != null) {
+            endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), Map.of(key, value)));
+        }
+        if (endpointConfig.getAdditionalParams() != null) {
+            endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), Map.of(key, value)));
+        }
+        if (endpointConfig.getPayload() != null) {
+            endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), Map.of(key, value)));
         }
     }
 
@@ -203,74 +200,91 @@ public class CatalogDownloadService {
      * @param provider Provedor/Fornecedor
      * @param authEndpoint Endpoint de autenticação (opcional)
      */
-    public void downloadTrimsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint){
+    public void downloadTrimsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
+        final List<EndpointConfig> catalogEndpoints = fetchTrimCatalogEndpoints(provider);
+        catalogEndpoints.forEach(endpointConfig -> processEachModel(provider, cloneEndpointConfig(endpointConfig), authEndpoint));
+    }
 
-            final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_TRIMS, provider);
-            for (final EndpointConfig originalEndpointConfig : catalogEndpoints) {
+    private List<EndpointConfig> fetchTrimCatalogEndpoints(ProviderEntity provider) {
+        return endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_TRIMS, provider);
+    }
 
-                //Busca todos os modelos
-                final List<ProviderModels> models = providerModelsRepository.findAllByProviderId(provider.getId());
+    private EndpointConfig cloneEndpointConfig(EndpointConfig originalEndpointConfig) {
+        try {
+            return objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfig), EndpointConfig.class);
+        } catch (JsonProcessingException e) {
+            logger.error("Error cloning endpoint config: " + e.getMessage(), e);
+            return modelMapper.map(originalEndpointConfig, EndpointConfig.class);
+        }
+    }
 
-                models.forEach(model -> {
+    private void processEachModel(ProviderEntity provider, EndpointConfig endpointConfig, EndpointConfig authEndpoint) {
+        final List<ProviderModels> models = providerModelsRepository.findAllByProviderId(provider.getId());
+        models.forEach(model -> processEachTrim(provider, model, updateEndpointConfigWithModelInfo(endpointConfig, model), authEndpoint));
+    }
 
-                    EndpointConfig endpointConfig = null;
-                    try {
-                        endpointConfig = objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfig), EndpointConfig.class);
-                    } catch (JsonProcessingException e) {
-                        logger.error("Erro ao fazer o parse do endpoint config: " + e.getMessage(), e);
-                        endpointConfig = modelMapper.map(originalEndpointConfig, EndpointConfig.class);
-                    }
+    private EndpointConfig updateEndpointConfigWithModelInfo(EndpointConfig endpointConfig, ProviderModels model) {
+        Map<String, String> replacements = Map.of(
+                MODEL_ID.getNormalizedValue(), model.getExternalId(),
+                BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId()
+        );
 
-                    logger.info("Baixando versões do modelo: " + model.getName());
+        replaceEndpointConfigFields(endpointConfig, replacements);
+        return endpointConfig;
+    }
 
-                    //set the brand id in the url
-                    endpointConfig.setUrl(endpointConfig.getUrl().replace(MODEL_ID.getValue(), model.getExternalId()));
-                    endpointConfig.setUrl(endpointConfig.getUrl().replace(BRAND_ID.getValue(), model.getParentProviderCatalog().getExternalId()));
+    private void replaceEndpointConfigFields(EndpointConfig endpointConfig, Map<String, String> replacements) {
+        replacements.forEach((key, value) -> {
+            replaceInUrl(endpointConfig, key, value);
+            replaceInHeaders(endpointConfig, key, value);
+            replaceInAdditionalParams(endpointConfig, key, value);
+            replaceInPayload(endpointConfig, key, value);
+        });
+    }
 
+    private void processEachTrim(ProviderEntity provider, ProviderModels model, EndpointConfig endpointConfig, EndpointConfig authEndpoint) {
+        final Map<Object, Object> results = (Map<Object, Object>) requestRestService.execute(provider, endpointConfig, authEndpoint);
+        if (results != null && !results.isEmpty()) {
+            processAndSaveCatalog(results, endpointConfig, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
+        }
+    }
 
-                    //set the brand id in the headers
-                    if (endpointConfig.getHeaders() != null){
+    private void replaceInUrl(EndpointConfig endpointConfig, String key, String value) {
+        String updatedUrl = endpointConfig.getUrl().replace("{" + key + "}", value);
+        endpointConfig.setUrl(updatedUrl);
+    }
 
-                        endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), new HashMap<>(){
-                            {
-                                put(MODEL_ID.getNormalizedValue(), model.getExternalId());
-                                put(BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId());
-                            }
-                        }));
-                    }
-
-                    //set the brand id in the additional params
-                    if(endpointConfig.getAdditionalParams() != null){
-
-                        endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), new HashMap<>(){
-                            {
-                                put(MODEL_ID.getNormalizedValue(), model.getExternalId());
-                                put(BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId());
-                            }
-                        }));
-                    }
-
-                    //set the brand id in the payload
-                    if (endpointConfig.getPayload() != null){
-
-                        endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), new HashMap<>(){
-                            {
-                                put(MODEL_ID.getNormalizedValue(), model.getExternalId());
-                                put(BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId());
-                            }
-                        }));
-                    }
-
-                    final Map<Object, Object> results = (Map) requestRestService.execute(provider, endpointConfig, authEndpoint);
-                    if (results != null && !results.isEmpty()) {
-                        processAndSaveCatalog(results, endpointConfig, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
-                    }
-
-                    logger.info("Downloaded trims from model: " + model.getName());
-
-                });
-
+    private void replaceInHeaders(EndpointConfig endpointConfig, String key, String value) {
+        if (endpointConfig.getHeaders() != null && !endpointConfig.getHeaders().isNull()) {
+            Iterator<String> fieldNames = endpointConfig.getHeaders().fieldNames();
+            while (fieldNames.hasNext()) {
+                String fieldName = fieldNames.next();
+                String fieldValue = endpointConfig.getHeaders().get(fieldName).textValue();
+                if (fieldValue.contains("{" + key + "}")) {
+                    ((ObjectNode) endpointConfig.getHeaders()).put(fieldName, fieldValue.replace("{" + key + "}", value));
+                }
             }
+        }
+    }
+
+    private void replaceInAdditionalParams(EndpointConfig endpointConfig, String key, String value) {
+        JsonNode params = endpointConfig.getAdditionalParams();
+        if (params != null && params.isObject()) {
+            ObjectNode paramsObj = (ObjectNode) params;
+            paramsObj.fieldNames().forEachRemaining(fieldName -> {
+                String fieldValue = paramsObj.get(fieldName).asText();
+                String updatedValue = fieldValue.replace("{" + key + "}", value);
+                paramsObj.put(fieldName, updatedValue);
+            });
+        }
+    }
+
+    private void replaceInPayload(EndpointConfig endpointConfig, String key, String value) {
+        JsonNode payload = endpointConfig.getPayload();
+        if (payload != null && payload.isTextual()) {
+            String updatedPayload = payload.asText().replace("{" + key + "}", value);
+            endpointConfig.setPayload(new TextNode(updatedPayload));
+        }
     }
 
     /**

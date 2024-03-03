@@ -6,6 +6,8 @@ import br.com.motur.dealbackendservice.core.model.common.ApiType;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.Objects;
+
 /**
  * Essa classe representa o um fornecedor de anúncios.
  */
@@ -33,5 +35,23 @@ public class ProviderEntity {
 
     @Column(name = "auto_download_catalog", nullable = false)
     private Boolean autoDownloadCatalog;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ProviderEntity that = (ProviderEntity) o;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(url, that.url) &&
+                apiType == that.apiType &&
+                //Objects.equals(active, that.active) &&
+                Objects.equals(autoDownloadCatalog, that.autoDownloadCatalog);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, url, apiType, active, autoDownloadCatalog);
+    }
 
 }

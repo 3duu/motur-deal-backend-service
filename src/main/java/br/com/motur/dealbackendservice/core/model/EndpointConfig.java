@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.Objects;
+
 /**
  * Essa classe representa o uma configuração de endpoint de um fornecedor.
  */
@@ -62,5 +64,28 @@ public class EndpointConfig {
     @Column(name = "response_mapping", columnDefinition = "jsonb")
     @Convert(converter = ReturnMappingConverter.class)
     private ResponseMapping responseMapping;// Dados de retorno
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        EndpointConfig that = (EndpointConfig) o;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(executionOrder, that.executionOrder) &&
+                Objects.equals(provider, that.provider) &&
+                category == that.category &&
+                Objects.equals(url, that.url) &&
+                method == that.method &&
+                Objects.equals(payload, that.payload) &&
+                Objects.equals(headers, that.headers) &&
+                Objects.equals(additionalParams, that.additionalParams) &&
+                responseType == that.responseType &&
+                Objects.equals(responseMapping, that.responseMapping);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, executionOrder, provider, category, url, method, payload, headers, additionalParams, responseType, responseMapping);
+    }
 }
 
