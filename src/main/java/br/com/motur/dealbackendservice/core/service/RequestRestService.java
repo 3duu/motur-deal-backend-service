@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
  * Essa classe é responsável por executar requisições REST
  */
 @Service
-public class RequestRestService {
+public class RequestRestService implements RequestService {
 
     private final ProviderRepository providerRepository;
     private final RestTemplate restTemplate;
@@ -52,6 +52,7 @@ public class RequestRestService {
      * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
+    @Override
     public Map<Object,Object> getMap(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
@@ -73,6 +74,7 @@ public class RequestRestService {
      * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
+    @Override
     public List<Object> getList(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
@@ -94,6 +96,7 @@ public class RequestRestService {
      * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
+    @Override
     public JsonNode getObject(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
@@ -115,6 +118,7 @@ public class RequestRestService {
      * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
+    @Override
     public String getString(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
@@ -129,6 +133,14 @@ public class RequestRestService {
         return (String)execute(provider, endpointConfig, autenticationEndpointConfig);
     }
 
+    /**
+     * Retorna o resultado da requisição REST como um Map
+     * @param provider Provedor
+     * @param endpointConfig Configuração do endpoint
+     * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
+     * @return
+     */
+    @Override
     public Map<Object, Object> getAsMap(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig){
 
         if (endpointConfig.getResponseMapping().getFieldMappings() != null && endpointConfig.getResponseMapping().getFieldMappings().size() > 0){
@@ -159,6 +171,7 @@ public class RequestRestService {
      * @param autenticationEndpointConfig (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
+    @Override
     public Object execute(final ProviderEntity provider, final EndpointConfig endpointConfig, final EndpointConfig autenticationEndpointConfig) {
 
         if (autenticationEndpointConfig != null){
