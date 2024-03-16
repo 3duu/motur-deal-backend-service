@@ -3,37 +3,59 @@ package br.com.motur.dealbackendservice.core.finder;
 import br.com.motur.dealbackendservice.core.model.common.BodyType;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Component
 public class BodyTypeFinder {
 
-        public BodyType categorizeBodyType(String tipo) {
-            tipo = tipo.toLowerCase();
+    final Map<String, BodyType> bodyTypeMap = new HashMap<>();
 
-            if (tipo.contains("sedan") || tipo.contains("sedã")) {
-                return BodyType.SEDAN;
-            } else if (tipo.contains("hatchback") || tipo.contains("hatch")) {
-                return BodyType.HATCHBACK;
-            }
-            else if (tipo.contains("suv") || tipo.contains("utilitário esportivo") || tipo.contains("utilitario esportivo") || tipo.contains("utilitario") || tipo.contains(BodyType.SUV.getDisplayName().toLowerCase())) {
-                return BodyType.SUV;
-            } else if (tipo.contains("coupe") || tipo.contains("coupé") || tipo.contains(BodyType.COUPE.getDisplayName().toLowerCase())) {
-                return BodyType.COUPE;
-            } else if (tipo.contains("convertible") || tipo.contains("cabriolet") || tipo.contains(BodyType.CONVERTIBLE.getDisplayName().toLowerCase())) {
-                return BodyType.CONVERTIBLE;
-            } else if (tipo.contains("wagon") || tipo.contains("estate") || tipo.contains(BodyType.WAGON.getDisplayName().toLowerCase())) {
-                return BodyType.WAGON;
-            } else if (tipo.contains("pickup") || tipo.contains("truck") || tipo.contains(BodyType.PICKUP.getDisplayName().toLowerCase())) {
-                return BodyType.PICKUP;
-            } else if (tipo.contains("van") || tipo.contains("minibus") || tipo.contains(BodyType.VAN.getDisplayName().toLowerCase())) {
-                return BodyType.VAN;
-            } else if (tipo.contains("minivan") || tipo.contains("mpv") || tipo.contains(BodyType.MINIVAN.getDisplayName().toLowerCase())) {
-                return BodyType.MINIVAN;
-            } else if (tipo.contains("sports car") || tipo.contains("sportscar") || tipo.contains(BodyType.SPORTS_CAR.getDisplayName().toLowerCase())) {
-                return BodyType.SPORTS_CAR;
-            }
+    public BodyTypeFinder() {
+        bodyTypeMap.put("sedan", BodyType.SEDAN);
+        bodyTypeMap.put("sedã", BodyType.SEDAN);
+        bodyTypeMap.put("hatchback", BodyType.HATCHBACK);
+        bodyTypeMap.put("hatch", BodyType.HATCHBACK);
+        bodyTypeMap.put("suv", BodyType.SUV);
+        bodyTypeMap.put("utilitário esportivo", BodyType.SUV);
+        bodyTypeMap.put("utilitario esportivo", BodyType.SUV);
+        bodyTypeMap.put("utilitario", BodyType.SUV);
+        bodyTypeMap.put(BodyType.SUV.getDisplayName().toLowerCase(), BodyType.SUV);
+        bodyTypeMap.put("coupe", BodyType.COUPE);
+        bodyTypeMap.put("coupé", BodyType.COUPE);
+        bodyTypeMap.put(BodyType.COUPE.getDisplayName().toLowerCase(), BodyType.COUPE);
+        bodyTypeMap.put("convertible", BodyType.CONVERTIBLE);
+        bodyTypeMap.put("cabriolet", BodyType.CONVERTIBLE);
+        bodyTypeMap.put(BodyType.CONVERTIBLE.getDisplayName().toLowerCase(), BodyType.CONVERTIBLE);
+        bodyTypeMap.put("wagon", BodyType.WAGON);
+        bodyTypeMap.put("estate", BodyType.WAGON);
+        bodyTypeMap.put(BodyType.WAGON.getDisplayName().toLowerCase(), BodyType.WAGON);
+        bodyTypeMap.put("pickup", BodyType.PICKUP);
+        bodyTypeMap.put("truck", BodyType.PICKUP);
+        bodyTypeMap.put(BodyType.PICKUP.getDisplayName().toLowerCase(), BodyType.PICKUP);
+        bodyTypeMap.put("van", BodyType.VAN);
+        bodyTypeMap.put("minibus", BodyType.VAN);
+        bodyTypeMap.put(BodyType.VAN.getDisplayName().toLowerCase(), BodyType.VAN);
+        bodyTypeMap.put("minivan", BodyType.MINIVAN);
+        bodyTypeMap.put("mpv", BodyType.MINIVAN);
+        bodyTypeMap.put(BodyType.MINIVAN.getDisplayName().toLowerCase(), BodyType.MINIVAN);
+        bodyTypeMap.put("sports car", BodyType.SPORTS_CAR);
+        bodyTypeMap.put("sportscar", BodyType.SPORTS_CAR);
+        bodyTypeMap.put(BodyType.SPORTS_CAR.getDisplayName().toLowerCase(), BodyType.SPORTS_CAR);
+    }
 
-            return null; // Padrão se nenhuma correspondência for encontrada
+
+    public BodyType categorizeBodyType(String tipo) {
+        tipo = tipo.toLowerCase();
+
+        for (Map.Entry<String, BodyType> entry : bodyTypeMap.entrySet()) {
+            if (tipo.contains(entry.getKey())) {
+                return entry.getValue();
+            }
         }
+
+        return null; // Padrão se nenhuma correspondência for encontrada
+    }
 
     public BodyType categorizeBodyType(Integer id) {
 

@@ -78,7 +78,7 @@ public class AuthConfigEndpoint extends CrudController<AuthConfigEntity> {
                     @ApiResponse(responseCode = "404", description = "Configuração de autenticação não encontrada")
             })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAuthConfig(@PathVariable Integer id) {
+    public ResponseEntity deleteAuthConfig(@PathVariable Integer id) {
         authConfigService.delete(id);
         return ResponseEntity.ok().build();
     }
