@@ -84,7 +84,7 @@ public class CatalogDownloadService {
         for (ProviderEntity provider : providers) {
 
             logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
-            final List<EndpointConfig> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
+            final List<EndpointConfigEntity> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
             downloadBrandsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando marcas
             downloadModelsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando modelos
@@ -137,12 +137,12 @@ public class CatalogDownloadService {
      * @param provider
      * @param authEndpoint Endpoint de autenticação
      */
-    public void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
-        final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
-        for (EndpointConfig endpointConfig : catalogEndpoints) {
-            Map<Object, Object> results = requestRestService.getAsMap(provider, endpointConfig, authEndpoint);
+    public void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfigEntity authEndpoint) {
+        final List<EndpointConfigEntity> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
+        for (EndpointConfigEntity endpointConfigEntity : catalogEndpoints) {
+            Map<Object, Object> results = requestRestService.getAsMap(provider, endpointConfigEntity, authEndpoint);
             if (results != null && !results.isEmpty()) {
-                processAndSaveCatalog(results, endpointConfig, provider, ProviderBrands.class, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), providerBrandsRepository);
+                processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderBrands.class, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), providerBrandsRepository);
             }
         }
     }
@@ -152,45 +152,45 @@ public class CatalogDownloadService {
      * @param provider Provedor
      * @param authEndpoint Endpoint de autenticação
      */
-    public void downloadModelsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
-        final List<EndpointConfig> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_MODELS, provider);
+    public void downloadModelsCatalog(final ProviderEntity provider, final EndpointConfigEntity authEndpoint) {
+        final List<EndpointConfigEntity> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_MODELS, provider);
         catalogEndpoints.forEach(endpointConfig -> processCatalogEndpointForModels(provider, endpointConfig, authEndpoint));
     }
 
-    private void processCatalogEndpointForModels(final ProviderEntity provider, final EndpointConfig originalEndpointConfig, final EndpointConfig authEndpoint) {
+    private void processCatalogEndpointForModels(final ProviderEntity provider, final EndpointConfigEntity originalEndpointConfigEntity, final EndpointConfigEntity authEndpoint) {
         List<ProviderBrands> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
-        brands.forEach(brand -> updateAndProcessEndpointForBrand(provider, brand, cloneEndpointConfig(originalEndpointConfig), authEndpoint));
+        brands.forEach(brand -> updateAndProcessEndpointForBrand(provider, brand, cloneEndpointConfig(originalEndpointConfigEntity), authEndpoint));
     }
 
-    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, EndpointConfig endpointConfig, final EndpointConfig authEndpoint) {
+    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity authEndpoint) {
         try {
-            updateEndpointConfigForBrand(endpointConfig, brand);
-            Map<Object, Object> results = (Map<Object, Object>) requestRestService.execute(provider, endpointConfig, authEndpoint);
+            updateEndpointConfigForBrand(endpointConfigEntity, brand);
+            Map<Object, Object> results = (Map<Object, Object>) requestRestService.execute(provider, endpointConfigEntity, authEndpoint);
             if (results != null && !results.isEmpty()) {
-                processAndSaveCatalog(results, endpointConfig, provider, ProviderModels.class, modelRepository.findAllByBrand(brand.getBaseCatalog().getId()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
+                processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderModelsEntity.class, modelRepository.findAllByBrand(brand.getBaseCatalog().getId()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
             }
         } catch (Exception e) {
             logger.error("Error processing models for brand: {} - {}", brand.getName(), e.getMessage(), e);
         }
     }
 
-    private void updateEndpointConfigForBrand(EndpointConfig endpointConfig, ProviderBrands brand) {
+    private void updateEndpointConfigForBrand(EndpointConfigEntity endpointConfigEntity, ProviderBrands brand) {
         String brandId = brand.getExternalId();
-        updateEndpointConfigFields(endpointConfig, BRAND_ID.getNormalizedValue(), brandId);
+        updateEndpointConfigFields(endpointConfigEntity, BRAND_ID.getNormalizedValue(), brandId);
     }
 
     // Utility method to update fields in the EndpointConfig
-    private void updateEndpointConfigFields(EndpointConfig endpointConfig, String key, String value) {
+    private void updateEndpointConfigFields(EndpointConfigEntity endpointConfigEntity, String key, String value) {
         // Update URL, headers, additionalParams, and payload using the methods similar to those we discussed earlier
-        endpointConfig.setUrl(endpointConfig.getUrl().replace("{" + key + "}", value));
-        if (endpointConfig.getHeaders() != null) {
-            endpointConfig.setHeaders(formatJsonField(endpointConfig.getHeaders(), Map.of(key, value)));
+        endpointConfigEntity.setUrl(endpointConfigEntity.getUrl().replace("{" + key + "}", value));
+        if (endpointConfigEntity.getHeaders() != null) {
+            endpointConfigEntity.setHeaders(formatJsonField(endpointConfigEntity.getHeaders(), Map.of(key, value)));
         }
-        if (endpointConfig.getAdditionalParams() != null) {
-            endpointConfig.setAdditionalParams(formatJsonField(endpointConfig.getAdditionalParams(), Map.of(key, value)));
+        if (endpointConfigEntity.getAdditionalParams() != null) {
+            endpointConfigEntity.setAdditionalParams(formatJsonField(endpointConfigEntity.getAdditionalParams(), Map.of(key, value)));
         }
-        if (endpointConfig.getPayload() != null) {
-            endpointConfig.setPayload(formatJsonField(endpointConfig.getPayload(), Map.of(key, value)));
+        if (endpointConfigEntity.getPayload() != null) {
+            endpointConfigEntity.setPayload(formatJsonField(endpointConfigEntity.getPayload(), Map.of(key, value)));
         }
     }
 
@@ -200,75 +200,75 @@ public class CatalogDownloadService {
      * @param provider Provedor/Fornecedor
      * @param authEndpoint Endpoint de autenticação (opcional)
      */
-    public void downloadTrimsCatalog(final ProviderEntity provider, final EndpointConfig authEndpoint) {
-        final List<EndpointConfig> catalogEndpoints = fetchTrimCatalogEndpoints(provider);
+    public void downloadTrimsCatalog(final ProviderEntity provider, final EndpointConfigEntity authEndpoint) {
+        final List<EndpointConfigEntity> catalogEndpoints = fetchTrimCatalogEndpoints(provider);
         catalogEndpoints.forEach(endpointConfig -> processEachModel(provider, cloneEndpointConfig(endpointConfig), authEndpoint));
     }
 
-    private List<EndpointConfig> fetchTrimCatalogEndpoints(ProviderEntity provider) {
+    private List<EndpointConfigEntity> fetchTrimCatalogEndpoints(ProviderEntity provider) {
         return endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_TRIMS, provider);
     }
 
-    private EndpointConfig cloneEndpointConfig(EndpointConfig originalEndpointConfig) {
+    private EndpointConfigEntity cloneEndpointConfig(EndpointConfigEntity originalEndpointConfigEntity) {
         try {
-            return objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfig), EndpointConfig.class);
+            return objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfigEntity), EndpointConfigEntity.class);
         } catch (JsonProcessingException e) {
             logger.error("Error cloning endpoint config: " + e.getMessage(), e);
-            return modelMapper.map(originalEndpointConfig, EndpointConfig.class);
+            return modelMapper.map(originalEndpointConfigEntity, EndpointConfigEntity.class);
         }
     }
 
-    private void processEachModel(ProviderEntity provider, EndpointConfig endpointConfig, EndpointConfig authEndpoint) {
-        final List<ProviderModels> models = providerModelsRepository.findAllByProviderId(provider.getId());
-        models.forEach(model -> processEachTrim(provider, model, updateEndpointConfigWithModelInfo(endpointConfig, model), authEndpoint));
+    private void processEachModel(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity authEndpoint) {
+        final List<ProviderModelsEntity> models = providerModelsRepository.findAllByProviderId(provider.getId());
+        models.forEach(model -> processEachTrim(provider, model, updateEndpointConfigWithModelInfo(endpointConfigEntity, model), authEndpoint));
     }
 
-    private EndpointConfig updateEndpointConfigWithModelInfo(EndpointConfig endpointConfig, ProviderModels model) {
+    private EndpointConfigEntity updateEndpointConfigWithModelInfo(EndpointConfigEntity endpointConfigEntity, ProviderModelsEntity model) {
         Map<String, String> replacements = Map.of(
                 MODEL_ID.getNormalizedValue(), model.getExternalId(),
                 BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId()
         );
 
-        replaceEndpointConfigFields(endpointConfig, replacements);
-        return endpointConfig;
+        replaceEndpointConfigFields(endpointConfigEntity, replacements);
+        return endpointConfigEntity;
     }
 
-    private void replaceEndpointConfigFields(EndpointConfig endpointConfig, Map<String, String> replacements) {
+    private void replaceEndpointConfigFields(EndpointConfigEntity endpointConfigEntity, Map<String, String> replacements) {
         replacements.forEach((key, value) -> {
-            replaceInUrl(endpointConfig, key, value);
-            replaceInHeaders(endpointConfig, key, value);
-            replaceInAdditionalParams(endpointConfig, key, value);
-            replaceInPayload(endpointConfig, key, value);
+            replaceInUrl(endpointConfigEntity, key, value);
+            replaceInHeaders(endpointConfigEntity, key, value);
+            replaceInAdditionalParams(endpointConfigEntity, key, value);
+            replaceInPayload(endpointConfigEntity, key, value);
         });
     }
 
-    private void processEachTrim(ProviderEntity provider, ProviderModels model, EndpointConfig endpointConfig, EndpointConfig authEndpoint) {
-        final Map<Object, Object> results = (Map<Object, Object>) requestRestService.execute(provider, endpointConfig, authEndpoint);
+    private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity authEndpoint) {
+        final Map<Object, Object> results = (Map<Object, Object>) requestRestService.execute(provider, endpointConfigEntity, authEndpoint);
         if (results != null && !results.isEmpty()) {
-            processAndSaveCatalog(results, endpointConfig, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
+            processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
         }
     }
 
-    private void replaceInUrl(EndpointConfig endpointConfig, String key, String value) {
-        String updatedUrl = endpointConfig.getUrl().replace("{" + key + "}", value);
-        endpointConfig.setUrl(updatedUrl);
+    private void replaceInUrl(EndpointConfigEntity endpointConfigEntity, String key, String value) {
+        String updatedUrl = endpointConfigEntity.getUrl().replace("{" + key + "}", value);
+        endpointConfigEntity.setUrl(updatedUrl);
     }
 
-    private void replaceInHeaders(EndpointConfig endpointConfig, String key, String value) {
-        if (endpointConfig.getHeaders() != null && !endpointConfig.getHeaders().isNull()) {
-            Iterator<String> fieldNames = endpointConfig.getHeaders().fieldNames();
+    private void replaceInHeaders(EndpointConfigEntity endpointConfigEntity, String key, String value) {
+        if (endpointConfigEntity.getHeaders() != null && !endpointConfigEntity.getHeaders().isNull()) {
+            Iterator<String> fieldNames = endpointConfigEntity.getHeaders().fieldNames();
             while (fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
-                String fieldValue = endpointConfig.getHeaders().get(fieldName).textValue();
+                String fieldValue = endpointConfigEntity.getHeaders().get(fieldName).textValue();
                 if (fieldValue.contains("{" + key + "}")) {
-                    ((ObjectNode) endpointConfig.getHeaders()).put(fieldName, fieldValue.replace("{" + key + "}", value));
+                    ((ObjectNode) endpointConfigEntity.getHeaders()).put(fieldName, fieldValue.replace("{" + key + "}", value));
                 }
             }
         }
     }
 
-    private void replaceInAdditionalParams(EndpointConfig endpointConfig, String key, String value) {
-        JsonNode params = endpointConfig.getAdditionalParams();
+    private void replaceInAdditionalParams(EndpointConfigEntity endpointConfigEntity, String key, String value) {
+        JsonNode params = endpointConfigEntity.getAdditionalParams();
         if (params != null && params.isObject()) {
             ObjectNode paramsObj = (ObjectNode) params;
             paramsObj.fieldNames().forEachRemaining(fieldName -> {
@@ -279,11 +279,11 @@ public class CatalogDownloadService {
         }
     }
 
-    private void replaceInPayload(EndpointConfig endpointConfig, String key, String value) {
-        JsonNode payload = endpointConfig.getPayload();
+    private void replaceInPayload(EndpointConfigEntity endpointConfigEntity, String key, String value) {
+        JsonNode payload = endpointConfigEntity.getPayload();
         if (payload != null && payload.isTextual()) {
             String updatedPayload = payload.asText().replace("{" + key + "}", value);
-            endpointConfig.setPayload(new TextNode(updatedPayload));
+            endpointConfigEntity.setPayload(new TextNode(updatedPayload));
         }
     }
 
@@ -311,7 +311,7 @@ public class CatalogDownloadService {
      * Download the trims catalog from the fornecedor
      *
      * @param data                Dados recebidos do fornecedor
-     * @param endpointConfig      Endpoint de autenticação
+     * @param endpointConfigEntity      Endpoint de autenticação
      * @param provider            Provedor
      * @param providerCatalogClassType Tipo da classe do item do catalogo do fornecedor
      * @param providerCatalogList Lista de dos itens do catalogo do fornecedor
@@ -319,7 +319,7 @@ public class CatalogDownloadService {
      * @param providerCatalogRepository Repository do item do catalogo do fornecedor
      */
     private void processAndSaveCatalog(final Map<Object, Object> data,
-                                       final EndpointConfig endpointConfig,
+                                       final EndpointConfigEntity endpointConfigEntity,
                                        final ProviderEntity provider,
                                        final Class<? extends ProviderCatalogEntity> providerCatalogClassType,
                                        final List<? extends CatalogEntity> catalogEntities,
@@ -330,7 +330,7 @@ public class CatalogDownloadService {
         logger.info("Processando e salvando dados do catalogo do fornecedor: {}",provider.getName());
 
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
-        final Object list = getValueFromNestedMap(endpointConfig.getResponseMapping(), data);
+        final Object list = getValueFromNestedMap(endpointConfigEntity.getResponseMapping(), data);
 
         if (list instanceof List && !((List)list).isEmpty() && ((List)list).get(0) instanceof Map){
 
@@ -345,7 +345,7 @@ public class CatalogDownloadService {
                             (v1, v2) -> v1
                     ));
 
-            brandList.forEach(brandMap -> processReturnMap(endpointConfig,
+            brandList.forEach(brandMap -> processReturnMap(endpointConfigEntity,
                     mapList,
                     providerCatalogClassType,
                     catalogEntities,
@@ -356,7 +356,7 @@ public class CatalogDownloadService {
 
         } else if (list instanceof Map) {
 
-            processReturnMap(endpointConfig, (Map<Object, Object>) list, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
+            processReturnMap(endpointConfigEntity, (Map<Object, Object>) list, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
 
         } else if (list instanceof JsonNode) {
 
@@ -386,7 +386,7 @@ public class CatalogDownloadService {
                                 (v1, v2) -> v1
                         ));
 
-                processReturnMap(endpointConfig, mapList, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
+                processReturnMap(endpointConfigEntity, mapList, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
             }
 
         }
@@ -399,7 +399,7 @@ public class CatalogDownloadService {
     /**
      * Processa o mapa de retorno do fornecedor
      *
-     * @param endpointConfig Endpoint de autenticação
+     * @param endpointConfigEntity Endpoint de autenticação
      * @param brandMap Mapa de retorno do fornecedor
      * @param providerCatalogClassType Tipo da classe do item do catalogo do fornecedor (Brand, Model, Trim)
      * @param catalogEntityList Lista de dos itens do catalogo do fornecedor
@@ -408,7 +408,7 @@ public class CatalogDownloadService {
      * @param provider Fornecedor
      * @param providerCatalogRepository Repositorio do item do catalogo do fornecedor
      */
-    private void processReturnMap(final EndpointConfig endpointConfig,
+    private void processReturnMap(final EndpointConfigEntity endpointConfigEntity,
                                   final Map<Object, Object> brandMap,
                                   final Class<? extends ProviderCatalogEntity> providerCatalogClassType,
                                   final List<? extends CatalogEntity> catalogEntityList,
@@ -424,7 +424,7 @@ public class CatalogDownloadService {
             final String externalId = key.toString();
             final String name = value.toString();
 
-            final CatalogEntity entity = endpointConfig.getCategory().getFinderInstance().find(catalogEntityList, name);
+            final CatalogEntity entity = endpointConfigEntity.getCategory().getFinderInstance().find(catalogEntityList, name);
             if (entity != null) {
                 final ProviderCatalogEntity providerCatalog = findOrCreateProviderCatalog(externalId, (List<ProviderCatalogEntity>) providerCatalogList, providerCatalogClassType);
                 providerCatalog.setName(name);

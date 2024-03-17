@@ -21,7 +21,7 @@ import java.util.Objects;
 @Table(name = "endpoint_config", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"provider_id", "category"})
 })
-public class EndpointConfig {
+public class EndpointConfigEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -69,7 +69,7 @@ public class EndpointConfig {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        EndpointConfig that = (EndpointConfig) o;
+        EndpointConfigEntity that = (EndpointConfigEntity) o;
         return Objects.equals(id, that.id) &&
                 Objects.equals(executionOrder, that.executionOrder) &&
                 Objects.equals(provider, that.provider) &&

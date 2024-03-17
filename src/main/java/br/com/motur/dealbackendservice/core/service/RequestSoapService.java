@@ -3,14 +3,12 @@ package br.com.motur.dealbackendservice.core.service;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.EndpointConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderRepository;
-import br.com.motur.dealbackendservice.core.model.EndpointConfig;
+import br.com.motur.dealbackendservice.core.model.EndpointConfigEntity;
 import br.com.motur.dealbackendservice.core.model.ProviderEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.context.annotation.Bean;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.ws.client.core.WebServiceTemplate;
 
 import java.util.List;
@@ -38,35 +36,35 @@ public class RequestSoapService implements RequestService {
     }
 
     @Override
-    public Map<Object, Object> getMap(ProviderEntity provider, EndpointConfig endpointConfig, EndpointConfig autenticationEndpointConfig) {
-        return (Map<Object, Object>) execute(provider, endpointConfig, autenticationEndpointConfig);
+    public Map<Object, Object> getMap(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
+        return (Map<Object, Object>) execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
     }
 
     @Override
-    public List<Object> getList(ProviderEntity provider, EndpointConfig endpointConfig, EndpointConfig autenticationEndpointConfig) {
-        return (List<Object>) execute(provider, endpointConfig, autenticationEndpointConfig);
+    public List<Object> getList(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
+        return (List<Object>) execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
     }
 
     @Override
-    public JsonNode getObject(ProviderEntity provider, EndpointConfig endpointConfig, EndpointConfig autenticationEndpointConfig) {
-        return objectMapper.valueToTree(execute(provider, endpointConfig, autenticationEndpointConfig));
+    public JsonNode getObject(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
+        return objectMapper.valueToTree(execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity));
     }
 
     @Override
-    public String getString(ProviderEntity provider, EndpointConfig endpointConfig, EndpointConfig autenticationEndpointConfig) {
-        return execute(provider, endpointConfig, autenticationEndpointConfig).toString();
+    public String getString(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
+        return execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity).toString();
     }
 
     @Override
-    public Map<Object, Object> getAsMap(ProviderEntity provider, EndpointConfig endpointConfig, EndpointConfig autenticationEndpointConfig) {
-        return objectMapper.convertValue(execute(provider, endpointConfig, autenticationEndpointConfig), Map.class);
+    public Map<Object, Object> getAsMap(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
+        return objectMapper.convertValue(execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity), Map.class);
     }
 
     @Override
-    public Object execute(ProviderEntity provider, EndpointConfig endpointConfig, EndpointConfig autenticationEndpointConfig) {
-        WebServiceTemplate webServiceTemplate = webServiceTemplate(endpointConfig.getUrl(), endpointConfig.getUrl());
+    public Object execute(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
+        WebServiceTemplate webServiceTemplate = webServiceTemplate(endpointConfigEntity.getUrl(), endpointConfigEntity.getUrl());
         // Assuming the payload is a SOAP request object
-        return webServiceTemplate.marshalSendAndReceive(endpointConfig.getPayload());
+        return webServiceTemplate.marshalSendAndReceive(endpointConfigEntity.getPayload());
     }
 
     private Jaxb2Marshaller marshaller(String contextPath) {

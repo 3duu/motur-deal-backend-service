@@ -11,7 +11,7 @@ import java.util.Date;
 @Entity
 @Table(name = "Users")
 @Data
-public class User {
+public class UserEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

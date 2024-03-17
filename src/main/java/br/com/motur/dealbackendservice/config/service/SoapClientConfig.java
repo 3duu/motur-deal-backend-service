@@ -8,7 +8,7 @@ import org.springframework.ws.client.core.WebServiceTemplate;
 @Configuration
 public class SoapClientConfig {
 
-    @Bean
+    /*@Bean
     public Jaxb2Marshaller marshaller() {
         Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
         // Define o pacote das classes geradas pelo JAXB
@@ -24,5 +24,5 @@ public class SoapClientConfig {
         // URL do serviço SOAP
         webServiceTemplate.setDefaultUri("http://exemplo.com/servicoSoap");
         return webServiceTemplate;
-    }
+    }*/
 }

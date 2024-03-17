@@ -4,7 +4,7 @@ import br.com.motur.dealbackendservice.core.finder.ModelsFinder;
 import br.com.motur.dealbackendservice.core.finder.TrimsFinder;
 import br.com.motur.dealbackendservice.core.model.ProviderBrands;
 import br.com.motur.dealbackendservice.core.model.ProviderCatalogEntity;
-import br.com.motur.dealbackendservice.core.model.ProviderModels;
+import br.com.motur.dealbackendservice.core.model.ProviderModelsEntity;
 import br.com.motur.dealbackendservice.core.model.ProviderTrims;
 import br.com.motur.dealbackendservice.core.finder.BrandsFinder;
 import br.com.motur.dealbackendservice.core.finder.CatalogFinder;
@@ -14,7 +14,7 @@ import lombok.Getter;
 public enum EndpointCategory {
     AUTHENTICATION("Autenticação", null, null),
     CATALOG_BRANDS("Catálogo de Marcas", ProviderBrands.class, new BrandsFinder()),
-    CATALOG_MODELS("Catálogo de Modelos", ProviderModels.class, new ModelsFinder()),
+    CATALOG_MODELS("Catálogo de Modelos", ProviderModelsEntity.class, new ModelsFinder()),
     CATALOG_TRIMS("Catálogo de Versões", ProviderTrims.class, new TrimsFinder()),
     LISTING("Listagem", null, null),
     DETAILS("Detalhes", null, null),

@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "provider_models")
-public class ProviderModels implements ProviderCatalogEntity {
+public class ProviderModelsEntity implements ProviderCatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
