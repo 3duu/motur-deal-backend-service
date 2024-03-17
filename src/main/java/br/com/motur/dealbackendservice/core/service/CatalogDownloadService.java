@@ -82,9 +82,17 @@ public class CatalogDownloadService extends AccessService {
             logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
             final List<EndpointConfigEntity> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
-            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando marcas
-            downloadModelsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando modelos
-            downloadTrimsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando versões
+            for(EndpointConfigEntity endpointConfigEntity : authEndpoint){
+                downloadBrandsCatalog(provider, endpointConfigEntity); // Baixando marcas
+                downloadModelsCatalog(provider, endpointConfigEntity); // Baixando modelos
+                downloadTrimsCatalog(provider, endpointConfigEntity); // Baixando versões
+            }
+
+            /*authEndpoint.forEach(endpointConfigEntity -> {
+                downloadBrandsCatalog(provider, endpointConfigEntity); // Baixando marcas
+                downloadModelsCatalog(provider, endpointConfigEntity); // Baixando modelos
+                downloadTrimsCatalog(provider, endpointConfigEntity); // Baixando versões
+            });*/
 
             logger.info("Catalogo do {} foi baixado", provider.getName());
         }
