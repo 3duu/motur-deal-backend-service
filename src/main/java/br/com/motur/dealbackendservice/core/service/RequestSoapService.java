@@ -28,6 +28,13 @@ public class RequestSoapService implements RequestService {
 
     private static final String API_KEY = "X-API-Key";
 
+    /**
+     * Construtor da classe.
+     * @param providerRepository Repository para ProviderEntity.
+     * @param endpointConfigRepository Repository para EndpointConfigEntity.
+     * @param authConfigRepository Repository para AuthConfigEntity.
+     * @param objectMapper ObjectMapper para converting values.
+     */
     public RequestSoapService(ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository, AuthConfigRepository authConfigRepository, ObjectMapper objectMapper) {
         this.providerRepository = providerRepository;
         this.endpointConfigRepository = endpointConfigRepository;
@@ -35,31 +42,73 @@ public class RequestSoapService implements RequestService {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Método que executa a requisição SOAP.
+     * @param provider ProviderEntity.
+     * @param endpointConfigEntity EndpointConfigEntity.
+     * @param autenticationEndpointConfigEntity EndpointConfigEntity.
+     * @return Object.
+     */
     @Override
     public Map<Object, Object> getMap(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
         return (Map<Object, Object>) execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
     }
 
+    /**
+     * Método que executa a requisição SOAP.
+     * @param provider ProviderEntity.
+     * @param endpointConfigEntity EndpointConfigEntity.
+     * @param autenticationEndpointConfigEntity EndpointConfigEntity.
+     * @return List<Object>.
+     */
     @Override
     public List<Object> getList(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
         return (List<Object>) execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
     }
 
+    /**
+     * Método que executa a requisição SOAP.
+     * @param provider ProviderEntity.
+     * @param endpointConfigEntity EndpointConfigEntity.
+     * @param autenticationEndpointConfigEntity EndpointConfigEntity.
+     * @return JsonNode.
+     */
     @Override
     public JsonNode getObject(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
         return objectMapper.valueToTree(execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity));
     }
 
+    /**
+     * Método que executa a requisição SOAP.
+     * @param provider ProviderEntity.
+     * @param endpointConfigEntity EndpointConfigEntity.
+     * @param autenticationEndpointConfigEntity EndpointConfigEntity.
+     * @return String.
+     */
     @Override
     public String getString(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
         return execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity).toString();
     }
 
+    /**
+     * Método que executa a requisição SOAP.
+     * @param provider ProviderEntity.
+     * @param endpointConfigEntity EndpointConfigEntity.
+     * @param autenticationEndpointConfigEntity EndpointConfigEntity.
+     * @return Map<Object, Object>.
+     */
     @Override
     public Map<Object, Object> getAsMap(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
         return objectMapper.convertValue(execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity), Map.class);
     }
 
+    /**
+     * Método que executa a requisição SOAP.
+     * @param provider ProviderEntity.
+     * @param endpointConfigEntity EndpointConfigEntity.
+     * @param autenticationEndpointConfigEntity EndpointConfigEntity.
+     * @return List<Object>.
+     */
     @Override
     public Object execute(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
         WebServiceTemplate webServiceTemplate = webServiceTemplate(endpointConfigEntity.getUrl(), endpointConfigEntity.getUrl());

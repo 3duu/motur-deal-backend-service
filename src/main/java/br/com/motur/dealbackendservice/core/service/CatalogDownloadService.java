@@ -3,6 +3,7 @@ package br.com.motur.dealbackendservice.core.service;
 import br.com.motur.dealbackendservice.common.ResponseProcessor;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.model.*;
+import br.com.motur.dealbackendservice.core.model.common.ApiType;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
 import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,6 +15,7 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
@@ -29,12 +31,14 @@ import static br.com.motur.dealbackendservice.core.model.common.IntegrationField
  * Serviço responsável por realizar o download dos dados do catalogo dos fornecedores
  */
 @Service
-public class CatalogDownloadService {
+public class CatalogDownloadService extends AccessService {
 
+
+    private final ApplicationContext applicationContext;
     private final ProviderRepository providerRepository;
     private final EndpointConfigRepository endpointConfigRepository;
-    private final RequestRestService requestRestService;
-    private final RequestSoapService requestSoapService;
+    /*private final RequestRestService requestRestService;
+    private final RequestSoapService requestSoapService;*/
     private final ProviderBrandsRepository providerBrandsRepository;
     private final ProviderModelsRepository providerModelsRepository;
     private final ProviderTrimsRepository providerTrimsRepository;
@@ -44,33 +48,25 @@ public class CatalogDownloadService {
 
     private final TrimRepository trimRepository;
 
-    private final ObjectMapper objectMapper;
-
-    private final ModelMapper modelMapper;
-
-    private final ResponseProcessor responseProcessor;
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public CatalogDownloadService(ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository,
-                                  RequestRestService requestRestService, RequestSoapService requestSoapService,
+    public CatalogDownloadService(final ApplicationContext applicationContext, ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository,
+                                  /*RequestRestService requestRestService,*/ /*RequestSoapService requestSoapService,*/
                                   ProviderBrandsRepository providerBrandsRepository, ProviderModelsRepository providerModelsRepository,
                                   ProviderTrimsRepository providerTrimsRepository, BrandRepository brandRepository,
-                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, ResponseProcessor responseProcessor) {
+                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, ResponseProcessor responseProcessor, TrimRepository trimRepository1) {
+        super(applicationContext, responseProcessor, objectMapper, modelMapper);
+        this.applicationContext = applicationContext;
         this.providerRepository = providerRepository;
         this.endpointConfigRepository = endpointConfigRepository;
-        this.requestRestService = requestRestService;
-        this.requestSoapService = requestSoapService;
+        /*this.requestRestService = requestRestService;
+        this.requestSoapService = requestSoapService;*/
         this.providerBrandsRepository = providerBrandsRepository;
         this.providerModelsRepository = providerModelsRepository;
         this.providerTrimsRepository = providerTrimsRepository;
         this.brandRepository = brandRepository;
         this.modelRepository = modelRepository;
-        this.trimRepository = trimRepository;
-        this.objectMapper = objectMapper;
-        this.modelMapper = modelMapper;
-        this.responseProcessor = responseProcessor;
+        this.trimRepository = trimRepository1;
     }
 
 
@@ -86,7 +82,7 @@ public class CatalogDownloadService {
             logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
             final List<EndpointConfigEntity> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
-            downloadBrandsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando marcas
+            downloadBrandsCatalog(provider, !authEndpoint.isEmpty() ? authEndpoint.get(0) : null); // Baixando marcas
             downloadModelsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando modelos
             downloadTrimsCatalog(provider, /*!authEndpoint.isEmpty() ? authEndpoint.get(0) :*/ null); // Baixando versões
 
@@ -94,43 +90,7 @@ public class CatalogDownloadService {
         }
     }
 
-    /**
-     * Obter o valor de um campo de um HashMap aninhado
-     * @param mapping Configuração do campos
-     * @param origin Mapa aninhado de origem
-     */
-    private Object getValueFromNestedMap(final ResponseMapping mapping, Map<Object, Object> origin) {
 
-        // Obtendo os valores mapeados
-        final Map<ResponseMapping.FieldMapping, Object> fieldMappings = responseProcessor.getMappingValues(origin, mapping.getFieldMappings());
-
-        var externalIds = fieldMappings.get(ResponseMapping.FieldMapping.EXTERNAL_ID);
-        var names = fieldMappings.get(ResponseMapping.FieldMapping.NAME);
-
-        // Convertendo para lista se necessário
-        if (externalIds != null && (externalIds  instanceof LinkedHashMap || externalIds instanceof SequencedCollection)) {
-            externalIds = objectMapper.convertValue(externalIds, List.class);
-        }
-
-        // Convertendo para lista se necessário
-        if (names != null && (names instanceof LinkedHashMap || names instanceof SequencedCollection)) {
-            names = objectMapper.convertValue(names, List.class);
-        }
-
-        if (externalIds == null || names == null || ((List)externalIds).size() != ((List)names).size()) {
-            logger.error("O External ID e o Name não foram encontrados ou não possuem o mesmo tamanho. External ID:{} - Name: {}", externalIds, names);
-        } else {
-            // Merging the lists into a HashMap
-            Map<Object, Object> map = new HashMap<>();
-            for (int i = 0; i < ((List)externalIds).size(); i++) {
-                map.put(((List)externalIds).get(i), ((List)names).get(i));
-            }
-
-            return map;
-        }
-
-        return new HashMap<>(); // Retornando um mapa vazio se não for possível obter os valores
-    }
 
     /**
      * Download das marcas do fornecedor
@@ -140,7 +100,7 @@ public class CatalogDownloadService {
     public void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfigEntity authEndpoint) {
         final List<EndpointConfigEntity> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
         for (EndpointConfigEntity endpointConfigEntity : catalogEndpoints) {
-            Map<Object, Object> results = requestRestService.getAsMap(provider, endpointConfigEntity, authEndpoint);
+            Map<Object, Object> results = getRequestService(provider.getApiType()).getAsMap(provider, endpointConfigEntity, authEndpoint);
             if (results != null && !results.isEmpty()) {
                 processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderBrands.class, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), providerBrandsRepository);
             }
@@ -165,7 +125,7 @@ public class CatalogDownloadService {
     private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity authEndpoint) {
         try {
             updateEndpointConfigForBrand(endpointConfigEntity, brand);
-            Map<Object, Object> results = (Map<Object, Object>) requestRestService.execute(provider, endpointConfigEntity, authEndpoint);
+            Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity, authEndpoint);
             if (results != null && !results.isEmpty()) {
                 processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderModelsEntity.class, modelRepository.findAllByBrand(brand.getBaseCatalog().getId()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
             }
@@ -243,7 +203,7 @@ public class CatalogDownloadService {
     }
 
     private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity authEndpoint) {
-        final Map<Object, Object> results = (Map<Object, Object>) requestRestService.execute(provider, endpointConfigEntity, authEndpoint);
+        final Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity, authEndpoint);
         if (results != null && !results.isEmpty()) {
             processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
         }
@@ -439,6 +399,14 @@ public class CatalogDownloadService {
         ((JpaRepository)providerCatalogRepository).saveAll(providerCatalogsToSave);
     }
 
+    /**
+     * Encontra ou cria um item do catalogo do fornecedor
+     *
+     * @param externalId ID do item do catalogo do fornecedor
+     * @param providerCatalogs Lista de itens do catalogo do fornecedor
+     * @param classType Tipo da classe do item do catalogo do fornecedor
+     * @return Item do catalogo do fornecedor
+     */
     private ProviderCatalogEntity findOrCreateProviderCatalog(final String externalId, final List<ProviderCatalogEntity> providerCatalogs, final Class<? extends ProviderCatalogEntity> classType) {
 
         try {
