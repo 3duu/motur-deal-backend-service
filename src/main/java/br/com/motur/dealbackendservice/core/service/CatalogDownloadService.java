@@ -188,7 +188,13 @@ public class CatalogDownloadService extends AccessService {
 
     private void processEachModel(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity authEndpoint) {
         final List<ProviderModelsEntity> models = providerModelsRepository.findAllByProviderId(provider.getId());
-        models.forEach(model -> processEachTrim(provider, model, updateEndpointConfigWithModelInfo(endpointConfigEntity, model), authEndpoint));
+        models.forEach(model -> {
+            try {
+                processEachTrim(provider, model, updateEndpointConfigWithModelInfo(endpointConfigEntity, model), authEndpoint);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private EndpointConfigEntity updateEndpointConfigWithModelInfo(EndpointConfigEntity endpointConfigEntity, ProviderModelsEntity model) {
@@ -210,14 +216,14 @@ public class CatalogDownloadService extends AccessService {
         });
     }
 
-    private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity authEndpoint) {
+    private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity authEndpoint) throws Exception {
         final Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity, authEndpoint);
         if (results != null && !results.isEmpty()) {
             processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
         }
     }
 
-    private void replaceInUrl(EndpointConfigEntity endpointConfigEntity, String key, String value) {
+        private void replaceInUrl(EndpointConfigEntity endpointConfigEntity, String key, String value) {
         String updatedUrl = endpointConfigEntity.getUrl().replace("{" + key + "}", value);
         endpointConfigEntity.setUrl(updatedUrl);
     }

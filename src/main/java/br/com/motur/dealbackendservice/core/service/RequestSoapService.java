@@ -3,14 +3,18 @@ package br.com.motur.dealbackendservice.core.service;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.EndpointConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderRepository;
+import br.com.motur.dealbackendservice.core.jobs.WsdlController;
 import br.com.motur.dealbackendservice.core.model.EndpointConfigEntity;
 import br.com.motur.dealbackendservice.core.model.ProviderEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.xml.soap.*;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.stereotype.Service;
 import org.springframework.ws.client.core.WebServiceTemplate;
 
+import javax.xml.namespace.QName;
+import javax.xml.ws.Dispatch;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +30,8 @@ public class RequestSoapService implements RequestService {
     private final AuthConfigRepository authConfigRepository;
     private final ObjectMapper objectMapper;
 
+    private final WsdlController wsdlController;
+
     private static final String API_KEY = "X-API-Key";
 
     /**
@@ -34,12 +40,15 @@ public class RequestSoapService implements RequestService {
      * @param endpointConfigRepository Repository para EndpointConfigEntity.
      * @param authConfigRepository Repository para AuthConfigEntity.
      * @param objectMapper ObjectMapper para converting values.
+     * @param wsdlController Controller para WSDL.
+     * @see com.fasterxml.jackson.databind.ObjectMapper
      */
-    public RequestSoapService(ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository, AuthConfigRepository authConfigRepository, ObjectMapper objectMapper) {
+    public RequestSoapService(ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository, AuthConfigRepository authConfigRepository, ObjectMapper objectMapper, WsdlController wsdlController) {
         this.providerRepository = providerRepository;
         this.endpointConfigRepository = endpointConfigRepository;
         this.authConfigRepository = authConfigRepository;
         this.objectMapper = objectMapper;
+        this.wsdlController = wsdlController;
     }
 
     /**
@@ -110,10 +119,63 @@ public class RequestSoapService implements RequestService {
      * @return List<Object>.
      */
     @Override
-    public Object execute(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity autenticationEndpointConfigEntity) {
-        WebServiceTemplate webServiceTemplate = webServiceTemplate(endpointConfigEntity.getUrl(), endpointConfigEntity.getUrl());
+    public Object execute(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity autenticationEndpointConfigEntity) {
+
+        final Map<String, QName> operations = wsdlController.getOperationsMap(provider.getId());
+
+        QName qName = operations.get(endpointConfigEntity.getUrl());
+
+        SOAPMessage request = null;
+        try {
+            request = createRequest(qName.getLocalPart());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        // The QName for the service and portType might need to be adjusted
+        QName serviceName = new QName("http://example.com/", "YourServiceName");
+        //QName portName = new QName("http://example.com/", portTypeName);
+
+        // Create a service and dispatch
+        javax.xml.ws.Service service = javax.xml.ws.Service.create(serviceName);
+        //service.addPort(portName, javax.xml.ws.soap.SOAPBinding.SOAP11HTTP_BINDING, wsdlUrl);
+        Dispatch<SOAPMessage> dispatch = service.createDispatch(qName, SOAPMessage.class, javax.xml.ws.Service.Mode.MESSAGE);
+
+        // Invoke the operation
+        SOAPMessage response = dispatch.invoke(request);
+
+        // Process the response
+        processResponse(response);
+
+
+
+        WebServiceTemplate webServiceTemplate = webServiceTemplate(endpointConfigEntity.getUrl(), endpointConfigEntity);
         // Assuming the payload is a SOAP request object
         return webServiceTemplate.marshalSendAndReceive(endpointConfigEntity.getPayload());
+    }
+
+    private SOAPMessage createRequest(String operationName) throws Exception {
+        MessageFactory messageFactory = MessageFactory.newInstance();
+        SOAPMessage soapMessage = messageFactory.createMessage();
+        SOAPEnvelope envelope = soapMessage.getSOAPPart().getEnvelope();
+        SOAPBody body = envelope.getBody();
+
+        // This is a simplified example. You'll need to construct the request based on the operation's expected input
+        QName operationQName = new QName("http://example.com/", operationName, "ns");
+        SOAPElement operationElement = body.addChildElement(operationQName);
+        // Add necessary elements to the operationElement based on the operation's requirements
+
+        soapMessage.saveChanges();
+
+        // Print the request message
+        System.out.println("Request SOAP Message:");
+        soapMessage.writeTo(System.out);
+        System.out.println("\n");
+
+        return soapMessage;
+    }
+
+    private void processResponse(SOAPMessage response) {
+        // Implement response processing logic here
     }
 
     private Jaxb2Marshaller marshaller(String contextPath) {
@@ -122,14 +184,14 @@ public class RequestSoapService implements RequestService {
         return marshaller;
     }
 
-    private WebServiceTemplate webServiceTemplate(String contextPath, String defaultUri) {
+    private WebServiceTemplate webServiceTemplate(String contextPath, EndpointConfigEntity endpointConfigEntity) {
 
         Jaxb2Marshaller marshaller = marshaller(contextPath);
         WebServiceTemplate webServiceTemplate = new WebServiceTemplate();
         webServiceTemplate.setMarshaller(marshaller);
         webServiceTemplate.setUnmarshaller(marshaller);
         // URL do serviço SOAP
-        webServiceTemplate.setDefaultUri(defaultUri);
+        webServiceTemplate.setDefaultUri(endpointConfigEntity.getUrl());
         return webServiceTemplate;
     }
 }
