@@ -127,17 +127,15 @@ public class RequestSoapService implements RequestService {
 
         SOAPMessage request = null;
         try {
-            request = createRequest(qName.getLocalPart());
+            request = createRequest(provider, qName.getLocalPart());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         // The QName for the service and portType might need to be adjusted
-        QName serviceName = new QName("http://example.com/", "YourServiceName");
-        //QName portName = new QName("http://example.com/", portTypeName);
 
         // Create a service and dispatch
-        javax.xml.ws.Service service = javax.xml.ws.Service.create(serviceName);
-        //service.addPort(portName, javax.xml.ws.soap.SOAPBinding.SOAP11HTTP_BINDING, wsdlUrl);
+        javax.xml.ws.Service service = javax.xml.ws.Service.create(qName);
+        service.addPort(qName, javax.xml.ws.soap.SOAPBinding.SOAP11HTTP_BINDING, provider.getUrl());
         Dispatch<SOAPMessage> dispatch = service.createDispatch(qName, SOAPMessage.class, javax.xml.ws.Service.Mode.MESSAGE);
 
         // Invoke the operation
@@ -153,14 +151,14 @@ public class RequestSoapService implements RequestService {
         return webServiceTemplate.marshalSendAndReceive(endpointConfigEntity.getPayload());
     }
 
-    private SOAPMessage createRequest(String operationName) throws Exception {
+    private SOAPMessage createRequest(final ProviderEntity provider, String operationName) throws Exception {
         MessageFactory messageFactory = MessageFactory.newInstance();
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPEnvelope envelope = soapMessage.getSOAPPart().getEnvelope();
         SOAPBody body = envelope.getBody();
 
         // This is a simplified example. You'll need to construct the request based on the operation's expected input
-        QName operationQName = new QName("http://example.com/", operationName, "ns");
+        QName operationQName = new QName(provider.getUrl(), operationName, "ns");
         SOAPElement operationElement = body.addChildElement(operationQName);
         // Add necessary elements to the operationElement based on the operation's requirements
 
