@@ -9,19 +9,21 @@ import br.com.motur.dealbackendservice.core.model.ProviderEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.xml.soap.*;
+import jakarta.xml.ws.Dispatch;
+import jakarta.xml.ws.Service;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
-import org.springframework.stereotype.Service;
 import org.springframework.ws.client.core.WebServiceTemplate;
 
 import javax.xml.namespace.QName;
-import javax.xml.ws.Dispatch;
 import java.util.List;
 import java.util.Map;
+
+import static jakarta.xml.ws.soap.SOAPBinding.SOAP11HTTP_BINDING;
 
 /**
  * Essa classe é responsável por executar requisições SOAP
  */
-@Service
+@org.springframework.stereotype.Service
 public class RequestSoapService implements RequestService {
 
     private final ProviderRepository providerRepository;
@@ -134,9 +136,9 @@ public class RequestSoapService implements RequestService {
         // The QName for the service and portType might need to be adjusted
 
         // Create a service and dispatch
-        javax.xml.ws.Service service = javax.xml.ws.Service.create(qName);
-        service.addPort(qName, javax.xml.ws.soap.SOAPBinding.SOAP11HTTP_BINDING, provider.getUrl());
-        Dispatch<SOAPMessage> dispatch = service.createDispatch(qName, SOAPMessage.class, javax.xml.ws.Service.Mode.MESSAGE);
+        Service service = Service.create(qName);
+        service.addPort(qName, SOAP11HTTP_BINDING, provider.getUrl());
+        Dispatch<SOAPMessage> dispatch = service.createDispatch(qName, SOAPMessage.class, Service.Mode.MESSAGE);
 
         // Invoke the operation
         SOAPMessage response = dispatch.invoke(request);
