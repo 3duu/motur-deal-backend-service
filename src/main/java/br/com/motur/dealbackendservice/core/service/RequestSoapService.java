@@ -129,7 +129,7 @@ public class RequestSoapService implements RequestService {
 
         SOAPMessage request = null;
         try {
-            request = createRequest(provider, qName.getLocalPart());
+            request = createRequest(provider, qName);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -153,15 +153,15 @@ public class RequestSoapService implements RequestService {
         return webServiceTemplate.marshalSendAndReceive(endpointConfigEntity.getPayload());
     }
 
-    private SOAPMessage createRequest(final ProviderEntity provider, String operationName) throws Exception {
+    private SOAPMessage createRequest(final ProviderEntity provider, QName operation) throws Exception {
         MessageFactory messageFactory = MessageFactory.newInstance();
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPEnvelope envelope = soapMessage.getSOAPPart().getEnvelope();
         SOAPBody body = envelope.getBody();
 
         // This is a simplified example. You'll need to construct the request based on the operation's expected input
-        QName operationQName = new QName(provider.getUrl(), operationName, "ns");
-        SOAPElement operationElement = body.addChildElement(operationQName);
+        //QName operationQName = new QName(provider.getUrl(), operationName, "ns");
+        SOAPElement operationElement = body.addChildElement(operation);
         // Add necessary elements to the operationElement based on the operation's requirements
 
         soapMessage.saveChanges();
