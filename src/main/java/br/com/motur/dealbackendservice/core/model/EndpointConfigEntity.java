@@ -65,6 +65,10 @@ public class EndpointConfigEntity {
     @Convert(converter = ReturnMappingConverter.class)
     private ResponseMapping responseMapping;// Dados de retorno
 
+    @JoinColumn(name = "auth_endpoint_id", nullable = true)
+    @ManyToOne(fetch = FetchType.EAGER)
+    private EndpointConfigEntity authEndpoint;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

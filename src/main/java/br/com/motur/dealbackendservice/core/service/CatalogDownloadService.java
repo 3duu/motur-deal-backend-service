@@ -51,22 +51,19 @@ public class CatalogDownloadService extends AccessService {
 
     @Autowired
     public CatalogDownloadService(final ApplicationContext applicationContext, ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository,
-                                  /*RequestRestService requestRestService,*/ /*RequestSoapService requestSoapService,*/
                                   ProviderBrandsRepository providerBrandsRepository, ProviderModelsRepository providerModelsRepository,
                                   ProviderTrimsRepository providerTrimsRepository, BrandRepository brandRepository,
-                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, ResponseProcessor responseProcessor, TrimRepository trimRepository1) {
+                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, ResponseProcessor responseProcessor) {
         super(applicationContext, responseProcessor, objectMapper, modelMapper);
         this.applicationContext = applicationContext;
         this.providerRepository = providerRepository;
         this.endpointConfigRepository = endpointConfigRepository;
-        /*this.requestRestService = requestRestService;
-        this.requestSoapService = requestSoapService;*/
         this.providerBrandsRepository = providerBrandsRepository;
         this.providerModelsRepository = providerModelsRepository;
         this.providerTrimsRepository = providerTrimsRepository;
         this.brandRepository = brandRepository;
         this.modelRepository = modelRepository;
-        this.trimRepository = trimRepository1;
+        this.trimRepository = trimRepository;
     }
 
 
@@ -83,9 +80,9 @@ public class CatalogDownloadService extends AccessService {
             final List<EndpointConfigEntity> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
             for(EndpointConfigEntity endpointConfigEntity : authEndpoint){
-                downloadBrandsCatalog(provider, endpointConfigEntity); // Baixando marcas
-                downloadModelsCatalog(provider, endpointConfigEntity); // Baixando modelos
-                downloadTrimsCatalog(provider, endpointConfigEntity); // Baixando versões
+                downloadBrandsCatalog(provider); // Baixando marcas
+                downloadModelsCatalog(provider); // Baixando modelos
+                downloadTrimsCatalog(provider); // Baixando versões
             }
 
             /*authEndpoint.forEach(endpointConfigEntity -> {
@@ -103,12 +100,11 @@ public class CatalogDownloadService extends AccessService {
     /**
      * Download das marcas do fornecedor
      * @param provider
-     * @param authEndpoint Endpoint de autenticação
      */
-    public void downloadBrandsCatalog(final ProviderEntity provider, final EndpointConfigEntity authEndpoint) {
+    public void downloadBrandsCatalog(final ProviderEntity provider) {
         final List<EndpointConfigEntity> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_BRANDS, provider);
         for (EndpointConfigEntity endpointConfigEntity : catalogEndpoints) {
-            Map<Object, Object> results = getRequestService(provider.getApiType()).getAsMap(provider, endpointConfigEntity, authEndpoint);
+            Map<Object, Object> results = getRequestService(provider.getApiType()).getAsMap(provider, endpointConfigEntity);
             if (results != null && !results.isEmpty()) {
                 processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderBrands.class, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), providerBrandsRepository);
             }
@@ -118,22 +114,21 @@ public class CatalogDownloadService extends AccessService {
     /**
      * Download dos modelos do catalog do fornecedor
      * @param provider Provedor
-     * @param authEndpoint Endpoint de autenticação
      */
-    public void downloadModelsCatalog(final ProviderEntity provider, final EndpointConfigEntity authEndpoint) {
+    public void downloadModelsCatalog(final ProviderEntity provider) {
         final List<EndpointConfigEntity> catalogEndpoints = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_MODELS, provider);
-        catalogEndpoints.forEach(endpointConfig -> processCatalogEndpointForModels(provider, endpointConfig, authEndpoint));
+        catalogEndpoints.forEach(endpointConfig -> processCatalogEndpointForModels(provider, endpointConfig));
     }
 
-    private void processCatalogEndpointForModels(final ProviderEntity provider, final EndpointConfigEntity originalEndpointConfigEntity, final EndpointConfigEntity authEndpoint) {
+    private void processCatalogEndpointForModels(final ProviderEntity provider, final EndpointConfigEntity originalEndpointConfigEntity) {
         List<ProviderBrands> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
-        brands.forEach(brand -> updateAndProcessEndpointForBrand(provider, brand, cloneEndpointConfig(originalEndpointConfigEntity), authEndpoint));
+        brands.forEach(brand -> updateAndProcessEndpointForBrand(provider, brand, cloneEndpointConfig(originalEndpointConfigEntity)));
     }
 
-    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity authEndpoint) {
+    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, EndpointConfigEntity endpointConfigEntity) {
         try {
             updateEndpointConfigForBrand(endpointConfigEntity, brand);
-            Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity, authEndpoint);
+            Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity);
             if (results != null && !results.isEmpty()) {
                 processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderModelsEntity.class, modelRepository.findAllByBrand(brand.getBaseCatalog().getId()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
             }
@@ -166,11 +161,10 @@ public class CatalogDownloadService extends AccessService {
      * Download the versões catalogo do fornecedor
      *
      * @param provider Provedor/Fornecedor
-     * @param authEndpoint Endpoint de autenticação (opcional)
      */
-    public void downloadTrimsCatalog(final ProviderEntity provider, final EndpointConfigEntity authEndpoint) {
+    public void downloadTrimsCatalog(final ProviderEntity provider) {
         final List<EndpointConfigEntity> catalogEndpoints = fetchTrimCatalogEndpoints(provider);
-        catalogEndpoints.forEach(endpointConfig -> processEachModel(provider, cloneEndpointConfig(endpointConfig), authEndpoint));
+        catalogEndpoints.forEach(endpointConfig -> processEachModel(provider, cloneEndpointConfig(endpointConfig)));
     }
 
     private List<EndpointConfigEntity> fetchTrimCatalogEndpoints(ProviderEntity provider) {
@@ -186,11 +180,11 @@ public class CatalogDownloadService extends AccessService {
         }
     }
 
-    private void processEachModel(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity authEndpoint) {
+    private void processEachModel(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity) {
         final List<ProviderModelsEntity> models = providerModelsRepository.findAllByProviderId(provider.getId());
         models.forEach(model -> {
             try {
-                processEachTrim(provider, model, updateEndpointConfigWithModelInfo(endpointConfigEntity, model), authEndpoint);
+                processEachTrim(provider, model, updateEndpointConfigWithModelInfo(endpointConfigEntity, model));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -216,8 +210,8 @@ public class CatalogDownloadService extends AccessService {
         });
     }
 
-    private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity, EndpointConfigEntity authEndpoint) throws Exception {
-        final Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity, authEndpoint);
+    private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity) throws Exception {
+        final Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity);
         if (results != null && !results.isEmpty()) {
             processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
         }

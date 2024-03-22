@@ -49,99 +49,94 @@ public class RequestRestService implements RequestService {
      * Executa uma requisição REST retornando um HashMap
      * @param provider Provedor
      * @param endpointConfigEntity Configuração do endpoint
-     * @param autenticationEndpointConfigEntity (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
     @Override
-    public Map<Object,Object> getMap(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity autenticationEndpointConfigEntity) {
+    public Map<Object,Object> getMap(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity) {
 
         if (endpointConfigEntity.getResponseMapping().getFieldMappings() != null && endpointConfigEntity.getResponseMapping().getFieldMappings().size() > 0){
 
             if (endpointConfigEntity.getResponseMapping().getFieldMappings().get(0).getOriginDatatype().equals(DataType.MAP)){
-                return (Map)execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+                return (Map)execute(provider, endpointConfigEntity);
             }
             else
                 return null;
         }
 
-        return (Map)execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+        return (Map)execute(provider, endpointConfigEntity);
     }
 
     /**
      * Executa uma requisição REST retornando uma lista
      * @param provider Provedor
      * @param endpointConfigEntity Configuração do endpoint
-     * @param autenticationEndpointConfigEntity (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
     @Override
-    public List<Object> getList(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity autenticationEndpointConfigEntity) {
+    public List<Object> getList(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity) {
 
         if (endpointConfigEntity.getResponseMapping().getFieldMappings() != null && endpointConfigEntity.getResponseMapping().getFieldMappings().size() > 0){
 
             if (endpointConfigEntity.getResponseMapping().getFieldMappings().get(0).getOriginDatatype().equals(DataType.LIST)){
-                return (List)execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+                return (List)execute(provider, endpointConfigEntity);
             }
             else
                 return null;
         }
 
-        return (List)execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+        return (List)execute(provider, endpointConfigEntity);
     }
 
     /**
      * Executa uma requisição REST retornando um JsonNode
      * @param provider Provedor
      * @param endpointConfigEntity Configuração do endpoint
-     * @param autenticationEndpointConfigEntity (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
     @Override
-    public JsonNode getObject(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity autenticationEndpointConfigEntity) {
+    public JsonNode getObject(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity) {
 
         if (endpointConfigEntity.getResponseMapping().getFieldMappings() != null && endpointConfigEntity.getResponseMapping().getFieldMappings().size() > 0){
 
             if (endpointConfigEntity.getResponseMapping().getFieldMappings().get(0).getOriginDatatype().equals(DataType.JSON)){
-                return (JsonNode)execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+                return (JsonNode)execute(provider, endpointConfigEntity);
             }
             else
                 return null;
         }
 
-        return (JsonNode)execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+        return (JsonNode)execute(provider, endpointConfigEntity);
     }
 
     /**
      * Executa uma requisição REST retornando uma String
      * @param provider Provedor
      * @param endpointConfigEntity Configuração do endpoint
-     * @param autenticationEndpointConfigEntity (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
     @Override
-    public String getString(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity autenticationEndpointConfigEntity) {
+    public String getString(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity) {
 
         if (endpointConfigEntity.getResponseMapping().getFieldMappings() != null && endpointConfigEntity.getResponseMapping().getFieldMappings().size() > 0){
 
             if (endpointConfigEntity.getResponseMapping().getFieldMappings().get(0).getOriginDatatype().equals(DataType.STRING)){
-                return (String)execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+                return (String)execute(provider, endpointConfigEntity);
             }
             else
                 return null;
         }
 
-        return (String)execute(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+        return (String)execute(provider, endpointConfigEntity);
     }
 
     /**
      * Retorna o resultado da requisição REST como um Map
      * @param provider Provedor
      * @param endpointConfigEntity Configuração do endpoint
-     * @param autenticationEndpointConfigEntity (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
     @Override
-    public Map<Object, Object> getAsMap(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity autenticationEndpointConfigEntity){
+    public Map<Object, Object> getAsMap(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity){
 
         if (endpointConfigEntity.getResponseMapping().getFieldMappings() != null && endpointConfigEntity.getResponseMapping().getFieldMappings().size() > 0){
 
@@ -149,9 +144,9 @@ public class RequestRestService implements RequestService {
 
                 switch (dataType) {
                     case MAP:
-                        return getMap(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+                        return getMap(provider, endpointConfigEntity);
                     case LIST:
-                        var list = getList(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+                        var list = getList(provider, endpointConfigEntity);
                         return IntStream.range(0, list.size())
                             .boxed()
                             .collect(Collectors.toMap(i -> i, list::get));
@@ -161,25 +156,24 @@ public class RequestRestService implements RequestService {
                         return null;
                 }
         }
-        return getMap(provider, endpointConfigEntity, autenticationEndpointConfigEntity);
+        return getMap(provider, endpointConfigEntity);
     }
 
     /**
      * Executa uma requisição REST
      * @param provider Provedor
      * @param endpointConfigEntity Configuração do endpoint
-     * @param autenticationEndpointConfigEntity (opcional) Fazer requisição de autenticação antes de executar a requisição principal
      * @return
      */
     @Override
-    public Object execute(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity, final EndpointConfigEntity autenticationEndpointConfigEntity) {
+    public Object execute(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity) {
 
-        if (autenticationEndpointConfigEntity != null){
+        if (endpointConfigEntity.getAuthEndpoint() != null){
 
             AuthConfigEntity authConfig = authConfigRepository.findByProviderId(provider.getId());
 
             if (authConfig != null)
-                execute(endpointConfigEntity.getUrl(), HttpMethod.valueOf(autenticationEndpointConfigEntity.getMethod().name()), autenticationEndpointConfigEntity.getAdditionalParams(), autenticationEndpointConfigEntity.getHeaders(), autenticationEndpointConfigEntity.getPayload(), authConfig);
+                execute(endpointConfigEntity.getUrl(), HttpMethod.valueOf(endpointConfigEntity.getAuthEndpoint().getMethod().name()), endpointConfigEntity.getAuthEndpoint().getAdditionalParams(), endpointConfigEntity.getAuthEndpoint().getHeaders(), endpointConfigEntity.getAuthEndpoint().getPayload(), authConfig);
         }
 
         return execute(endpointConfigEntity.getUrl(), HttpMethod.valueOf(endpointConfigEntity.getMethod().name()), endpointConfigEntity.getAdditionalParams(), endpointConfigEntity.getHeaders(), endpointConfigEntity.getPayload(), null);
