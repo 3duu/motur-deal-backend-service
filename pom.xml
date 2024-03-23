@@ -240,22 +240,11 @@
 			<version>4.0.2</version>
 		</dependency>
 
-
 		<dependency>
 			<groupId>wsdl4j</groupId>
 			<artifactId>wsdl4j</artifactId>
 			<version>1.5.1</version>
 		</dependency>
-		<!-- Thanks for using https://jar-download.com -->
-
-
-		<!-- https://mvnrepository.com/artifact/com.sun.xml.messaging.saaj/saaj-impl -->
-		<!--<dependency>
-			<groupId>com.sun.xml.messaging.saaj</groupId>
-			<artifactId>saaj-impl</artifactId>
-			<version>2.0.0-M1</version>
-		</dependency>-->
-
 
 		<!-- Spring Boot starter web -->
 		<dependency>
@@ -266,6 +255,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web-services</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+			<version>2.16.1</version>
 		</dependency>
 
 	</dependencies>

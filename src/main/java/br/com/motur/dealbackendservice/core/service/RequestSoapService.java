@@ -12,6 +12,7 @@ import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import jakarta.xml.soap.*;
 import jakarta.xml.ws.Dispatch;
 import jakarta.xml.ws.Service;
@@ -42,6 +43,8 @@ public class RequestSoapService implements RequestService {
 
     private final ResponseProcessor responseProcessor;
 
+    private final XmlMapper xmlMapper;
+
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(RequestSoapService.class);
 
     /**
@@ -62,6 +65,7 @@ public class RequestSoapService implements RequestService {
         this.objectMapper = objectMapper;
         this.wsdlController = wsdlController;
         this.responseProcessor = responseProcessor;
+        this.xmlMapper = mapperBuilder.createXmlMapper(true).build();
     }
 
     /**
@@ -139,7 +143,6 @@ public class RequestSoapService implements RequestService {
                     if (field != ResponseMapping.FieldMapping.RETURNS) {
                         final String value = responseProcessor.getStringFieldFromNestedMap(field, endpointConfigEntity.getResponseMapping(), ret, logger);
                         if (!value.isEmpty()){
-                            //logger.info("Field: {} Value: {}", field, ret.get(field));
                             authData.put(field, value);
                         }
 
@@ -177,7 +180,11 @@ public class RequestSoapService implements RequestService {
         // Invoke the operation
         final SOAPMessage response = dispatch.invoke(request);
 
-        return parseSOAPMessageToHashMap(response);
+        try {
+            return parseSOAPMessageToHashMap(response.getSOAPBody());
+        } catch (SOAPException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private SOAPMessage createRequest(final QName operation, final JsonNode requestData) throws Exception {
@@ -197,7 +204,7 @@ public class RequestSoapService implements RequestService {
             SOAPElement element = null;
             try {
                 element = operationElement.addChildElement(entry.getKey());
-                element.addTextNode(entry.getValue().toString());
+                element.addTextNode(entry.getValue().textValue());
             } catch (SOAPException e) {
                 throw new RuntimeException(e);
             }
@@ -209,30 +216,91 @@ public class RequestSoapService implements RequestService {
         return soapMessage;
     }
 
-    private static Map<String, String> parseSOAPMessageToHashMap(SOAPMessage soapMessage) {
-        Map<String, String> resultMap = new HashMap<>();
+    private Map<String, Object> parseSOAPMessageToHashMap(SOAPElement soapBody) {
 
-        SOAPBody soapBody = null;
-        try {
-            soapBody = soapMessage.getSOAPBody();
-        } catch (SOAPException e) {
-            throw new RuntimeException(e);
-        }
+        final Map<String, Object> resultMap = new HashMap<>();
+
         Iterator<?> iterator = soapBody.getChildElements();
         while (iterator.hasNext()) {
             Node node = (Node) iterator.next();
             if (node instanceof SOAPElement) {
                 SOAPElement element = (SOAPElement) node;
+
                 Iterator<?> childIterator = element.getChildElements();
                 while (childIterator.hasNext()) {
                     Node childNode = (Node) childIterator.next();
                     if (childNode instanceof SOAPElement) {
+
                         SOAPElement childElement = (SOAPElement) childNode;
                         String key = childElement.getLocalName();
-                        String value = childElement.getValue();
+                        Object value = childElement.getValue();
+
+                        if (value == null || (!(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean) && !(value instanceof Date))) {
+                            // Check if the child is a complex element
+                            value = parseSOAPMessageToHashMap(childElement);
+                        }
+
                         resultMap.put(key, value);
                     }
                 }
+            }
+        }
+
+        return resultMap;
+    }
+
+    /*private Map<String, Object> parseSOAPMessageToHashMap(SOAPElement soapBody) {
+
+        final Map<String, Object> resultMap = new HashMap<>();
+
+        Iterator<?> iterator = soapBody.getChildElements();
+        while (iterator.hasNext()) {
+            Node node = (Node) iterator.next();
+            if (node instanceof SOAPElement) {
+                SOAPElement element = (SOAPElement) node;
+
+                Iterator<?> childIterator = element.getChildElements();
+                while (childIterator.hasNext()) {
+                    Node childNode = (Node) childIterator.next();
+                    if (childNode instanceof SOAPElement) {
+
+                        SOAPElement childElement = (SOAPElement) node;
+                        String key = childElement.getLocalName();
+                        Object value = childElement.getValue();
+                        if (childElement.hasChildNodes() && childElement.getChildElements().hasNext()) {
+                            // Check if the child is a complex element
+                            value = parseSOAPMessageToHashMap(childElement);
+                        }
+
+                        resultMap.put(key, value);
+                    }
+                }
+            }
+        }
+
+        return resultMap;
+    }*/
+
+
+
+    private HashMap<String, Object> parseSOAPMessageToHashMap(SOAPElement element, boolean r) throws SOAPException {
+        HashMap<String, Object> resultMap = new HashMap<>();
+
+        Iterator<?> iterator = element.getChildElements();
+        while (iterator.hasNext()) {
+            Node node = (Node) iterator.next();
+            if (node instanceof SOAPElement) {
+                SOAPElement childElement = (SOAPElement) node;
+                String key = childElement.getLocalName();
+                Object value;
+                if (childElement.hasChildNodes() && childElement.getChildElements().hasNext()) {
+                    // Check if the child is a complex element
+                    value = parseSOAPMessageToHashMap(childElement, true);
+                } else {
+                    // Simple element
+                    value = childElement.getValue();
+                }
+                resultMap.put(key, value);
             }
         }
 
