@@ -5,6 +5,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -39,6 +40,7 @@ public class ResponseMapping implements java.io.Serializable {
     /**
      * Configuração de mapeamento de campos.
      */
+    @Getter
     public enum FieldMapping {
 
         RETURNS("returns"), //Proximo nível (Config.returns)

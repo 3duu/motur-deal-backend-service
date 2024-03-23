@@ -1,30 +1,28 @@
 package br.com.motur.dealbackendservice.core.service;
 
+import br.com.motur.dealbackendservice.common.ResponseProcessor;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.EndpointConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderRepository;
 import br.com.motur.dealbackendservice.core.jobs.WsdlController;
 import br.com.motur.dealbackendservice.core.model.EndpointConfigEntity;
 import br.com.motur.dealbackendservice.core.model.ProviderEntity;
-import com.fasterxml.jackson.core.JsonProcessingException;
+
+import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.sun.xml.messaging.saaj.soap.ver1_1.Message1_1Impl;
+
 import jakarta.xml.soap.*;
 import jakarta.xml.ws.Dispatch;
 import jakarta.xml.ws.Service;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.slf4j.Logger;
+
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import org.springframework.oxm.jaxb.Jaxb2Marshaller;
-import org.springframework.ws.client.core.WebServiceTemplate;
+
 
 import javax.xml.namespace.QName;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 import static jakarta.xml.ws.soap.SOAPBinding.SOAP11HTTP_BINDING;
 
@@ -42,7 +40,9 @@ public class RequestSoapService implements RequestService {
 
     private final WsdlController wsdlController;
 
-    private final XmlMapper xmlMapper;
+    private final ResponseProcessor responseProcessor;
+
+    private final Logger logger = org.slf4j.LoggerFactory.getLogger(RequestSoapService.class);
 
     /**
      * Construtor da classe.
@@ -53,13 +53,15 @@ public class RequestSoapService implements RequestService {
      * @param wsdlController Controller para WSDL.
      * @see com.fasterxml.jackson.databind.ObjectMapper
      */
-    public RequestSoapService(ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository, AuthConfigRepository authConfigRepository, ObjectMapper objectMapper, WsdlController wsdlController, Jackson2ObjectMapperBuilder mapperBuilder) {
+    public RequestSoapService(ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository,
+                              AuthConfigRepository authConfigRepository, ObjectMapper objectMapper, WsdlController wsdlController,
+                              Jackson2ObjectMapperBuilder mapperBuilder, ResponseProcessor responseProcessor) {
         this.providerRepository = providerRepository;
         this.endpointConfigRepository = endpointConfigRepository;
         this.authConfigRepository = authConfigRepository;
         this.objectMapper = objectMapper;
         this.wsdlController = wsdlController;
-        this.xmlMapper = mapperBuilder.createXmlMapper(true).build();
+        this.responseProcessor = responseProcessor;
     }
 
     /**
@@ -126,18 +128,46 @@ public class RequestSoapService implements RequestService {
     @Override
     public Object execute(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity) {
 
-        final Map<Object, Object> authData;
+        final Map<ResponseMapping.FieldMapping, Object> authData;
         if (endpointConfigEntity.getAuthEndpoint() != null){
-            authData = getAsMap(provider, endpointConfigEntity.getAuthEndpoint());
+            var ret = (Map<Object, Object>) execute(provider, endpointConfigEntity.getAuthEndpoint());
+
+            if (!ret.isEmpty()){
+
+                authData = new HashMap<>();
+                Arrays.stream(ResponseMapping.FieldMapping.values()).forEach(field -> {
+                    if (field != ResponseMapping.FieldMapping.RETURNS) {
+                        final String value = responseProcessor.getStringFieldFromNestedMap(field, endpointConfigEntity.getResponseMapping(), ret, logger);
+                        if (!value.isEmpty()){
+                            //logger.info("Field: {} Value: {}", field, ret.get(field));
+                            authData.put(field, value);
+                        }
+
+                    }
+                });
+            } else {
+                authData = null;
+            }
+        } else {
+            authData = null;
         }
+
+
+
+        logger.info("Executing SOAP request for provider: {} from {} and endpoint: {}", provider.getName(), provider.getUrl(), endpointConfigEntity.getUrl());
 
         final Map<String, QName> operations = wsdlController.getOperationsMap(provider.getId());
 
         QName qName = operations.get(endpointConfigEntity.getUrl());
 
+        if (authData != null){
+            authData.forEach((key, value) ->
+                    responseProcessor.updateEndpointConfigFields(endpointConfigEntity, key.getValue(), value.toString()));
+        }
+
         SOAPMessage request = null;
         try {
-            request = createRequest(provider, qName, endpointConfigEntity.getPayload());
+            request = createRequest(qName, endpointConfigEntity.getPayload() != null ? objectMapper.convertValue(endpointConfigEntity.getPayload(), Map.class) : new HashMap<>());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -151,16 +181,15 @@ public class RequestSoapService implements RequestService {
         // Invoke the operation
         final SOAPMessage response = dispatch.invoke(request);
 
-        return getResponse(response);
+        return parseSOAPMessageToHashMap(response);
     }
 
-    private SOAPMessage createRequest(final ProviderEntity provider, final QName operation, final JsonNode payload) throws Exception {
+    private SOAPMessage createRequest(final QName operation, final Map<String, Object> requestData) throws Exception {
 
-        final Map<String, Object> requestData = payload != null ? objectMapper.convertValue(payload, Map.class) : new HashMap<>();
         final MessageFactory messageFactory = MessageFactory.newInstance();
-        SOAPMessage soapMessage = messageFactory.createMessage();
-        soapMessage.setProperty(SOAPMessage.CHARACTER_SET_ENCODING, "UTF-8");
-        SOAPEnvelope envelope = soapMessage.getSOAPPart().getEnvelope();
+        final SOAPMessage soapMessage = messageFactory.createMessage();
+        soapMessage.setProperty(SOAPMessage.CHARACTER_SET_ENCODING, StandardCharsets.UTF_8.name());
+        final SOAPEnvelope envelope = soapMessage.getSOAPPart().getEnvelope();
 
         SOAPBody body = envelope.getBody();
 
@@ -169,10 +198,7 @@ public class RequestSoapService implements RequestService {
 
         // Itera sobre o requestData e adiciona cada entrada como um elemento filho
         for (Map.Entry<String, Object> entry : requestData.entrySet()) {
-            // Cria um novo elemento para cada entrada no Map
             SOAPElement element = operationElement.addChildElement(entry.getKey());
-            // Define o valor do elemento. Assumindo que os valores são Strings ou tipos que possam ser corretamente representados como Strings.
-            // Para casos mais complexos, você pode precisar de lógica adicional para tratar tipos específicos ou estruturas aninhadas.
             element.addTextNode(entry.getValue().toString());
         }
 
@@ -181,75 +207,35 @@ public class RequestSoapService implements RequestService {
         return soapMessage;
     }
 
-    /*private Map<String, Object> getResponse(SOAPMessage response) {
-        try {
-            return (Map<String, Object>) xmlMapper.readTree(response.toString());
-        } catch (Exception e) {
-            return null;
-        }
-    }*/
+    private static Map<String, String> parseSOAPMessageToHashMap(SOAPMessage soapMessage) {
+        Map<String, String> resultMap = new HashMap<>();
 
-    public HashMap<String, Object> getResponse(SOAPMessage soapMessage) {
-        HashMap<String, Object> resultMap = new HashMap<>();
-        SOAPBody body = null;
+        SOAPBody soapBody = null;
         try {
-            body = soapMessage.getSOAPBody();
+            soapBody = soapMessage.getSOAPBody();
         } catch (SOAPException e) {
             throw new RuntimeException(e);
         }
-
-        // Extrai todos os elementos do corpo da mensagem SOAP
-        Iterator<?> iterator = body.getChildElements();
+        Iterator<?> iterator = soapBody.getChildElements();
         while (iterator.hasNext()) {
-            Object nextElement = iterator.next();
-            if (nextElement instanceof SOAPElement) {
-                SOAPElement soapElement = (SOAPElement) nextElement;
-                // Chama o método recursivo para processar o elemento e seus filhos
-                processSOAPElement(soapElement, resultMap);
+            Node node = (Node) iterator.next();
+            if (node instanceof SOAPElement) {
+                SOAPElement element = (SOAPElement) node;
+                Iterator<?> childIterator = element.getChildElements();
+                while (childIterator.hasNext()) {
+                    Node childNode = (Node) childIterator.next();
+                    if (childNode instanceof SOAPElement) {
+                        SOAPElement childElement = (SOAPElement) childNode;
+                        String key = childElement.getLocalName();
+                        String value = childElement.getValue();
+                        resultMap.put(key, value);
+                    }
+                }
             }
         }
 
         return resultMap;
     }
 
-    private void processSOAPElement(SOAPElement element, HashMap<String, Object> map) {
-        // Assume-se que os elementos têm nomes únicos no nível em que se encontram
-        // Se houver múltiplos elementos com o mesmo nome (por exemplo, em uma lista), este código precisará ser ajustado
-        QName elementQName = element.getElementQName();
-        String elementName = elementQName.getLocalPart();
 
-        // Verifica se o elemento tem filhos
-        Iterator<?> iterator = element.getChildElements();
-        if (!iterator.hasNext()) {
-            // Se não tem filhos, trata como um valor de texto
-            map.put(elementName, element.getValue());
-        } else {
-            // Se tem filhos, cria um novo HashMap para esses filhos e os processa recursivamente
-            HashMap<String, Object> childMap = new HashMap<>();
-            while (iterator.hasNext()) {
-                Object child = iterator.next();
-                if (child instanceof SOAPElement) {
-                    processSOAPElement((SOAPElement) child, childMap);
-                }
-            }
-            map.put(elementName, childMap);
-        }
-    }
-
-    private Jaxb2Marshaller marshaller(String contextPath) {
-        Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
-        marshaller.setContextPath(contextPath);
-        return marshaller;
-    }
-
-    private WebServiceTemplate webServiceTemplate(String contextPath, EndpointConfigEntity endpointConfigEntity) {
-
-        Jaxb2Marshaller marshaller = marshaller(contextPath);
-        WebServiceTemplate webServiceTemplate = new WebServiceTemplate();
-        webServiceTemplate.setMarshaller(marshaller);
-        webServiceTemplate.setUnmarshaller(marshaller);
-        // URL do serviço SOAP
-        webServiceTemplate.setDefaultUri(endpointConfigEntity.getUrl());
-        return webServiceTemplate;
-    }
 }

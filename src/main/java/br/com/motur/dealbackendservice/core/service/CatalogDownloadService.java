@@ -3,17 +3,13 @@ package br.com.motur.dealbackendservice.core.service;
 import br.com.motur.dealbackendservice.common.ResponseProcessor;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.model.*;
-import br.com.motur.dealbackendservice.core.model.common.ApiType;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
-import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,8 +33,6 @@ public class CatalogDownloadService extends AccessService {
     private final ApplicationContext applicationContext;
     private final ProviderRepository providerRepository;
     private final EndpointConfigRepository endpointConfigRepository;
-    /*private final RequestRestService requestRestService;
-    private final RequestSoapService requestSoapService;*/
     private final ProviderBrandsRepository providerBrandsRepository;
     private final ProviderModelsRepository providerModelsRepository;
     private final ProviderTrimsRepository providerTrimsRepository;
@@ -50,10 +44,10 @@ public class CatalogDownloadService extends AccessService {
 
 
     @Autowired
-    public CatalogDownloadService(final ApplicationContext applicationContext, ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository,
+    public CatalogDownloadService(final ApplicationContext applicationContext, final ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository,
                                   ProviderBrandsRepository providerBrandsRepository, ProviderModelsRepository providerModelsRepository,
                                   ProviderTrimsRepository providerTrimsRepository, BrandRepository brandRepository,
-                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, ResponseProcessor responseProcessor) {
+                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, final ResponseProcessor responseProcessor) {
         super(applicationContext, responseProcessor, objectMapper, modelMapper);
         this.applicationContext = applicationContext;
         this.providerRepository = providerRepository;
@@ -139,23 +133,10 @@ public class CatalogDownloadService extends AccessService {
 
     private void updateEndpointConfigForBrand(EndpointConfigEntity endpointConfigEntity, ProviderBrands brand) {
         String brandId = brand.getExternalId();
-        updateEndpointConfigFields(endpointConfigEntity, BRAND_ID.getNormalizedValue(), brandId);
+        responseProcessor.updateEndpointConfigFields(endpointConfigEntity, BRAND_ID.getNormalizedValue(), brandId);
     }
 
-    // Utility method to update fields in the EndpointConfig
-    private void updateEndpointConfigFields(EndpointConfigEntity endpointConfigEntity, String key, String value) {
-        // Update URL, headers, additionalParams, and payload using the methods similar to those we discussed earlier
-        endpointConfigEntity.setUrl(endpointConfigEntity.getUrl().replace("{" + key + "}", value));
-        if (endpointConfigEntity.getHeaders() != null) {
-            endpointConfigEntity.setHeaders(formatJsonField(endpointConfigEntity.getHeaders(), Map.of(key, value)));
-        }
-        if (endpointConfigEntity.getAdditionalParams() != null) {
-            endpointConfigEntity.setAdditionalParams(formatJsonField(endpointConfigEntity.getAdditionalParams(), Map.of(key, value)));
-        }
-        if (endpointConfigEntity.getPayload() != null) {
-            endpointConfigEntity.setPayload(formatJsonField(endpointConfigEntity.getPayload(), Map.of(key, value)));
-        }
-    }
+
 
     /**
      * Download the versões catalogo do fornecedor
@@ -253,26 +234,6 @@ public class CatalogDownloadService extends AccessService {
             String updatedPayload = payload.asText().replace("{" + key + "}", value);
             endpointConfigEntity.setPayload(new TextNode(updatedPayload));
         }
-    }
-
-    /**
-     * Formata um campo json com os campos informados
-     * @param json Json a ser formatado
-     * @param fields Campos a serem adicionados
-     */
-    private JsonNode formatJsonField(final JsonNode json, final Map<String,Object> fields) {
-        final Map<Object,Object> payload = new HashMap<>();
-        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = json.fields();
-        while (fieldsIterator.hasNext()) {
-            final Map.Entry<String, JsonNode> field = fieldsIterator.next();
-            payload.put(field.getKey(), objectMapper.convertValue(field.getValue(), Object.class));
-        }
-
-        fields.forEach((key, value) -> {
-            payload.put(key, value);
-        });
-
-        return objectMapper.valueToTree(payload);
     }
 
     /**
