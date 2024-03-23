@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -222,13 +224,17 @@ public class ResponseProcessor {
      */
     public JsonNode formatJsonField(final JsonNode json, final Map<String,Object> fields) {
 
-        String jsonString = json.toString() != null ? json.toString() : StringUtils.EMPTY;
+        String jsonString = json != null ? new String(json.toString().getBytes(StandardCharsets.UTF_8)) : StringUtils.EMPTY;
 
         for (var entry : fields.entrySet()) {
             jsonString = jsonString.replace("{" + entry.getKey() + "}", entry.getValue().toString());
         }
 
-        return mapper.convertValue(jsonString, JsonNode.class);
+        try {
+            return mapper.readValue(jsonString.getBytes(StandardCharsets.UTF_8), JsonNode.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

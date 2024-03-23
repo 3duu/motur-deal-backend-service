@@ -152,13 +152,10 @@ public class RequestSoapService implements RequestService {
             authData = null;
         }
 
-
-
         logger.info("Executing SOAP request for provider: {} from {} and endpoint: {}", provider.getName(), provider.getUrl(), endpointConfigEntity.getUrl());
 
         final Map<String, QName> operations = wsdlController.getOperationsMap(provider.getId());
-
-        QName qName = operations.get(endpointConfigEntity.getUrl());
+        final QName qName = operations.get(endpointConfigEntity.getUrl());
 
         if (authData != null){
             authData.forEach((key, value) ->
@@ -167,11 +164,10 @@ public class RequestSoapService implements RequestService {
 
         SOAPMessage request = null;
         try {
-            request = createRequest(qName, endpointConfigEntity.getPayload() != null ? objectMapper.convertValue(endpointConfigEntity.getPayload(), Map.class) : new HashMap<>());
+            request = createRequest(qName, endpointConfigEntity.getPayload());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        // The QName for the service and portType might need to be adjusted
 
         // Create a service and dispatch
         Service service = Service.create(qName);
@@ -184,7 +180,7 @@ public class RequestSoapService implements RequestService {
         return parseSOAPMessageToHashMap(response);
     }
 
-    private SOAPMessage createRequest(final QName operation, final Map<String, Object> requestData) throws Exception {
+    private SOAPMessage createRequest(final QName operation, final JsonNode requestData) throws Exception {
 
         final MessageFactory messageFactory = MessageFactory.newInstance();
         final SOAPMessage soapMessage = messageFactory.createMessage();
@@ -197,10 +193,16 @@ public class RequestSoapService implements RequestService {
         final SOAPElement operationElement = body.addChildElement(operation);
 
         // Itera sobre o requestData e adiciona cada entrada como um elemento filho
-        for (Map.Entry<String, Object> entry : requestData.entrySet()) {
-            SOAPElement element = operationElement.addChildElement(entry.getKey());
-            element.addTextNode(entry.getValue().toString());
-        }
+        requestData.fields().forEachRemaining(entry -> {
+            SOAPElement element = null;
+            try {
+                element = operationElement.addChildElement(entry.getKey());
+                element.addTextNode(entry.getValue().toString());
+            } catch (SOAPException e) {
+                throw new RuntimeException(e);
+            }
+
+        });
 
         soapMessage.saveChanges();
 
