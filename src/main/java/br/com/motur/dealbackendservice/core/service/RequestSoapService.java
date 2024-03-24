@@ -133,21 +133,24 @@ public class RequestSoapService implements RequestService {
     public Object execute(final ProviderEntity provider, final EndpointConfigEntity endpointConfigEntity) {
 
         final Map<ResponseMapping.FieldMapping, Object> authData;
+
         if (endpointConfigEntity.getAuthEndpoint() != null){
             var ret = (Map<Object, Object>) execute(provider, endpointConfigEntity.getAuthEndpoint());
 
             if (!ret.isEmpty()){
 
                 authData = new HashMap<>();
-                Arrays.stream(ResponseMapping.FieldMapping.values()).forEach(field -> {
+
+                for (ResponseMapping.FieldMapping field : ResponseMapping.FieldMapping.values()) {
                     if (field != ResponseMapping.FieldMapping.RETURNS) {
-                        final String value = responseProcessor.getStringFieldFromNestedMap(field, endpointConfigEntity.getResponseMapping(), ret, logger);
+                        final String value = responseProcessor.getStringFieldFromNestedMap(field, endpointConfigEntity.getAuthEndpoint().getResponseMapping(), ret, logger);
                         if (!value.isEmpty()){
                             authData.put(field, value);
                         }
 
                     }
-                });
+                }
+
             } else {
                 authData = null;
             }
@@ -173,7 +176,7 @@ public class RequestSoapService implements RequestService {
         }
 
         // Create a service and dispatch
-        Service service = Service.create(qName);
+        final Service service = Service.create(qName);
         service.addPort(qName, SOAP11HTTP_BINDING, provider.getUrl());
         Dispatch<SOAPMessage> dispatch = service.createDispatch(qName, SOAPMessage.class, Service.Mode.MESSAGE);
 
@@ -181,9 +184,9 @@ public class RequestSoapService implements RequestService {
         final SOAPMessage response = dispatch.invoke(request);
 
         try {
-            return parseSOAPMessageToHashMap(response.getSOAPBody());
+            return parseElementToObject(response.getSOAPBody());
         } catch (SOAPException e) {
-            throw new RuntimeException(e);
+            return new HashMap<>();
         }
     }
 
@@ -216,9 +219,8 @@ public class RequestSoapService implements RequestService {
         return soapMessage;
     }
 
-    private Map<String, Object> parseSOAPMessageToHashMap(SOAPElement soapBody) {
+    /*private Map<String, Object> parseSOAPMessageToHashMap(SOAPElement soapBody, final Map<String, Object> resultMap) {
 
-        final Map<String, Object> resultMap = new HashMap<>();
 
         Iterator<?> iterator = soapBody.getChildElements();
         while (iterator.hasNext()) {
@@ -237,39 +239,7 @@ public class RequestSoapService implements RequestService {
 
                         if (value == null || (!(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean) && !(value instanceof Date))) {
                             // Check if the child is a complex element
-                            value = parseSOAPMessageToHashMap(childElement);
-                        }
-
-                        resultMap.put(key, value);
-                    }
-                }
-            }
-        }
-
-        return resultMap;
-    }
-
-    /*private Map<String, Object> parseSOAPMessageToHashMap(SOAPElement soapBody) {
-
-        final Map<String, Object> resultMap = new HashMap<>();
-
-        Iterator<?> iterator = soapBody.getChildElements();
-        while (iterator.hasNext()) {
-            Node node = (Node) iterator.next();
-            if (node instanceof SOAPElement) {
-                SOAPElement element = (SOAPElement) node;
-
-                Iterator<?> childIterator = element.getChildElements();
-                while (childIterator.hasNext()) {
-                    Node childNode = (Node) childIterator.next();
-                    if (childNode instanceof SOAPElement) {
-
-                        SOAPElement childElement = (SOAPElement) node;
-                        String key = childElement.getLocalName();
-                        Object value = childElement.getValue();
-                        if (childElement.hasChildNodes() && childElement.getChildElements().hasNext()) {
-                            // Check if the child is a complex element
-                            value = parseSOAPMessageToHashMap(childElement);
+                            value = parseSOAPMessageToHashMap(childElement, resultMap);
                         }
 
                         resultMap.put(key, value);
@@ -281,9 +251,106 @@ public class RequestSoapService implements RequestService {
         return resultMap;
     }*/
 
+    private Object parseElementToObject(final SOAPElement element) throws SOAPException {
+        final Map<String, Object> resultMap = new HashMap<>();
+        final Map<String, List<Object>> tempListMap = new HashMap<>();
+
+        Iterator<?> childIterator = element.getChildElements();
+        while (childIterator.hasNext()) {
+            Node childNode = (Node) childIterator.next();
+            if (childNode instanceof SOAPElement) {
+
+                SOAPElement childElement = (SOAPElement) childNode;
+                String key = childElement.getLocalName();
+                Object value = childElement.getValue();
+                // Check if this element has nested elements
+                if (value == null || (!(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean) && !(value instanceof Date))) {
+                    // Recursively parse nested elements
+                    value = parseElementToObject(childElement);
+                }
+
+                // Handle multiple elements with the same tag name
+                if (resultMap.containsKey(key)) {
+                    // If already in resultMap, move to tempListMap
+                    if (!tempListMap.containsKey(key)) {
+                        tempListMap.put(key, new ArrayList<>());
+                        tempListMap.get(key).add(resultMap.get(key));
+                    }
+                    tempListMap.get(key).add(value);
+                } else {
+                    resultMap.put(key, value);
+                }
+            }
+        }
+
+        // Merge tempListMap into resultMap, converting to ArrayList if necessary
+        for (String key : tempListMap.keySet()) {
+            resultMap.put(key, new ArrayList<>(tempListMap.get(key)));
+        }
+
+        // If resultMap contains only one list, return the list instead of a map
+        if (resultMap.size() == 1 && resultMap.values().iterator().next() instanceof ArrayList) {
+            return resultMap.values().iterator().next();
+        }
+
+        return resultMap;
+    }
+
+    /*private Object parseElementToObject(SOAPElement soapBody) throws SOAPException {
+        final Map<String, Object> resultMap = new HashMap<>();
+        final Map<String, List<Object>> tempListMap = new HashMap<>();
+
+        Iterator<?> iterator = soapBody.getChildElements();
+        while (iterator.hasNext()){
+            Node node = (Node) iterator.next();
+            SOAPElement element = (SOAPElement) node;
+
+            Iterator<?> childIterator = element.getChildElements();
+            while (childIterator.hasNext()) {
+                Node childNode = (Node) childIterator.next();
+                if (childNode instanceof SOAPElement) {
+
+                    SOAPElement childElement = (SOAPElement) childNode;
+                    String key = childElement.getLocalName();
+                    Object value = childElement.getValue();
+                    // Check if this element has nested elements
+                    if (value == null || (!(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean) && !(value instanceof Date))) {
+                        // Recursively parse nested elements
+                        value = parseElementToObject(childElement);
+                    }
+
+                    // Handle multiple elements with the same tag name
+                    if (resultMap.containsKey(key)) {
+                        // If already in resultMap, move to tempListMap
+                        if (!tempListMap.containsKey(key)) {
+                            tempListMap.put(key, new ArrayList<>());
+                            tempListMap.get(key).add(resultMap.get(key));
+                        }
+                        tempListMap.get(key).add(value);
+                    } else {
+                        resultMap.put(key, value);
+                    }
+                }
+            }
+
+            // Merge tempListMap into resultMap, converting to ArrayList if necessary
+            for (String key : tempListMap.keySet()) {
+                resultMap.put(key, new ArrayList<>(tempListMap.get(key)));
+            }
+
+            // If resultMap contains only one list, return the list instead of a map
+            if (resultMap.size() == 1 && resultMap.values().iterator().next() instanceof ArrayList) {
+                return resultMap.values().iterator().next();
+            }
+
+        }
+
+        return resultMap;
+    }*/
 
 
-    private HashMap<String, Object> parseSOAPMessageToHashMap(SOAPElement element, boolean r) throws SOAPException {
+
+    /*private HashMap<String, Object> parseSOAPMessageToHashMap(SOAPElement element, boolean r) throws SOAPException {
         HashMap<String, Object> resultMap = new HashMap<>();
 
         Iterator<?> iterator = element.getChildElements();
@@ -305,7 +372,7 @@ public class RequestSoapService implements RequestService {
         }
 
         return resultMap;
-    }
+    }*/
 
 
 }
