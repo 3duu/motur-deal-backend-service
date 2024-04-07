@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +24,10 @@ public final class ResponseProcessor {
 
     private final ObjectMapper mapper;
 
+    private final Logger logger = LoggerFactory.getLogger(ResponseProcessor.class);
+
     @Autowired
-    private ResponseProcessor(ObjectMapper mapper) {
+    private ResponseProcessor(final ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
@@ -35,7 +38,7 @@ public final class ResponseProcessor {
      * @param config      Configurações de mapeamento
      * @return O objeto de retorno
      */
-    public Map<ResponseMapping.FieldMapping, Object> processAsHashMap(final Object jsonResponse, final ResponseMapping.Config config) {
+    public EnumMap<ResponseMapping.FieldMapping, Object> processAsHashMap(final Object jsonResponse, final ResponseMapping.Config config) {
         final EnumMap<ResponseMapping.FieldMapping, Object> resultMap = new EnumMap<>(ResponseMapping.FieldMapping.class);
         Object value = null;
 
@@ -99,12 +102,17 @@ public final class ResponseProcessor {
         return value;
     }
 
-    private Object processMapDataType(Object jsonResponse, ResponseMapping.Config config) {
+    /**
+     * Processa o tipo de dado MAP
+     * @param jsonResponse Resposta da requisição
+     * @param config Configuração de mapeamento
+     */
+    private Object processMapDataType(final Object jsonResponse, final ResponseMapping.Config config) {
 
         Object value = null;
-        if (config.getOriginPath().equals("#key")) { // Retorna as chaves
+        if ("#key".equals(config.getOriginPath())) { // Retorna as chaves
             value = ((Map<Object, Object>)jsonResponse).keySet();
-        } else if (config.getOriginPath().equals("#value")) { // Retorna os valores
+        } else if ("#value".equals(config.getOriginPath())) { // Retorna os valores
             value = ((Map<Object, Object>)jsonResponse).values();
         } else {
             value = ((Map<Object, Object>)jsonResponse).get(config.getOriginPath()); // Retorna o valor de uma chave específica
@@ -113,6 +121,11 @@ public final class ResponseProcessor {
         return value;
     }
 
+    /**
+     * Processa o tipo de dado JSON
+     * @param jsonResponse Resposta da requisição
+     * @param config Configuração de mapeamento
+     */
     private Object processJsonDataType(Object jsonResponse, ResponseMapping.Config config) {
         return ((JsonNode)jsonResponse).get(config.getOriginPath());
     }
@@ -130,7 +143,7 @@ public final class ResponseProcessor {
 
         for (var item : configs) {
 
-            Map<ResponseMapping.FieldMapping, Object> result = processAsHashMap(jsonResponse, item);
+            EnumMap<ResponseMapping.FieldMapping, Object> result = processAsHashMap(jsonResponse, item);
 
             for (ResponseMapping.FieldMapping value : ResponseMapping.FieldMapping.values()) {
 
@@ -140,7 +153,7 @@ public final class ResponseProcessor {
 
                 Map<ResponseMapping.FieldMapping, Object> currentMap = result;
                 while (currentMap.get(ResponseMapping.FieldMapping.RETURNS) != null) {
-                    currentMap = (HashMap<ResponseMapping.FieldMapping, Object>) currentMap.get(ResponseMapping.FieldMapping.RETURNS);
+                    currentMap = (EnumMap<ResponseMapping.FieldMapping, Object>) currentMap.get(ResponseMapping.FieldMapping.RETURNS);
                 }
 
                 if(currentMap.get(value) != null){
@@ -179,7 +192,7 @@ public final class ResponseProcessor {
             logger.error("O External ID e o Name não foram encontrados ou não possuem o mesmo tamanho da lista. External ID:{} - Name: {}", externalIds, names);
         } else {
             // Merging the lists into a HashMap
-            Map<Object, Object> map = new HashMap<>();
+            final Map<Object, Object> map = new HashMap<>();
             for (int i = 0; i < ((List)externalIds).size(); i++) {
                 map.put(((List)externalIds).get(i), ((List)names).get(i));
             }
@@ -246,6 +259,7 @@ public final class ResponseProcessor {
         try {
             return mapper.readValue(jsonString.getBytes(StandardCharsets.UTF_8), JsonNode.class);
         } catch (IOException e) {
+            logger.error("Erro ao formatar o campo JSON: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -283,7 +297,7 @@ public final class ResponseProcessor {
         return false;
     }
 
-    private boolean isParametrizedField(final String field) {
+    public boolean isParametrizedField(final String field) {
         return field.startsWith("{") && field.endsWith("}");
     }
 }

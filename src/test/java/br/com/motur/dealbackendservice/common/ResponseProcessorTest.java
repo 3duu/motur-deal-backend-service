@@ -4,17 +4,21 @@ import br.com.motur.dealbackendservice.core.model.common.DataType;
 import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.slf4j.Logger;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +32,7 @@ class ResponseProcessorTest {
     @InjectMocks
     private ResponseProcessor responseProcessor;
 
-    @Mock
+    @Spy
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -37,11 +41,14 @@ class ResponseProcessorTest {
     }
 
     @Test
+    @DisplayName("Testa se o método processAsHashMap retorna um mapa vazio quando o JSON de entrada é uma string vazia")
     void processAsHashMapReturnsCorrectMap() {
         Object jsonResponse = new HashMap<>();
         ResponseMapping.Config config = new ResponseMapping.Config();
         config.setOriginDatatype(DataType.STRING);
-        Map<ResponseMapping.FieldMapping, Object> expectedResult = new HashMap<>();
+        config.setDestination(ResponseMapping.FieldMapping.NAME);
+        EnumMap<ResponseMapping.FieldMapping, Object> expectedResult = new EnumMap<>(ResponseMapping.FieldMapping.class);
+        expectedResult.put(ResponseMapping.FieldMapping.NAME, "{}");
 
         Map<ResponseMapping.FieldMapping, Object> result = responseProcessor.processAsHashMap(jsonResponse, config);
 

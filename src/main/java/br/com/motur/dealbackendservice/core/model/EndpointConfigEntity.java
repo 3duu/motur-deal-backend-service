@@ -34,7 +34,7 @@ public class EndpointConfigEntity {
     @JoinColumn(name = "provider_id", nullable = false)
     private ProviderEntity provider;// Provider associado
 
-    @Column(name = "category", nullable = false)
+    @Column(name = "category", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private EndpointCategory category;// Categoria do endpoint (veículos, anúncios, etc.)
 
@@ -57,7 +57,7 @@ public class EndpointConfigEntity {
     @Convert(converter = JsonNodeConverter.class)
     private JsonNode  additionalParams;// Parâmetros adicionais
 
-    @Column(name = "response_type", nullable = false)
+    @Column(name = "response_type", nullable = false, length = 32)
     @Enumerated(EnumType.STRING)
     private DataType responseType;// Tipo de resposta
 
