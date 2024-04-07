@@ -13,18 +13,18 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.StreamSupport;
 
 /**
  * Essa classe é responsável por processar a resposta de uma requisiçãoerfdeferd
  */
 @Component
-public class ResponseProcessor {
+public final class ResponseProcessor {
 
     private final ObjectMapper mapper;
 
     @Autowired
     private ResponseProcessor(ObjectMapper mapper) {
-        // Construtor privado para evitar instanciação
         this.mapper = mapper;
     }
 
@@ -36,53 +36,15 @@ public class ResponseProcessor {
      * @return O objeto de retorno
      */
     public Map<ResponseMapping.FieldMapping, Object> processAsHashMap(final Object jsonResponse, final ResponseMapping.Config config) {
-        final Map<ResponseMapping.FieldMapping, Object> resultMap = new HashMap<>();
-
+        final EnumMap<ResponseMapping.FieldMapping, Object> resultMap = new EnumMap<>(ResponseMapping.FieldMapping.class);
         Object value = null;
+
         if (config.getOriginDatatype() == DataType.LIST) {
-            if (config.getOriginPath().startsWith("[") && config.getOriginPath().endsWith("]")) {
-                Integer index = Integer.parseInt(config.getOriginPath().replaceAll("[\\[\\]]", ""));
-                if (jsonResponse instanceof List<?>) {
-                    value = ((List)jsonResponse).get(index);
-                }
-                else if (jsonResponse instanceof Map<?,?>) {
-                    value = ((Map<Integer, Object>)jsonResponse).get(index);
-                }
-            } else {
-
-                if (jsonResponse instanceof List<?>) {
-
-                    final List<Object> list = new ArrayList<>();
-
-                    if (!((List)jsonResponse).isEmpty()){
-
-                        if (((List)jsonResponse).get(0) instanceof Map<?,?>) {
-
-                            ((List)jsonResponse).forEach(item -> {
-                                Map<Object,Object> map = (Map<Object, Object>) item;
-                                list.add(map.get(config.getOriginPath()));
-                            });
-                        }
-
-                        value = list;
-                    }
-                }
-            }
-
-
-
+            value = processListDataType(jsonResponse, config);
         } else if (config.getOriginDatatype() == DataType.MAP) {
-            if (config.getOriginPath().equals("#key")) {
-                value = ((Map<Object, Object>)jsonResponse).keySet();
-            } else if (config.getOriginPath().equals("#value")) {
-                value = ((Map<Object, Object>)jsonResponse).values();
-            } else {
-                value = ((Map<Object, Object>)jsonResponse).get(config.getOriginPath());
-            }
-        }
-        else if (config.getOriginDatatype() == DataType.JSON) {
-
-            value = ((JsonNode)jsonResponse).get(config.getOriginPath());
+            value = processMapDataType(jsonResponse, config);
+        } else if (config.getOriginDatatype() == DataType.JSON) {
+            value = processJsonDataType(jsonResponse, config);
         }
         else if (config.getOriginDatatype() == DataType.STRING || config.getOriginDatatype() == DataType.INT
                 || config.getOriginDatatype() == DataType.LONG || config.getOriginDatatype() == DataType.FLOAT
@@ -99,10 +61,61 @@ public class ResponseProcessor {
         }
 
         resultMap.put(config.getDestination(), value);
-
         return resultMap;
     }
 
+    private Object processListDataType(Object jsonResponse, ResponseMapping.Config config) {
+
+        Object value = null;
+        if (config.getOriginPath().startsWith("[") && config.getOriginPath().endsWith("]")) {
+            Integer index = Integer.parseInt(config.getOriginPath().replaceAll("[\\[\\]]", ""));
+            if (jsonResponse instanceof List<?>) {
+                value = ((List)jsonResponse).get(index);
+            }
+            else if (jsonResponse instanceof Map<?,?>) {
+                value = ((Map<Integer, Object>)jsonResponse).get(index);
+            }
+        } else {
+
+            if (jsonResponse instanceof List<?>) {
+
+                final List<Object> list = new ArrayList<>();
+
+                if (!((List)jsonResponse).isEmpty()){
+
+                    if (((List)jsonResponse).get(0) instanceof Map<?,?>) {
+
+                        ((List)jsonResponse).forEach(item -> {
+                            Map<Object,Object> map = (Map<Object, Object>) item;
+                            list.add(map.get(config.getOriginPath()));
+                        });
+                    }
+
+                    value = list;
+                }
+            }
+        }
+
+        return value;
+    }
+
+    private Object processMapDataType(Object jsonResponse, ResponseMapping.Config config) {
+
+        Object value = null;
+        if (config.getOriginPath().equals("#key")) { // Retorna as chaves
+            value = ((Map<Object, Object>)jsonResponse).keySet();
+        } else if (config.getOriginPath().equals("#value")) { // Retorna os valores
+            value = ((Map<Object, Object>)jsonResponse).values();
+        } else {
+            value = ((Map<Object, Object>)jsonResponse).get(config.getOriginPath()); // Retorna o valor de uma chave específica
+        }
+
+        return value;
+    }
+
+    private Object processJsonDataType(Object jsonResponse, ResponseMapping.Config config) {
+        return ((JsonNode)jsonResponse).get(config.getOriginPath());
+    }
 
     /**
      * Processa a resposta de uma requisição e retorna um HashMap com os valores mapeados.
@@ -113,7 +126,7 @@ public class ResponseProcessor {
      */
     public Map<ResponseMapping.FieldMapping, Object> getMappingValues(final Object jsonResponse, final List<ResponseMapping.Config> configs) {
 
-        final Map<ResponseMapping.FieldMapping, Object> resultMap = new HashMap<>();
+        final EnumMap<ResponseMapping.FieldMapping, Object> resultMap = new EnumMap<>(ResponseMapping.FieldMapping.class);
 
         for (var item : configs) {
 
@@ -163,7 +176,7 @@ public class ResponseProcessor {
         }
 
         if (externalIds == null || names == null || ((List)externalIds).size() != ((List)names).size()) {
-            logger.error("O External ID e o Name não foram encontrados ou não possuem o mesmo tamanho. External ID:{} - Name: {}", externalIds, names);
+            logger.error("O External ID e o Name não foram encontrados ou não possuem o mesmo tamanho da lista. External ID:{} - Name: {}", externalIds, names);
         } else {
             // Merging the lists into a HashMap
             Map<Object, Object> map = new HashMap<>();
@@ -205,7 +218,7 @@ public class ResponseProcessor {
      */
     public void updateEndpointConfigFields(EndpointConfigEntity endpointConfigEntity, String key, String value) {
         // Update URL, headers, additionalParams, and payload using the methods similar to those we discussed earlier
-        endpointConfigEntity.setUrl(endpointConfigEntity.getUrl().replace("{" + key + "}", value));
+        endpointConfigEntity.setUrl(endpointConfigEntity.getUrl() != null ? endpointConfigEntity.getUrl().replace("{" + key + "}", value) : null);
         if (endpointConfigEntity.getHeaders() != null) {
             endpointConfigEntity.setHeaders(formatJsonField(endpointConfigEntity.getHeaders(), Map.of(key, value)));
         }
@@ -237,6 +250,41 @@ public class ResponseProcessor {
         }
     }
 
+    /**
+     * Verifica se o endpoint é parametrizado
+     * @param endpointConfigEntity Configuração do endpoint
+     */
+    public boolean isParametrizedEndpoint(final EndpointConfigEntity endpointConfigEntity) {
 
+        for (final ResponseMapping.FieldMapping field : ResponseMapping.FieldMapping.values()) {
+
+            final String value = "{" + field + "}";
+
+            if (endpointConfigEntity.getUrl() != null && endpointConfigEntity.getUrl().contains(value)) {
+                return true;
+            }
+
+            Iterable<Map.Entry<String, JsonNode>> iterable = () -> endpointConfigEntity.getHeaders().fields();
+            if (endpointConfigEntity.getHeaders() != null && !endpointConfigEntity.getHeaders().isNull() && StreamSupport.stream(iterable.spliterator(), false).anyMatch(f -> f.getValue().textValue().contains(value))){
+                return true;
+            }
+
+            iterable = () -> endpointConfigEntity.getAdditionalParams().fields();
+            if (endpointConfigEntity.getAdditionalParams() != null && !endpointConfigEntity.getAdditionalParams().isNull() && StreamSupport.stream(iterable.spliterator(), false).anyMatch(f -> f.getValue().textValue().contains(value))){
+                return true;
+            }
+
+            iterable = () -> endpointConfigEntity.getPayload().fields();
+            if (endpointConfigEntity.getPayload() != null && !endpointConfigEntity.getPayload().isNull() && StreamSupport.stream(iterable.spliterator(), false).anyMatch(f -> f.getValue().textValue().contains(value))){
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+    private boolean isParametrizedField(final String field) {
+        return field.startsWith("{") && field.endsWith("}");
+    }
 }
 

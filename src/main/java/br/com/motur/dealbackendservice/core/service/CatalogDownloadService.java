@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -73,17 +75,11 @@ public class CatalogDownloadService extends AccessService {
             logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
             final List<EndpointConfigEntity> authEndpoint = endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.AUTHENTICATION, provider);
 
-            for(EndpointConfigEntity endpointConfigEntity : authEndpoint){
+            for (EndpointConfigEntity endpointConfigEntity : authEndpoint){
                 downloadBrandsCatalog(provider); // Baixando marcas
                 downloadModelsCatalog(provider); // Baixando modelos
                 downloadTrimsCatalog(provider); // Baixando versões
             }
-
-            /*authEndpoint.forEach(endpointConfigEntity -> {
-                downloadBrandsCatalog(provider, endpointConfigEntity); // Baixando marcas
-                downloadModelsCatalog(provider, endpointConfigEntity); // Baixando modelos
-                downloadTrimsCatalog(provider, endpointConfigEntity); // Baixando versões
-            });*/
 
             logger.info("Catalogo do {} foi baixado", provider.getName());
         }
@@ -115,28 +111,71 @@ public class CatalogDownloadService extends AccessService {
     }
 
     private void processCatalogEndpointForModels(final ProviderEntity provider, final EndpointConfigEntity originalEndpointConfigEntity) {
-        List<ProviderBrands> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
-        brands.forEach(brand -> updateAndProcessEndpointForBrand(provider, brand, cloneEndpointConfig(originalEndpointConfigEntity)));
+
+        final boolean isParametrized = responseProcessor.isParametrizedEndpoint(originalEndpointConfigEntity); // Verifica se o endpoint é parametrizado, caso seja, será feita várias chamadas e o valor do parâmetro é substituído em cada uma delas
+        final List<ProviderBrands> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
+        EndpointConfigEntity cloneEndpointConfig = originalEndpointConfigEntity;
+
+        Map<Object, Object> results = null;
+        if (!isParametrized) {
+            try {
+                results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, cloneEndpointConfig);
+            } catch (Exception e) {
+                logger.error("Error processing models for provider: {} - {}", provider.getName(), e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        }
+        else {
+            cloneEndpointConfig = cloneEndpointConfig(originalEndpointConfigEntity);
+        }
+
+        for (final ProviderBrands brand : brands) {
+
+            if (isParametrized) {
+
+                try {
+                    updateEndpointConfigForBrand(cloneEndpointConfig, brand);
+                    results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, cloneEndpointConfig);
+                } catch (Exception e) {
+                    logger.error("Error processing models for provider: {} - brand {}", provider.getName(), brand.getName(), e);
+                    throw new RuntimeException(e);
+                }
+            }
+
+            updateAndProcessEndpointForBrand(provider, brand, cloneEndpointConfig, results);
+        }
     }
 
-    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, EndpointConfigEntity endpointConfigEntity) {
+    /**
+     * Atualiza e processa o endpoint com a marca para publicar modelos
+     * @param provider Provedor
+     * @param brand Marca
+     * @param endpointConfigEntity Endpoint de configuração
+     */
+    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, final EndpointConfigEntity endpointConfigEntity, final Map<Object, Object> results) {
         try {
-            updateEndpointConfigForBrand(endpointConfigEntity, brand);
-            Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity);
+
             if (results != null && !results.isEmpty()) {
-                processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderModelsEntity.class, modelRepository.findAllByBrand(brand.getBaseCatalog().getId()), brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
+                final List<ModelEntity> models = brand != null ? modelRepository.findAllByBrand(brand.getBaseCatalog().getId()) : modelRepository.findAll();
+                processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderModelsEntity.class, models, brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
             }
         } catch (Exception e) {
             logger.error("Error processing models for brand: {} - {}", brand.getName(), e.getMessage(), e);
         }
     }
 
+    /**
+     * Atualiza o endpoint de modelos com a marca
+     * @param endpointConfigEntity Endpoint de configuração
+     * @param brand Marca
+     */
     private void updateEndpointConfigForBrand(EndpointConfigEntity endpointConfigEntity, ProviderBrands brand) {
+        if (brand == null) {
+            return;
+        }
         String brandId = brand.getExternalId();
         responseProcessor.updateEndpointConfigFields(endpointConfigEntity, BRAND_ID.getNormalizedValue(), brandId);
     }
-
-
 
     /**
      * Download the versões catalogo do fornecedor
@@ -152,24 +191,64 @@ public class CatalogDownloadService extends AccessService {
         return endpointConfigRepository.findByCategoryAndProvider(EndpointCategory.CATALOG_TRIMS, provider);
     }
 
+    /**
+     * Clona o endpoint de configuração
+     *
+     * @param originalEndpointConfigEntity Endpoint de configuração original
+     * @return Endpoint de configuração clonado
+     */
     private EndpointConfigEntity cloneEndpointConfig(EndpointConfigEntity originalEndpointConfigEntity) {
         try {
             return objectMapper.readValue(objectMapper.writeValueAsString(originalEndpointConfigEntity), EndpointConfigEntity.class);
         } catch (JsonProcessingException e) {
-            logger.error("Error cloning endpoint config: " + e.getMessage(), e);
+            logger.error("Error cloning endpoint config: {}",e.getMessage(), e);
             return modelMapper.map(originalEndpointConfigEntity, EndpointConfigEntity.class);
         }
     }
 
-    private void processEachModel(ProviderEntity provider, EndpointConfigEntity endpointConfigEntity) {
+    private void processEachModel(ProviderEntity provider, EndpointConfigEntity originalEndpointConfigEntity) {
+
+        final boolean isParametrized = responseProcessor.isParametrizedEndpoint(originalEndpointConfigEntity); // Verifica se o endpoint é parametrizado, caso seja, será feita várias chamadas e o valor do parâmetro é substituído em cada uma delas
         final List<ProviderModelsEntity> models = providerModelsRepository.findAllByProviderId(provider.getId());
+        EndpointConfigEntity cloneEndpointConfig = originalEndpointConfigEntity;
+
+        Map<Object, Object> results = null;
+        if (!isParametrized) {
+            try {
+                results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, cloneEndpointConfig);
+            } catch (Exception e) {
+                logger.error("Error processing trims for provider: {}", provider.getName(), e);
+                throw new RuntimeException(e);
+            }
+        }
+        else {
+            cloneEndpointConfig = cloneEndpointConfig(originalEndpointConfigEntity);
+        }
+
+        for (ProviderModelsEntity model : models) {
+
+            if (isParametrized) {
+
+                try {
+                    updateEndpointConfigWithModelInfo(cloneEndpointConfig, model);
+                    results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, cloneEndpointConfig);
+                } catch (Exception e) {
+                    logger.error("Error processing trims for provider: {} - model: {}", provider.getName(), model.getName(), e);
+                    throw new RuntimeException(e);
+                }
+            }
+
+            processEachTrim(provider, model, cloneEndpointConfig, results);
+        }
+
+        /*final List<ProviderModelsEntity> models = providerModelsRepository.findAllByProviderId(provider.getId());
         models.forEach(model -> {
             try {
                 processEachTrim(provider, model, updateEndpointConfigWithModelInfo(endpointConfigEntity, model));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        });
+        });*/
     }
 
     private EndpointConfigEntity updateEndpointConfigWithModelInfo(EndpointConfigEntity endpointConfigEntity, ProviderModelsEntity model) {
@@ -191,8 +270,8 @@ public class CatalogDownloadService extends AccessService {
         });
     }
 
-    private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity) throws Exception {
-        final Map<Object, Object> results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, endpointConfigEntity);
+    private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity, Map<Object, Object> results) {
+
         if (results != null && !results.isEmpty()) {
             processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
         }
@@ -237,24 +316,25 @@ public class CatalogDownloadService extends AccessService {
     }
 
     /**
-     * Download the trims catalog from the fornecedor
+     * Processa e salva os dados do catalogo do fornecedor
      *
-     * @param data                Dados recebidos do fornecedor
-     * @param endpointConfigEntity      Endpoint de autenticação
-     * @param provider            Provedor
-     * @param providerCatalogClassType Tipo da classe do item do catalogo do fornecedor
-     * @param providerCatalogList Lista de dos itens do catalogo do fornecedor
+     * @param data Dados do catalogo do fornecedor
+     * @param endpointConfigEntity Endpoint de configuração
+     * @param provider Fornecedor
+     * @param providerCatalogClassType Tipo da classe do item do catalogo do fornecedor (Brand, Model, Trim)
+     * @param catalogEntities Lista de dos itens do catalogo do fornecedor
      * @param parentProviderCatalog Item pai do catalogo do fornecedor
-     * @param providerCatalogRepository Repository do item do catalogo do fornecedor
+     * @param providerCatalogList Lista de dos itens do catalogo do fornecedor
+     * @param providerCatalogRepository Repositorio do item do catalogo do fornecedor
      */
-    private void processAndSaveCatalog(final Map<Object, Object> data,
-                                       final EndpointConfigEntity endpointConfigEntity,
-                                       final ProviderEntity provider,
-                                       final Class<? extends ProviderCatalogEntity> providerCatalogClassType,
-                                       final List<? extends CatalogEntity> catalogEntities,
-                                       final ProviderCatalogEntity parentProviderCatalog,
-                                       final List<? extends ProviderCatalogEntity> providerCatalogList,
-                                       final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
+    private void processAndSaveCatalog(@NotNull final Map<Object, Object> data,
+                                       @NotNull final EndpointConfigEntity endpointConfigEntity,
+                                       @NotNull final ProviderEntity provider,
+                                       @NotNull final Class<? extends ProviderCatalogEntity> providerCatalogClassType,
+                                       @NotNull final List<? extends CatalogEntity> catalogEntities,
+                                       @Null final ProviderCatalogEntity parentProviderCatalog,
+                                       @NotNull final List<? extends ProviderCatalogEntity> providerCatalogList,
+                                       @NotNull final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
 
         logger.info("Processando e salvando dados do catalogo do fornecedor: {}",provider.getName());
 
@@ -263,7 +343,7 @@ public class CatalogDownloadService extends AccessService {
 
         if (list instanceof List && !((List)list).isEmpty() && ((List)list).get(0) instanceof Map){
 
-            final List brandList = (List) list;
+            final List newList = (List) list;
             final List<Map<Object, Object>> listMap = (List<Map<Object, Object>>) list;
 
             final Map<Object, Object> mapList = listMap.stream()
@@ -274,7 +354,7 @@ public class CatalogDownloadService extends AccessService {
                             (v1, v2) -> v1
                     ));
 
-            brandList.forEach(brandMap -> processReturnMap(endpointConfigEntity,
+            newList.forEach(map -> processReturnMap(endpointConfigEntity,
                     mapList,
                     providerCatalogClassType,
                     catalogEntities,
@@ -315,7 +395,15 @@ public class CatalogDownloadService extends AccessService {
                                 (v1, v2) -> v1
                         ));
 
-                processReturnMap(endpointConfigEntity, mapList, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
+                processReturnMap(endpointConfigEntity,
+
+                        mapList,
+                        providerCatalogClassType,
+                        catalogEntities,
+                        providerCatalogList,
+                        parentProviderCatalog,
+                        provider,
+                        providerCatalogRepository);
             }
 
         }
@@ -329,7 +417,7 @@ public class CatalogDownloadService extends AccessService {
      * Processa o mapa de retorno do fornecedor
      *
      * @param endpointConfigEntity Endpoint de autenticação
-     * @param brandMap Mapa de retorno do fornecedor
+     * @param map Mapa de retorno do fornecedor
      * @param providerCatalogClassType Tipo da classe do item do catalogo do fornecedor (Brand, Model, Trim)
      * @param catalogEntityList Lista de dos itens do catalogo do fornecedor
      * @param providerCatalogList Lista de dos itens do catalogo do fornecedor
@@ -337,18 +425,18 @@ public class CatalogDownloadService extends AccessService {
      * @param provider Fornecedor
      * @param providerCatalogRepository Repositorio do item do catalogo do fornecedor
      */
-    private void processReturnMap(final EndpointConfigEntity endpointConfigEntity,
-                                  final Map<Object, Object> brandMap,
-                                  final Class<? extends ProviderCatalogEntity> providerCatalogClassType,
-                                  final List<? extends CatalogEntity> catalogEntityList,
-                                  final List<? extends ProviderCatalogEntity> providerCatalogList,
-                                  final ProviderCatalogEntity parentProviderCatalog,
-                                  final ProviderEntity provider,
-                                  final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
+    private void processReturnMap(@NotNull final EndpointConfigEntity endpointConfigEntity,
+                                  @NotNull final Map<Object, Object> map,
+                                  @NotNull final Class<? extends ProviderCatalogEntity> providerCatalogClassType,
+                                  @NotNull final List<? extends CatalogEntity> catalogEntityList,
+                                  @NotNull final List<? extends ProviderCatalogEntity> providerCatalogList,
+                                  @Null final ProviderCatalogEntity parentProviderCatalog,
+                                  @NotNull final ProviderEntity provider,
+                                  @NotNull final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
 
         final List<ProviderCatalogEntity> providerCatalogsToSave = new ArrayList<>();
 
-        brandMap.forEach((key, value) -> {
+        map.forEach((key, value) -> {
 
             final String externalId = key.toString();
             final String name = value.toString();
