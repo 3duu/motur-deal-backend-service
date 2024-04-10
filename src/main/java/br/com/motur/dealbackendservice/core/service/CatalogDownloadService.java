@@ -5,6 +5,7 @@ import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
 import br.com.motur.dealbackendservice.core.model.common.IntegrationFields;
+import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
+import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -73,7 +75,7 @@ public class CatalogDownloadService extends AccessService {
 
             logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
 
-            downloadBrandsCatalog(provider); // Baixando marcas
+            //downloadBrandsCatalog(provider); // Baixando marcas
             downloadModelsCatalog(provider); // Baixando modelos
             downloadTrimsCatalog(provider); // Baixando versões
 
@@ -327,13 +329,14 @@ public class CatalogDownloadService extends AccessService {
 
         logger.info("Processando e salvando dados do catalogo do fornecedor: {}",provider.getName());
 
+        //final EnumMap<ResponseMapping.FieldMapping, Object> parsedResponse = responseProcessor.parseMappingValues(data, endpointConfigEntity.getResponseMapping().getFieldMappings());
+
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
-        final Object list = getValueFromNestedMap(endpointConfigEntity.getResponseMapping(), data);
+        final List list = getIdAndNameFromNestedMap(endpointConfigEntity.getResponseMapping(), data);
 
-        if (list instanceof List && !((List)list).isEmpty() && ((List)list).get(0) instanceof Map){
+        if (list instanceof List && !list.isEmpty()){
 
-            final List newList = (List) list;
-            final List<Map<Object, Object>> listMap = (List<Map<Object, Object>>) list;
+            /*final List<Map<Object, Object>> listMap = (List<Map<Object, Object>>) list;
 
             final Map<Object, Object> mapList = listMap.stream()
                     .flatMap(m -> m.entrySet().stream())
@@ -341,10 +344,10 @@ public class CatalogDownloadService extends AccessService {
                             entry -> entry.getKey(),
                             entry -> entry.getValue(),
                             (v1, v2) -> v1
-                    ));
+                    ));*/
 
-            newList.forEach(map -> processReturnMap(endpointConfigEntity,
-                    mapList,
+            list.forEach(map -> processReturnMap(endpointConfigEntity,
+                    list,
                     providerCatalogClassType,
                     catalogEntities,
                     providerCatalogList,
@@ -354,7 +357,7 @@ public class CatalogDownloadService extends AccessService {
 
         } else if (list instanceof Map) {
 
-            processReturnMap(endpointConfigEntity, (Map<Object, Object>) list, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
+            //processReturnMap(endpointConfigEntity, (Map<Object, Object>) list, providerCatalogClassType, catalogEntities, providerCatalogList, parentProviderCatalog, provider, providerCatalogRepository);
 
         } else if (list instanceof JsonNode) {
 
@@ -384,7 +387,7 @@ public class CatalogDownloadService extends AccessService {
                                 (v1, v2) -> v1
                         ));
 
-                processReturnMap(endpointConfigEntity,
+                /*processReturnMap(endpointConfigEntity,
 
                         mapList,
                         providerCatalogClassType,
@@ -392,7 +395,7 @@ public class CatalogDownloadService extends AccessService {
                         providerCatalogList,
                         parentProviderCatalog,
                         provider,
-                        providerCatalogRepository);
+                        providerCatalogRepository);*/
             }
 
         }
@@ -405,7 +408,7 @@ public class CatalogDownloadService extends AccessService {
      * Processa o mapa de retorno do fornecedor
      *
      * @param endpointConfigEntity Endpoint de autenticação
-     * @param map Mapa de retorno do fornecedor
+     * @param mapList Lista de mapas de retorno
      * @param providerCatalogClassType Tipo da classe do item do catalogo do fornecedor (Brand, Model, Trim)
      * @param catalogEntityList Lista de dos itens do catalogo do fornecedor
      * @param providerCatalogList Lista de dos itens do catalogo do fornecedor
@@ -414,7 +417,7 @@ public class CatalogDownloadService extends AccessService {
      * @param providerCatalogRepository Repositorio do item do catalogo do fornecedor
      */
     private void processReturnMap(@NotNull final EndpointConfigEntity endpointConfigEntity,
-                                  @NotNull final Map<Object, Object> map,
+                                  @NotNull final List<Map<String, Object>> mapList,
                                   @NotNull final Class<? extends ProviderCatalogEntity> providerCatalogClassType,
                                   @NotNull final List<? extends CatalogEntity> catalogEntityList,
                                   @NotNull final List<? extends ProviderCatalogEntity> providerCatalogList,
@@ -424,14 +427,15 @@ public class CatalogDownloadService extends AccessService {
 
         final List<ProviderCatalogEntity> providerCatalogsToSave = new ArrayList<>();
 
-        if (map == null) {
+        if (mapList == null) {
             return;
         }
 
-        map.forEach((key, value) -> {
+        final List<Map> maps = mapList.stream().filter(m -> m != null && m.getOrDefault(ResponseMapping.FieldMapping.PARENT_ID.getValue(), StringUtils.EMPTY).equals(parentProviderCatalog.getExternalId())).collect(Collectors.toList());
+        for (Map map : maps) {
 
-            final String externalId = key.toString();
-            final String name = value.toString();
+            final String externalId = map.getOrDefault(ResponseMapping.FieldMapping.EXTERNAL_ID.getValue(), StringUtils.EMPTY).toString();
+            final String name = map.getOrDefault(ResponseMapping.FieldMapping.NAME.getValue(), StringUtils.EMPTY).toString();
 
             final CatalogEntity entity = endpointConfigEntity.getCategory().getFinderInstance().find(catalogEntityList, name);
             if (entity != null) {
@@ -443,7 +447,7 @@ public class CatalogDownloadService extends AccessService {
                 providerCatalog.setProvider(provider);
                 providerCatalogsToSave.add(providerCatalog);
             }
-        });
+        }
 
         ((JpaRepository)providerCatalogRepository).saveAll(providerCatalogsToSave);
     }

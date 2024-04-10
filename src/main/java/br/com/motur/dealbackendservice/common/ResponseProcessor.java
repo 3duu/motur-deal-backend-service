@@ -137,7 +137,7 @@ public final class ResponseProcessor {
      * @param configs      Configurações de mapeamento
      * @return O objeto de retorno
      */
-    public Map<ResponseMapping.FieldMapping, Object> getMappingValues(final Object jsonResponse, final List<ResponseMapping.Config> configs) {
+    public EnumMap<ResponseMapping.FieldMapping, Object> parseMappingValues(final Object jsonResponse, final List<ResponseMapping.Config> configs) {
 
         final EnumMap<ResponseMapping.FieldMapping, Object> resultMap = new EnumMap<>(ResponseMapping.FieldMapping.class);
 
@@ -173,7 +173,7 @@ public final class ResponseProcessor {
     public Object getValueFromNestedMap(final ResponseMapping mapping, Map<Object, Object> origin, Logger logger) {
 
         // Obtendo os valores mapeados
-        final Map<ResponseMapping.FieldMapping, Object> fieldMappings = getMappingValues(origin, mapping.getFieldMappings());
+        final Map<ResponseMapping.FieldMapping, Object> fieldMappings = parseMappingValues(origin, mapping.getFieldMappings());
 
         var externalIds = fieldMappings.get(ResponseMapping.FieldMapping.EXTERNAL_ID);
         var names = fieldMappings.get(ResponseMapping.FieldMapping.NAME);
@@ -211,7 +211,7 @@ public final class ResponseProcessor {
     public String getStringFieldFromNestedMap(final ResponseMapping.FieldMapping fieldMapping, final ResponseMapping mapping, final Map<Object, Object> origin, final Logger logger) {
 
         // Obtendo os valores mapeados
-        final Map<ResponseMapping.FieldMapping, Object> fieldMappings = getMappingValues(origin, mapping.getFieldMappings());
+        final Map<ResponseMapping.FieldMapping, Object> fieldMappings = parseMappingValues(origin, mapping.getFieldMappings());
 
         var field = fieldMappings.get(fieldMapping);
 

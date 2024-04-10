@@ -7,17 +7,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.slf4j.Logger;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +20,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class ResponseProcessorTest {
 
@@ -61,7 +55,7 @@ class ResponseProcessorTest {
         List<ResponseMapping.Config> configs = List.of(new ResponseMapping.Config());
         Map<ResponseMapping.FieldMapping, Object> expectedResult = new HashMap<>();
 
-        Map<ResponseMapping.FieldMapping, Object> result = responseProcessor.getMappingValues(jsonResponse, configs);
+        Map<ResponseMapping.FieldMapping, Object> result = responseProcessor.parseMappingValues(jsonResponse, configs);
 
         assertEquals(expectedResult, result);
     }
