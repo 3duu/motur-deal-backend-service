@@ -158,7 +158,7 @@ public class CatalogDownloadService extends AccessService {
                 processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderModelsEntity.class, models, brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
             }
         } catch (Exception e) {
-            logger.error("Error processing models for brand: {} - {}", brand.getName(), e.getMessage(), e);
+            logger.error("Erro ao processar e salvar os modelos do fornecedor: {}", provider.getName(), e);
         }
     }
 
@@ -206,7 +206,7 @@ public class CatalogDownloadService extends AccessService {
         }
     }
 
-    private void processEachModel(ProviderEntity provider, EndpointConfigEntity originalEndpointConfigEntity) {
+    private void processEachModel(final ProviderEntity provider, EndpointConfigEntity originalEndpointConfigEntity) {
 
         final boolean isParametrized = responseProcessor.isParametrizedEndpoint(originalEndpointConfigEntity); // Verifica se o endpoint é parametrizado, caso seja, será feita várias chamadas e o valor do parâmetro é substituído em cada uma delas
         final List<ProviderModelsEntity> models = providerModelsRepository.findAllByProviderId(provider.getId());
@@ -327,24 +327,12 @@ public class CatalogDownloadService extends AccessService {
                                        @NotNull final List<? extends ProviderCatalogEntity> providerCatalogList,
                                        @NotNull final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
 
-        logger.info("Processando e salvando dados do catalogo do fornecedor: {}",provider.getName());
-
-        //final EnumMap<ResponseMapping.FieldMapping, Object> parsedResponse = responseProcessor.parseMappingValues(data, endpointConfigEntity.getResponseMapping().getFieldMappings());
+        logger.info("Processando e salvando dados do catalogo do fornecedor: {}", provider.getName());
 
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
         final List list = getIdAndNameFromNestedMap(endpointConfigEntity.getResponseMapping(), data);
 
         if (list instanceof List && !list.isEmpty()){
-
-            /*final List<Map<Object, Object>> listMap = (List<Map<Object, Object>>) list;
-
-            final Map<Object, Object> mapList = listMap.stream()
-                    .flatMap(m -> m.entrySet().stream())
-                    .collect(Collectors.toMap(
-                            entry -> entry.getKey(),
-                            entry -> entry.getValue(),
-                            (v1, v2) -> v1
-                    ));*/
 
             list.forEach(map -> processReturnMap(endpointConfigEntity,
                     list,
@@ -386,16 +374,6 @@ public class CatalogDownloadService extends AccessService {
                                 entry -> entry.getValue(),
                                 (v1, v2) -> v1
                         ));
-
-                /*processReturnMap(endpointConfigEntity,
-
-                        mapList,
-                        providerCatalogClassType,
-                        catalogEntities,
-                        providerCatalogList,
-                        parentProviderCatalog,
-                        provider,
-                        providerCatalogRepository);*/
             }
 
         }
@@ -431,7 +409,7 @@ public class CatalogDownloadService extends AccessService {
             return;
         }
 
-        final List<Map> maps = mapList.stream().filter(m -> m != null && m.getOrDefault(ResponseMapping.FieldMapping.PARENT_ID.getValue(), StringUtils.EMPTY).equals(parentProviderCatalog.getExternalId())).collect(Collectors.toList());
+        final List<Map<String, Object>> maps = parentProviderCatalog != null ? mapList.stream().filter(m -> m != null && m.getOrDefault(ResponseMapping.FieldMapping.PARENT_ID.getValue(), StringUtils.EMPTY).equals(parentProviderCatalog.getExternalId())).collect(Collectors.toList()) : mapList;
         for (Map map : maps) {
 
             final String externalId = map.getOrDefault(ResponseMapping.FieldMapping.EXTERNAL_ID.getValue(), StringUtils.EMPTY).toString();

@@ -9,6 +9,7 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
@@ -49,51 +50,49 @@ public abstract class AccessService {
      * @param mapping Configuração do campos
      * @param origin Mapa aninhado de origem
      */
+    //@Cacheable("idAndNameFromNestedMap", key = "#mapping.id + #origin.hashCode()")
     protected List<Map<String, Object>> getIdAndNameFromNestedMap(final ResponseMapping mapping, Map<Object, Object> origin) {
 
         // Obtendo os valores mapeados
         final EnumMap<ResponseMapping.FieldMapping, Object> parsedResponse = responseProcessor.parseMappingValues(origin, mapping.getFieldMappings());
 
-        // Output list
         final List<Map<String, Object>> outputList = new ArrayList<>();
         final AtomicReference<Type> type = new AtomicReference<>(null);
 
-        for (Map.Entry<ResponseMapping.FieldMapping, Object> entry : parsedResponse.entrySet()) {
+        final Map.Entry<ResponseMapping.FieldMapping, Object> firstEntry = parsedResponse.entrySet().iterator().next();
+        if (firstEntry != null) {
+            if (firstEntry.getValue() instanceof List && !((List)firstEntry.getValue()).isEmpty()) {
 
-                if (entry.getValue() instanceof List && !((List)entry.getValue()).isEmpty()) {
+                final List list = (List) firstEntry.getValue();
+                type.set(list.get(0).getClass());
+            }
+            else if (firstEntry.getValue() instanceof Map && !((Map)firstEntry.getValue()).isEmpty()) {
 
-                    final List list = (List) entry.getValue();
-                    type.set(list.get(0).getClass());
-                }
-                else if (entry.getValue() instanceof Map && !((Map)entry.getValue()).isEmpty()) {
-
-                    final Map map = (Map) entry.getValue();
-                    type.set(map.get(0).getClass());
-                }
-                else if (entry.getValue() instanceof JsonNode) {
-                    type.set(JsonNode.class);
-                }
-                else {
-                    type.set(entry.getValue().getClass());
-                }
-
-                break;
+                final Map map = (Map) firstEntry.getValue();
+                type.set(map.get(0).getClass());
+            }
+            else if (firstEntry.getValue() instanceof JsonNode) {
+                type.set(JsonNode.class);
+            }
+            else {
+                type.set(firstEntry.getValue().getClass());
+            }
         }
 
-        // Assuming all lists in the map are of the same size
+        // Assumindo que todas as listas tem o mesmo tamanho
         if (type == null || type.get() == null){
             logger.error("Não foi possível obter o tipo de dado do campo. Tipo: {}", type);
             return new ArrayList<>();
         }
 
         if (type.get() == LinkedHashMap.class || type.get() == HashMap.class || type.get() == Map.class) {
-            //return getIdAndNameFromNestedMap(origin);
+
         }
         else if (type.get() == JsonNode.class) {
-            //return getIdAndNameFromNestedJsonNode(origin);
+
         }
         else if (type.get() == List.class || type.get() == ArrayList.class || type.get() == LinkedList.class || type.get() == Set.class || type.get() == Collection.class) {
-            //return getIdAndNameFromNestedList(origin);
+
         }
         else {
             final int listSize = ((List)parsedResponse.get(ResponseMapping.FieldMapping.EXTERNAL_ID)).size();
