@@ -4,6 +4,7 @@ import br.com.motur.dealbackendservice.common.ResponseProcessor;
 import br.com.motur.dealbackendservice.config.service.CacheService;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.model.*;
+import br.com.motur.dealbackendservice.core.model.common.CacheNames;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
 import br.com.motur.dealbackendservice.core.model.common.IntegrationFields;
 import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
@@ -45,15 +46,14 @@ public class CatalogDownloadService extends AccessService {
     private final BrandRepository brandRepository;
     private final ModelRepository modelRepository;
     private final TrimRepository trimRepository;
-
     private final CacheService cacheService;
 
 
     @Autowired
-    public CatalogDownloadService(final ApplicationContext applicationContext, final ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository,
-                                  ProviderBrandsRepository providerBrandsRepository, ProviderModelsRepository providerModelsRepository,
-                                  ProviderTrimsRepository providerTrimsRepository, BrandRepository brandRepository,
-                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, final ResponseProcessor responseProcessor, CacheService cacheService) {
+    public CatalogDownloadService(final ApplicationContext applicationContext, final ProviderRepository providerRepository, final EndpointConfigRepository endpointConfigRepository,
+                                  final ProviderBrandsRepository providerBrandsRepository, final ProviderModelsRepository providerModelsRepository,
+                                  final ProviderTrimsRepository providerTrimsRepository, final BrandRepository brandRepository,
+                                  final ModelRepository modelRepository, final TrimRepository trimRepository, final ObjectMapper objectMapper, final ModelMapper modelMapper, final ResponseProcessor responseProcessor, final CacheService cacheService) {
         super(applicationContext, responseProcessor, objectMapper, modelMapper);
         this.applicationContext = applicationContext;
         this.providerRepository = providerRepository;
@@ -131,7 +131,7 @@ public class CatalogDownloadService extends AccessService {
             try {
                 results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, cloneEndpointConfig);
             } catch (Exception e) {
-                logger.error("Error processing models for provider: {} - {}", provider.getName(), e.getMessage(), e);
+                logger.error("Erro ao processar modelos para o fornecedor: {} - {}", provider.getName(), e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         }
@@ -147,7 +147,7 @@ public class CatalogDownloadService extends AccessService {
                     bindExternalIdToEndpointConfig(cloneEndpointConfig, brand, BRAND_ID);
                     results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, cloneEndpointConfig);
                 } catch (Exception e) {
-                    logger.error("Error processing models for provider: {} - brand {}", provider.getName(), brand.getName(), e);
+                    logger.error("Erro ao processar modelos para o fornecedor: {} - brand {}", provider.getName(), brand.getName(), e);
                     throw new RuntimeException(e);
                 }
             }
@@ -237,7 +237,7 @@ public class CatalogDownloadService extends AccessService {
             try {
                 results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, cloneEndpointConfig);
             } catch (Exception e) {
-                logger.error("Error processing trims for provider: {}", provider.getName(), e);
+                logger.error("Erro ao processar versões para o fornecedor: {}", provider.getName(), e);
                 throw new RuntimeException(e);
             }
         }
@@ -253,7 +253,7 @@ public class CatalogDownloadService extends AccessService {
                     updateEndpointConfigWithModelInfo(cloneEndpointConfig, model);
                     results = (Map<Object, Object>) getRequestService(provider.getApiType()).execute(provider, cloneEndpointConfig);
                 } catch (Exception e) {
-                    logger.error("Error processing trims for provider: {} - model: {}", provider.getName(), model.getName(), e);
+                    logger.error("Erro ao processar modelos para o fornecedor: {} - model: {}", provider.getName(), model.getName(), e);
                     throw new RuntimeException(e);
                 }
             }
@@ -432,7 +432,7 @@ public class CatalogDownloadService extends AccessService {
                                   @Null final ProviderCatalogEntity parentProviderCatalog,
                                   @NotNull final ProviderEntity provider,
                                   @NotNull final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository,
-                                  final EndpointCategory endpointCategory) {
+                                  @NotNull final EndpointCategory endpointCategory) {
 
         final List<ProviderCatalogEntity> providerCatalogsToSave = new ArrayList<>();
 
@@ -461,7 +461,7 @@ public class CatalogDownloadService extends AccessService {
         // Salva os itens do catalogo do fornecedor
         final List<ProviderCatalogEntity> saved = ((JpaRepository)providerCatalogRepository).saveAll(providerCatalogsToSave);
         // Salva os itens do catalogo do fornecedor no cache
-        saved.stream().forEach(providerCatalog -> cacheService.putInCache("PROVIDER_CATALOG", providerCatalog.getCacheKey(), providerCatalogsToSave));
+        saved.stream().forEach(providerCatalog -> cacheService.putInCache(CacheNames.PROVIDER_CATALOG, providerCatalog.getCacheKey(), providerCatalogsToSave));
     }
 
     /**

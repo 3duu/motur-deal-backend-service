@@ -16,32 +16,33 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import java.time.Duration;
 import java.util.Map;
+import br.com.motur.dealbackendservice.core.model.common.CacheNames;
 
 import static io.lettuce.core.ReadFrom.MASTER;
 
 @Configuration
 @EnableCaching
-public class ElastiCacheConfig {
+public class RedisCacheConfig {
 
     private final String host;
     private final int port;
 
-    public ElastiCacheConfig(@Value("${spring.data.redis.host}") String host, @Value ("${spring.data.redis.port}") int port) {
+    final RedisValueSerializer serializer = new RedisValueSerializer();
+
+    public RedisCacheConfig(@Value("${spring.data.redis.host}") String host, @Value ("${spring.data.redis.port}") int port) {
         this.host = host;
         this.port = port;
     }
-
-    final RedisValueSerializer serializer = new RedisValueSerializer();
 
 
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         return (builder) -> builder
-                .withCacheConfiguration("COLORS",
+                .withCacheConfiguration(CacheNames.COLORS,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
-                .withCacheConfiguration("PROVIDER_CATALOG",
+                .withCacheConfiguration(CacheNames.PROVIDER_CATALOG,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(3)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
-                .withCacheConfiguration("FIND_BY_CATHEGORY",
+                .withCacheConfiguration(CacheNames.FIND_BY_CATEGORY,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(48)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics();
     }
 
