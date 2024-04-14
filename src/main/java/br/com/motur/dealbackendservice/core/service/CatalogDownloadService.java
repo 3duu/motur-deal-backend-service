@@ -37,7 +37,6 @@ import static br.com.motur.dealbackendservice.core.model.common.IntegrationField
 public class CatalogDownloadService extends AccessService {
 
 
-    private final ApplicationContext applicationContext;
     private final ProviderRepository providerRepository;
     private final EndpointConfigRepository endpointConfigRepository;
     private final ProviderBrandsRepository providerBrandsRepository;
@@ -55,7 +54,6 @@ public class CatalogDownloadService extends AccessService {
                                   final ProviderTrimsRepository providerTrimsRepository, final BrandRepository brandRepository,
                                   final ModelRepository modelRepository, final TrimRepository trimRepository, final ObjectMapper objectMapper, final ModelMapper modelMapper, final ResponseProcessor responseProcessor, final CacheService cacheService) {
         super(applicationContext, responseProcessor, objectMapper, modelMapper);
-        this.applicationContext = applicationContext;
         this.providerRepository = providerRepository;
         this.endpointConfigRepository = endpointConfigRepository;
         this.providerBrandsRepository = providerBrandsRepository;
@@ -297,7 +295,7 @@ public class CatalogDownloadService extends AccessService {
     }
 
     private void replaceInUrl(final EndpointConfigEntity endpointConfigEntity, final String key, final String value) {
-        String updatedUrl = endpointConfigEntity.getUrl().replace(STR."{\{key}}", value);
+        String updatedUrl = endpointConfigEntity.getUrl().replace("{".concat(key).concat("}"), value);
         endpointConfigEntity.setUrl(updatedUrl);
     }
 
@@ -307,8 +305,8 @@ public class CatalogDownloadService extends AccessService {
             while (fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
                 String fieldValue = endpointConfigEntity.getHeaders().get(fieldName).textValue();
-                if (fieldValue.contains(STR."{\{key}}")) {
-                    ((ObjectNode) endpointConfigEntity.getHeaders()).put(fieldName, fieldValue.replace(STR."{\{key}}", value));
+                if (fieldValue.contains("{".concat(key).concat("}"))) {
+                    ((ObjectNode) endpointConfigEntity.getHeaders()).put(fieldName, fieldValue.replace("{".concat(key).concat("}"), value));
                 }
             }
         }

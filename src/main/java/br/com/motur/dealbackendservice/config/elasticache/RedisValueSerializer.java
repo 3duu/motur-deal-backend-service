@@ -35,7 +35,10 @@ public class RedisValueSerializer extends GenericJackson2JsonRedisSerializer {
                         return EMPTY_ARRAY;
                     }
                     var entityMap = mapper.readValue(this.mapper.writeValueAsString(source), LinkedHashMap.class);
-                    entityMap.put("bodyType", ((ResponseEntity<?>) source).getBody().getClass().getName());
+                    if (((ResponseEntity<?>) source).getBody() != null){
+                        entityMap.put("bodyType", ((ResponseEntity<?>) source).getBody().getClass().getName());
+                    }
+
                     return this.mapper.writeValueAsBytes(entityMap);
                 }
                 return super.serialize(source);

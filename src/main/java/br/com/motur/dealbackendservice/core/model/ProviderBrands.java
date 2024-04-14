@@ -47,6 +47,6 @@ public class ProviderBrands implements ProviderCatalogEntity {
 
     @Override
     public String getCacheKey() {
-        return STR."\{provider.getId()}:\{externalId}:\{baseCatalog.getId()}";
+        return "marca:" + provider.getId() + ":" + baseCatalog.getId() + ":" + id;
     }
 }

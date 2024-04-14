@@ -22,7 +22,7 @@ public class ConverterResolverImpl implements ConverterResolver {
         for (var k : services.keySet()) {
             final Type[] persistentClass = ((ParameterizedType)services.get(k).getClass().getGenericSuperclass()).getActualTypeArguments();
             if (persistentClass.length == 2) {
-                if (((Class)persistentClass[1]).getName().equals(to.getName())){
+                if (((Class)persistentClass[1]).isAssignableFrom(to)){
                     return services.get(k);
                 }
             }
@@ -37,7 +37,7 @@ public class ConverterResolverImpl implements ConverterResolver {
         for (var k : services.keySet()) {
             final Type[] persistentClass = ((ParameterizedType)services.get(k).getClass().getGenericSuperclass()).getActualTypeArguments();
             if (persistentClass.length == 2) {
-                if (((Class)persistentClass[0]).getName().equals(from.getName()) && ((Class)persistentClass[1]).getName().equals(to.getName())){
+                if (((Class)persistentClass[0]).isAssignableFrom(from) && ((Class)persistentClass[1]).isAssignableFrom(to)){
                     return services.get(k);
                 }
             }

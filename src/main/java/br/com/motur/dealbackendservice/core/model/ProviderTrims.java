@@ -52,7 +52,7 @@ public class ProviderTrims implements ProviderCatalogEntity {
 
     @Override
     public String getCacheKey() {
-        return STR."\{getProvider().getId()}:\{getExternalId()}:\{getBaseCatalog() != null ? getBaseCatalog().getId() : StringUtils.EMPTY}:\{getParentProviderCatalog() != null ? getParentProviderCatalog().getExternalId() : StringUtils.EMPTY}";
+        return "versao:"+getProvider().getId() + ":" + getExternalId() + ":" + (getBaseCatalog() != null ? getBaseCatalog().getId() : StringUtils.EMPTY) + ":" + (getParentProviderCatalog() != null ? getParentProviderCatalog().getExternalId() : StringUtils.EMPTY);
     }
 }
 

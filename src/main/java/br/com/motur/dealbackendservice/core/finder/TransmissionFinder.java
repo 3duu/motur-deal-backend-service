@@ -25,10 +25,6 @@ public class TransmissionFinder {
             if (tipo.contains("seqüencial") || tipo.contains("sequencial") || tipo.contains("sequential") || tipo.contains("semi-auto") || tipo.contains("semi-automatic") || tipo.contains(TransmissionType.SEMI_AUTOMATIC.getDisplayName().toLowerCase())) {
                 return TransmissionType.SEMI_AUTOMATIC;
             }
-            // Tiptronic
-            else if (tipo.contains("tiptronic") || tipo.contains("manumatic") || tipo.contains("sport mode") || tipo.contains("sportmatic") || tipo.contains("steptronic") || tipo.contains("shiftmatic") || tipo.contains("shifttronic") || tipo.contains("sportronic") || tipo.contains("touchshift") || tipo.contains("sportshift") || tipo.contains("paddle shift")  || tipo.contains("paddle shift")  || tipo.contains(TransmissionType.DIRECT_SHIFT.getDisplayName().toLowerCase())) {
-                return TransmissionType.TIPTRONIC;
-            }
             // Direct Shift
             else if (tipo.contains("dualogic") || tipo.contains("dsg") || tipo.contains("direct shift") || tipo.contains("paddle shift") || tipo.contains(TransmissionType.DIRECT_SHIFT.getDisplayName().toLowerCase())) {
                 return TransmissionType.DIRECT_SHIFT;
@@ -38,7 +34,7 @@ public class TransmissionFinder {
                 return TransmissionType.AUTOMATIC;
             }
         }
-        else if (tipo.contains("tiptronic") || tipo.contains("manumatic") || tipo.contains("sport mode") || tipo.contains("sportmatic") || tipo.contains("steptronic") || tipo.contains("shiftmatic") || tipo.contains("shifttronic") || tipo.contains("sportronic") || tipo.contains("touchshift") || tipo.contains("sportshift") || tipo.contains("paddle shift")  || tipo.contains("paddle shift")  || tipo.contains(TransmissionType.DIRECT_SHIFT.getDisplayName().toLowerCase())) {
+        else if (tipo.contains("tiptronic") || tipo.contains("manumatic") || tipo.contains("sport mode") || tipo.contains("sportmatic") || tipo.contains("steptronic") || tipo.contains("shiftmatic") || tipo.contains("shifttronic") || tipo.contains("sportronic") || tipo.contains("touchshift") || tipo.contains("sportshift") || tipo.contains("paddle shift") || tipo.contains(TransmissionType.DIRECT_SHIFT.getDisplayName().toLowerCase())) {
             return TransmissionType.TIPTRONIC;
         }
         else if (tipo.contains("automático") || tipo.contains("automatico") || tipo.contains("auto") || tipo.contains("slushbox") || tipo.equals("at") || tipo.contains("a/t") || tipo.equals(TransmissionType.AUTOMATIC.getDisplayName().toLowerCase()) || tipo.contains("tronic")) {
@@ -61,7 +57,7 @@ public class TransmissionFinder {
             return TransmissionType.HYBRID;
         }
 
-        System.out.println("Tipo não encontrado: " + tipo);
+        //System.out.println("Tipo não encontrado: " + tipo);
         return TransmissionType.NONE; // Padrão se nenhuma correspondência for encontrada
     }
 }
