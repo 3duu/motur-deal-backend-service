@@ -15,7 +15,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 
 import static io.lettuce.core.ReadFrom.MASTER;
@@ -35,34 +34,13 @@ public class ElastiCacheConfig {
     final RedisValueSerializer serializer = new RedisValueSerializer();
 
 
-    /*@Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        RedisCacheManager cm = RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(defaultCacheConfig())
-                .withInitialCacheConfigurations(singletonMap("predefined", defaultCacheConfig().disableCachingNullValues()))
-                .transactionAware()
-                .build()
-        return RedisCacheManager.create(connectionFactory);
-    }*/
-
-    /*@Bean
-    public RedisCacheConfiguration cacheConfiguration() {
-
-        RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24))
-                .disableCachingNullValues()
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
-
-        return cacheConfiguration;
-    }*/
-
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         return (builder) -> builder
                 .withCacheConfiguration("COLORS",
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
                 .withCacheConfiguration("PROVIDER_CATALOG",
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(2)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(3)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
                 .withCacheConfiguration("FIND_BY_CATHEGORY",
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(48)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics();
     }
@@ -74,10 +52,7 @@ public class ElastiCacheConfig {
                 .readFrom(MASTER)
                 .build();
 
-        final RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration(host, port);
-        serverConfig.setDatabase(0);
-
-        return new LettuceConnectionFactory(serverConfig, clientConfig);
+        return new LettuceConnectionFactory(new RedisStandaloneConfiguration(host, port), clientConfig);
     }
 
     @Bean
@@ -90,18 +65,10 @@ public class ElastiCacheConfig {
 
         RedisCacheManager cm = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(cacheConfiguration)
-                //.withInitialCacheConfigurations(singletonMap("predefined", cacheConfiguration.disableCachingNullValues()))
-                //.transactionAware()
                 .withInitialCacheConfigurations(Map.of("predefined", cacheConfiguration.disableCachingNullValues()))
                 .build();
 
         return cm;
-    }
-
-    private Map<String, RedisCacheConfiguration> singletonMap(String predefined, RedisCacheConfiguration redisCacheConfiguration) {
-        Map<String, RedisCacheConfiguration> map = new HashMap<>();
-        map.put(predefined, redisCacheConfiguration);
-        return map;
     }
 
     @Bean

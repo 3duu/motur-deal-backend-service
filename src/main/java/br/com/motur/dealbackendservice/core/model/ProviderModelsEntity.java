@@ -49,4 +49,8 @@ public class ProviderModelsEntity implements ProviderCatalogEntity {
     }
 
 
+    @Override
+    public String getCacheKey() {
+        return STR."\{provider.getId()}:\{externalId}:\{baseModel.getId()}:\{parentProviderCatalog.getId()}";
+    }
 }

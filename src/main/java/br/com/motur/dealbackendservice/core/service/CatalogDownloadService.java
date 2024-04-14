@@ -458,8 +458,10 @@ public class CatalogDownloadService extends AccessService {
             }
         }
 
-        ((JpaRepository)providerCatalogRepository).saveAll(providerCatalogsToSave);
-        cacheService.putInCache("PROVIDER_CATALOG", provider.getName() + "-" + endpointCategory.name(), providerCatalogsToSave);
+        // Salva os itens do catalogo do fornecedor
+        final List<ProviderCatalogEntity> saved = ((JpaRepository)providerCatalogRepository).saveAll(providerCatalogsToSave);
+        // Salva os itens do catalogo do fornecedor no cache
+        saved.stream().forEach(providerCatalog -> cacheService.putInCache("PROVIDER_CATALOG", providerCatalog.getCacheKey(), providerCatalogsToSave));
     }
 
     /**

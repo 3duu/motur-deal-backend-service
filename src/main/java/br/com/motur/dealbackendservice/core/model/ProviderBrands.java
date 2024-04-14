@@ -35,7 +35,7 @@ public class ProviderBrands implements ProviderCatalogEntity {
     }
 
     @Override
-    public void setParentProviderCatalog(ProviderCatalogEntity parentProviderCatalog) {
+    public void setParentProviderCatalog(final ProviderCatalogEntity parentProviderCatalog) {
 
     }
 
@@ -45,4 +45,8 @@ public class ProviderBrands implements ProviderCatalogEntity {
     }
 
 
+    @Override
+    public String getCacheKey() {
+        return STR."\{provider.getId()}:\{externalId}:\{baseCatalog.getId()}";
+    }
 }

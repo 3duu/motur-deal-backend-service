@@ -1,12 +1,11 @@
 package br.com.motur.dealbackendservice.core.model;
 
-
-import java.io.Serializable;
+import br.com.motur.dealbackendservice.core.model.common.CacheableEntity;
 
 /**
  * Essa interface representa um item do catálogo de um fornecedor. Ex: Modelo, Versão, Marca, etc.
  */
-public interface ProviderCatalogEntity extends Serializable {
+public interface ProviderCatalogEntity extends CacheableEntity {
 
     String getExternalId();
 

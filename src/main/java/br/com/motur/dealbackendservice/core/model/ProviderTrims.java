@@ -2,6 +2,7 @@ package br.com.motur.dealbackendservice.core.model;
 
 import lombok.Data;
 import jakarta.persistence.*;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Essa classe representa o uma versão de uum veículo no catálogo do fornecedor.
@@ -49,5 +50,9 @@ public class ProviderTrims implements ProviderCatalogEntity {
         this.parentProviderCatalog = (ProviderModelsEntity) parentProviderCatalog;
     }
 
+    @Override
+    public String getCacheKey() {
+        return STR."\{getProvider().getId()}:\{getExternalId()}:\{getBaseCatalog() != null ? getBaseCatalog().getId() : StringUtils.EMPTY}:\{getParentProviderCatalog() != null ? getParentProviderCatalog().getExternalId() : StringUtils.EMPTY}";
+    }
 }
 
