@@ -2,10 +2,7 @@ package br.com.motur.dealbackendservice.config.elasticache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-//import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-//import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +12,9 @@ import org.springframework.util.Assert;
 import java.util.LinkedHashMap;
 
 
+/**
+ * Classe de serialização de valores para o Redis.
+ */
 public class RedisValueSerializer extends GenericJackson2JsonRedisSerializer {
 
     static final byte[] EMPTY_ARRAY = new byte[0];

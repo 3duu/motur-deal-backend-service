@@ -32,9 +32,6 @@ spring:
         name: motur-config
     profiles:
         active: "@activatedProperties@"
-    cache:
-        type: redis
-
     datasource:
         password: ${DB_PASS}
         url: jdbc:postgresql://${DB_HOST}/${DB_NAME}
@@ -87,6 +84,7 @@ spring:
         redis:
             host: ${REDIS_HOST}
             port: ${REDIS_PORT}
+            database: 0
 springdoc:
     api-docs:
         path: /api-docs

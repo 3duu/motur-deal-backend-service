@@ -1,6 +1,7 @@
 package br.com.motur.dealbackendservice.core.service;
 
 import br.com.motur.dealbackendservice.common.ResponseProcessor;
+import br.com.motur.dealbackendservice.config.service.CacheService;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
@@ -45,12 +46,14 @@ public class CatalogDownloadService extends AccessService {
     private final ModelRepository modelRepository;
     private final TrimRepository trimRepository;
 
+    private final CacheService cacheService;
+
 
     @Autowired
     public CatalogDownloadService(final ApplicationContext applicationContext, final ProviderRepository providerRepository, EndpointConfigRepository endpointConfigRepository,
                                   ProviderBrandsRepository providerBrandsRepository, ProviderModelsRepository providerModelsRepository,
                                   ProviderTrimsRepository providerTrimsRepository, BrandRepository brandRepository,
-                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, final ResponseProcessor responseProcessor) {
+                                  ModelRepository modelRepository, TrimRepository trimRepository, ObjectMapper objectMapper, ModelMapper modelMapper, final ResponseProcessor responseProcessor, CacheService cacheService) {
         super(applicationContext, responseProcessor, objectMapper, modelMapper);
         this.applicationContext = applicationContext;
         this.providerRepository = providerRepository;
@@ -61,6 +64,7 @@ public class CatalogDownloadService extends AccessService {
         this.brandRepository = brandRepository;
         this.modelRepository = modelRepository;
         this.trimRepository = trimRepository;
+        this.cacheService = cacheService;
     }
 
 
@@ -75,7 +79,7 @@ public class CatalogDownloadService extends AccessService {
 
             logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
 
-            //downloadBrandsCatalog(provider); // Baixando marcas
+            downloadBrandsCatalog(provider); // Baixando marcas
             downloadModelsCatalog(provider); // Baixando modelos
             downloadTrimsCatalog(provider); // Baixando versões
 
@@ -94,7 +98,15 @@ public class CatalogDownloadService extends AccessService {
         for (EndpointConfigEntity endpointConfigEntity : catalogEndpoints) {
             Map<Object, Object> results = getRequestService(provider.getApiType()).getAsMap(provider, endpointConfigEntity);
             if (results != null && !results.isEmpty()) {
-                processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderBrands.class, brandRepository.findAll(), null, providerBrandsRepository.findAllByProvider(provider), providerBrandsRepository);
+                processAndSaveCatalog(results,
+                        endpointConfigEntity,
+                        provider,
+                        ProviderBrands.class,
+                        brandRepository.findAll(),
+                        null,
+                        providerBrandsRepository.findAllByProvider(provider),
+                        providerBrandsRepository,
+                        endpointConfigEntity.getCategory());
             }
         }
     }
@@ -112,7 +124,7 @@ public class CatalogDownloadService extends AccessService {
 
         final boolean isParametrized = responseProcessor.isParametrizedEndpoint(originalEndpointConfigEntity); // Verifica se o endpoint é parametrizado, caso seja, será feita várias chamadas e o valor do parâmetro é substituído em cada uma delas
         final List<ProviderBrands> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
-        EndpointConfigEntity cloneEndpointConfig = originalEndpointConfigEntity;
+        EndpointConfigEntity cloneEndpointConfig = originalEndpointConfigEntity; // Clona o endpoint de configuração para não alterar o original
 
         Map<Object, Object> results = null;
         if (!isParametrized) {
@@ -155,7 +167,15 @@ public class CatalogDownloadService extends AccessService {
 
             if (results != null && !results.isEmpty()) {
                 final List<ModelEntity> models = brand != null ? modelRepository.findAllByBrand(brand.getBaseCatalog().getId()) : modelRepository.findAll();
-                processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderModelsEntity.class, models, brand, providerModelsRepository.findAllByParentProviderCatalog(brand), providerModelsRepository);
+                processAndSaveCatalog(results,
+                        endpointConfigEntity,
+                        provider,
+                        ProviderModelsEntity.class,
+                        models,
+                        brand,
+                        providerModelsRepository.findAllByParentProviderCatalog(brand),
+                        providerModelsRepository,
+                        endpointConfigEntity.getCategory());
             }
         } catch (Exception e) {
             logger.error("Erro ao processar e salvar os modelos do fornecedor: {}", provider.getName(), e);
@@ -210,7 +230,7 @@ public class CatalogDownloadService extends AccessService {
 
         final boolean isParametrized = responseProcessor.isParametrizedEndpoint(originalEndpointConfigEntity); // Verifica se o endpoint é parametrizado, caso seja, será feita várias chamadas e o valor do parâmetro é substituído em cada uma delas
         final List<ProviderModelsEntity> models = providerModelsRepository.findAllByProviderId(provider.getId());
-        EndpointConfigEntity cloneEndpointConfig = originalEndpointConfigEntity;
+        EndpointConfigEntity cloneEndpointConfig = originalEndpointConfigEntity; // Clona o endpoint de configuração para não alterar o original
 
         Map<Object, Object> results = null;
         if (!isParametrized) {
@@ -242,8 +262,8 @@ public class CatalogDownloadService extends AccessService {
         }
     }
 
-    private EndpointConfigEntity updateEndpointConfigWithModelInfo(EndpointConfigEntity endpointConfigEntity, ProviderModelsEntity model) {
-        Map<String, String> replacements = Map.of(
+    private EndpointConfigEntity updateEndpointConfigWithModelInfo(final EndpointConfigEntity endpointConfigEntity, final ProviderModelsEntity model) {
+        final Map<String, String> replacements = Map.of(
                 MODEL_ID.getNormalizedValue(), model.getExternalId(),
                 BRAND_ID.getNormalizedValue(), model.getParentProviderCatalog().getExternalId()
         );
@@ -252,7 +272,7 @@ public class CatalogDownloadService extends AccessService {
         return endpointConfigEntity;
     }
 
-    private void replaceEndpointConfigFields(EndpointConfigEntity endpointConfigEntity, Map<String, String> replacements) {
+    private void replaceEndpointConfigFields(final EndpointConfigEntity endpointConfigEntity, final Map<String, String> replacements) {
         replacements.forEach((key, value) -> {
             replaceInUrl(endpointConfigEntity, key, value);
             replaceInHeaders(endpointConfigEntity, key, value);
@@ -261,19 +281,27 @@ public class CatalogDownloadService extends AccessService {
         });
     }
 
-    private void processEachTrim(ProviderEntity provider, ProviderModelsEntity model, EndpointConfigEntity endpointConfigEntity, Map<Object, Object> results) {
+    private void processEachTrim(final ProviderEntity provider, final ProviderModelsEntity model, final EndpointConfigEntity endpointConfigEntity, final Map<Object, Object> results) {
 
         if (results != null && !results.isEmpty()) {
-            processAndSaveCatalog(results, endpointConfigEntity, provider, ProviderTrims.class, trimRepository.findAllByModelId(model.getBaseModel().getId()), model, providerTrimsRepository.findAllByParentProviderCatalog(model), providerModelsRepository);
+            processAndSaveCatalog(results,
+                    endpointConfigEntity,
+                    provider,
+                    ProviderTrims.class,
+                    trimRepository.findAllByModelId(model.getBaseModel().getId()),
+                    model,
+                    providerTrimsRepository.findAllByParentProviderCatalog(model),
+                    providerModelsRepository,
+                    endpointConfigEntity.getCategory());
         }
     }
 
-    private void replaceInUrl(EndpointConfigEntity endpointConfigEntity, String key, String value) {
+    private void replaceInUrl(final EndpointConfigEntity endpointConfigEntity, final String key, final String value) {
         String updatedUrl = endpointConfigEntity.getUrl().replace("{" + key + "}", value);
         endpointConfigEntity.setUrl(updatedUrl);
     }
 
-    private void replaceInHeaders(EndpointConfigEntity endpointConfigEntity, String key, String value) {
+    private void replaceInHeaders(final EndpointConfigEntity endpointConfigEntity, final String key, final String value) {
         if (endpointConfigEntity.getHeaders() != null && !endpointConfigEntity.getHeaders().isNull()) {
             Iterator<String> fieldNames = endpointConfigEntity.getHeaders().fieldNames();
             while (fieldNames.hasNext()) {
@@ -286,7 +314,7 @@ public class CatalogDownloadService extends AccessService {
         }
     }
 
-    private void replaceInAdditionalParams(EndpointConfigEntity endpointConfigEntity, String key, String value) {
+    private void replaceInAdditionalParams(final EndpointConfigEntity endpointConfigEntity, final String key, final String value) {
         JsonNode params = endpointConfigEntity.getAdditionalParams();
         if (params != null && params.isObject()) {
             ObjectNode paramsObj = (ObjectNode) params;
@@ -325,9 +353,10 @@ public class CatalogDownloadService extends AccessService {
                                        @NotNull final List<? extends CatalogEntity> catalogEntities,
                                        @Null final ProviderCatalogEntity parentProviderCatalog,
                                        @NotNull final List<? extends ProviderCatalogEntity> providerCatalogList,
-                                       @NotNull final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
+                                       @NotNull final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository,
+                                       final EndpointCategory endpointCategory) {
 
-        logger.info("Processando e salvando dados do catalogo do fornecedor: {}", provider.getName());
+        logger.info("Processando e salvando dados do catalogo do fornecedor: {} para {} que pertence a: {} ", provider.getName(), endpointCategory.getDisplayName(), parentProviderCatalog != null ? parentProviderCatalog.getExternalId() : StringUtils.EMPTY);
 
         //Extrai a lista raiz de itens de catalogo do retorno do fornecedor
         final List list = getIdAndNameFromNestedMap(endpointConfigEntity.getResponseMapping(), data);
@@ -341,7 +370,8 @@ public class CatalogDownloadService extends AccessService {
                     providerCatalogList,
                     parentProviderCatalog,
                     provider,
-                    providerCatalogRepository));
+                    providerCatalogRepository,
+                    endpointCategory));
 
         } else if (list instanceof Map) {
 
@@ -378,7 +408,7 @@ public class CatalogDownloadService extends AccessService {
 
         }
 
-        logger.info("Dados do catalogo do fornecedor " + provider.getName() + " foram processados e salvos");
+        logger.info("Dados do catalogo do fornecedor {} para {} foram processados e salvos", provider.getName(), endpointCategory.getDisplayName());
     }
 
 
@@ -401,7 +431,8 @@ public class CatalogDownloadService extends AccessService {
                                   @NotNull final List<? extends ProviderCatalogEntity> providerCatalogList,
                                   @Null final ProviderCatalogEntity parentProviderCatalog,
                                   @NotNull final ProviderEntity provider,
-                                  @NotNull final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository) {
+                                  @NotNull final JpaRepository<? extends ProviderCatalogEntity, Integer> providerCatalogRepository,
+                                  final EndpointCategory endpointCategory) {
 
         final List<ProviderCatalogEntity> providerCatalogsToSave = new ArrayList<>();
 
@@ -428,6 +459,7 @@ public class CatalogDownloadService extends AccessService {
         }
 
         ((JpaRepository)providerCatalogRepository).saveAll(providerCatalogsToSave);
+        cacheService.putInCache("PROVIDER_CATALOG", provider.getName() + "-" + endpointCategory.name(), providerCatalogsToSave);
     }
 
     /**

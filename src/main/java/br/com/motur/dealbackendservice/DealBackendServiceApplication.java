@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableFeignClients
 @EnableScheduling
-@EnableCaching
+//@EnableCaching
 @EnableSpringDataWebSupport
 public class DealBackendServiceApplication {
 
