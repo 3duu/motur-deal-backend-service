@@ -297,7 +297,7 @@ public class CatalogDownloadService extends AccessService {
     }
 
     private void replaceInUrl(final EndpointConfigEntity endpointConfigEntity, final String key, final String value) {
-        String updatedUrl = endpointConfigEntity.getUrl().replace("{" + key + "}", value);
+        String updatedUrl = endpointConfigEntity.getUrl().replace(STR."{\{key}}", value);
         endpointConfigEntity.setUrl(updatedUrl);
     }
 
@@ -307,8 +307,8 @@ public class CatalogDownloadService extends AccessService {
             while (fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
                 String fieldValue = endpointConfigEntity.getHeaders().get(fieldName).textValue();
-                if (fieldValue.contains("{" + key + "}")) {
-                    ((ObjectNode) endpointConfigEntity.getHeaders()).put(fieldName, fieldValue.replace("{" + key + "}", value));
+                if (fieldValue.contains(STR."{\{key}}")) {
+                    ((ObjectNode) endpointConfigEntity.getHeaders()).put(fieldName, fieldValue.replace(STR."{\{key}}", value));
                 }
             }
         }

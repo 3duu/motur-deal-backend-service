@@ -15,7 +15,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import java.time.Duration;
-import java.util.Map;
 import br.com.motur.dealbackendservice.core.model.common.CacheNames;
 
 import static io.lettuce.core.ReadFrom.MASTER;
@@ -57,16 +56,16 @@ public class RedisCacheConfig {
     }
 
     @Bean
-    public RedisCacheManager cacheManager(final RedisConnectionFactory connectionFactory/*, final RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer*/) {
+    public RedisCacheManager cacheManager(final RedisConnectionFactory connectionFactory) {
 
         final RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(24))
                 .disableCachingNullValues()
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
 
-        RedisCacheManager cm = RedisCacheManager.builder(connectionFactory)
+        final RedisCacheManager cm = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(cacheConfiguration)
-                .withInitialCacheConfigurations(Map.of("predefined", cacheConfiguration.disableCachingNullValues()))
+                //.withInitialCacheConfigurations(Map.of("predefined", cacheConfiguration.disableCachingNullValues()))
                 .build();
 
         return cm;

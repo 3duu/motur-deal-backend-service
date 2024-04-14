@@ -38,16 +38,22 @@ public class CacheService {
             LOGGER.warn("Cache {} not found", cacheName);
         }
         catch (Exception e){
-            LOGGER.error("Error trying to put in cache", e);
+            LOGGER.error("Erro ao tentar adicionar ao cache", e);
         }
     }
 
     public void removeFromCache(final String cacheName, final String key) {
-        final Cache cache = cacheManager.getCache(cacheName);
-        if (cache != null) {
-            cache.evict(key);
-            return;
+
+        try{
+            final Cache cache = cacheManager.getCache(cacheName);
+            if (cache != null) {
+                cache.evict(key);
+                return;
+            }
+            LOGGER.error("Cache {} not found", cacheName);
         }
-        LOGGER.error("Cache {} not found", cacheName);
+        catch (Exception e){
+            LOGGER.error("Erro ao tentar remover do cache", e);
+        }
     }
 }
