@@ -1,7 +1,10 @@
 package br.com.motur.dealbackendservice.core.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -12,6 +15,9 @@ import java.util.List;
  * Essa classe representa uma revenda de veículos.
  */
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "dealer")
 public class DealerEntity {
@@ -26,8 +32,8 @@ public class DealerEntity {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "address")
-    private String address;
+    @Column(name = "cnpj", unique = true, nullable = false, length = 14)
+    private String cnpj; // CNPJ
 
     @Column(name = "phoneNumber")
     private String phoneNumber; // Telefone de Contato
@@ -82,7 +88,7 @@ public class DealerEntity {
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "address_id")
-    private AddressEntity addressEntity;
+    private AddressEntity address;
 
     @ManyToMany(
             fetch = FetchType.LAZY,

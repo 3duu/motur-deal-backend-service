@@ -54,6 +54,43 @@ public class AdPublicationService extends IntegrationService implements AdPublic
      * @return PostResultsVo com os resultados da publicação.
      */
     public PostResultsVo publishAd(final AdDto adDto) throws Exception {
+
+        final DealerEntity dealer = dealerRepository.findById(adDto.getDealerId()).orElseThrow(() -> new IllegalArgumentException("Dealer não encontrado"));
+
+        final AdEntity ad = AdEntity.builder()
+                .provider(ProviderEntity.builder().id(adDto.getProviderId()).build())
+                .brandId(adDto.getBrandId())
+                .modelId(adDto.getModelId())
+                .trimId(adDto.getTrimId())
+                .modelYear(adDto.getModelYear())
+                .productionYear(adDto.getProductionYear())
+                .fuelType(adDto.getFuelType())
+                .transmissionType(adDto.getTransmissionType())
+                .licensePlate(adDto.getLicensePlate())
+                .color(adDto.getColor())
+                .km(adDto.getKm())
+                .price(adDto.getPrice())
+                .description(adDto.getDescription())
+                .dealer(dealer)
+                .status(adDto.getStatus())
+                .build();
+
+        final PostResultsVo results = new PostResultsVo();
+
+        for (ProviderEntity provider : dealer.getProviders()) {
+            publishAdToProvider(ad, provider);
+        }
+
+        return results;
+    }
+
+    /**
+     * Atualiza um anúncio em todos os integradores configurados para o dealer especificado.
+     *
+     * @param adDto Dados do anúncio a ser publicado.
+     * @return PostResultsVo com os resultados da publicação.
+     */
+    public PostResultsVo updateAd(final AdDto adDto) throws Exception {
         AdEntity ad = adRepository.findById(adDto.getId()).orElseThrow(() -> new IllegalArgumentException("Anúncio não encontrado"));
         DealerEntity dealer = dealerRepository.findById(adDto.getDealerId()).orElseThrow(() -> new IllegalArgumentException("Dealer não encontrado"));
 
