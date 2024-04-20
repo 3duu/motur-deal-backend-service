@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -9,6 +10,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "provider_models")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ProviderModelsEntity implements ProviderCatalogEntity {
 
     @Id
@@ -24,7 +26,7 @@ public class ProviderModelsEntity implements ProviderCatalogEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_brand_id", nullable = false)
-    private ProviderBrands parentProviderCatalog;
+    private ProviderBrandsEntity parentProviderCatalog;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "base_model_id", nullable = false)
@@ -40,7 +42,7 @@ public class ProviderModelsEntity implements ProviderCatalogEntity {
 
     @Override
     public void setParentProviderCatalog(ProviderCatalogEntity parentProviderCatalog) {
-        this.parentProviderCatalog = (ProviderBrands) parentProviderCatalog;
+        this.parentProviderCatalog = (ProviderBrandsEntity) parentProviderCatalog;
     }
 
     @Override

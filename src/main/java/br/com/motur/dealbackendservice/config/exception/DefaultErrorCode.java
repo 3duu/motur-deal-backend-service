@@ -1,6 +1,6 @@
 package br.com.motur.dealbackendservice.config.exception;
 
-public enum CodigoErroAnuncio {
+public enum DefaultErrorCode {
 
     VALIDACAO_REGRAS_NEGOCIO(1, "erro.inclusao.anuncio.regras.negocio"),
     ANUNCIO_COM_IMAGEM_INVALIDA(2, "erro.inclusao.anuncio.imagem.invalida"),
@@ -60,7 +60,7 @@ public enum CodigoErroAnuncio {
     private final int code;
     private final String message;
 
-    CodigoErroAnuncio(int code, String msg) {
+    DefaultErrorCode(int code, String msg) {
         this.code = code;
         this.message = msg;
     }

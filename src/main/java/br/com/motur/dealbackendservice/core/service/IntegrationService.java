@@ -102,7 +102,7 @@ public class IntegrationService {
             field.setAccessible(true);
             return field.get(vehicle);
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             // Tratamento adequado de exceções ou retorno de um valor padrão
             return null;
         }
@@ -158,7 +158,7 @@ public class IntegrationService {
                     return value;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }
@@ -321,12 +321,15 @@ public class IntegrationService {
             ResponseEntity<String> response = restTemplate.postForEntity(providerApiUrl, requestEntity, String.class);
             // Verifique a resposta. Em caso de erro, lidar adequadamente.
         } catch (Exception e) {
-            e.printStackTrace(); // Log e tratamento adequado de erros.
+            //e.printStackTrace(); // Log e tratamento adequado de erros.
         }
     }
 
     private String getProviderApiUrl(final ProviderEntity provider) {
         // Retorne a URL da API com base no providerId. Isso pode envolver uma consulta ao banco de dados ou uma configuração.
         return "http://example.com/api"; // Exemplo. Substitua pela lógica real.
+    }
+
+    public void sendDataToProvider(String adData, ProviderEntity provider) {
     }
 }

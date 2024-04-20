@@ -1,5 +1,7 @@
 package br.com.motur.dealbackendservice.config.elasticache;
 
+import br.com.motur.dealbackendservice.core.model.common.EndpointCategory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
@@ -26,11 +28,12 @@ public class RedisCacheConfig {
     private final String host;
     private final int port;
 
-    final RedisValueSerializer serializer = new RedisValueSerializer();
+    final RedisValueSerializer serializer;
 
-    public RedisCacheConfig(@Value("${spring.data.redis.host}") String host, @Value ("${spring.data.redis.port}") int port) {
+    public RedisCacheConfig(@Value("${spring.data.redis.host}") String host, @Value ("${spring.data.redis.port}") int port, final ObjectMapper objectMapper) {
         this.host = host;
         this.port = port;
+        this.serializer = new RedisValueSerializer(objectMapper);
     }
 
 
@@ -39,7 +42,11 @@ public class RedisCacheConfig {
         return (builder) -> builder
                 .withCacheConfiguration(CacheNames.COLORS,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
-                .withCacheConfiguration(CacheNames.PROVIDER_CATALOG,
+                .withCacheConfiguration(CacheNames.PROVIDER_CATALOG.concat("_").concat(EndpointCategory.CATALOG_BRANDS.name()),
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                .withCacheConfiguration(CacheNames.PROVIDER_CATALOG.concat("_").concat(EndpointCategory.CATALOG_MODELS.name()),
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                .withCacheConfiguration(CacheNames.PROVIDER_CATALOG.concat("_").concat(EndpointCategory.CATALOG_TRIMS.name()),
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(3)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
                 .withCacheConfiguration(CacheNames.FIND_BY_CATEGORY,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(48)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics();

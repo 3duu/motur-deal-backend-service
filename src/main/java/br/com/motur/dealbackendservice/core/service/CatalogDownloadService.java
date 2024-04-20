@@ -77,8 +77,8 @@ public class CatalogDownloadService extends AccessService {
 
             logger.info("Baixando catálogo do fornecedor: {}",provider.getName());
 
-            downloadBrandsCatalog(provider); // Baixando marcas
-            downloadModelsCatalog(provider); // Baixando modelos
+            //downloadBrandsCatalog(provider); // Baixando marcas
+            //downloadModelsCatalog(provider); // Baixando modelos
             downloadTrimsCatalog(provider); // Baixando versões
 
             logger.info("Catalogo do {} foi baixado", provider.getName());
@@ -99,7 +99,7 @@ public class CatalogDownloadService extends AccessService {
                 processAndSaveCatalog(results,
                         endpointConfigEntity,
                         provider,
-                        ProviderBrands.class,
+                        ProviderBrandsEntity.class,
                         brandRepository.findAll(),
                         null,
                         providerBrandsRepository.findAllByProvider(provider),
@@ -121,7 +121,7 @@ public class CatalogDownloadService extends AccessService {
     private void processCatalogEndpointForModels(final ProviderEntity provider, final EndpointConfigEntity originalEndpointConfigEntity) {
 
         final boolean isParametrized = responseProcessor.isParametrizedEndpoint(originalEndpointConfigEntity); // Verifica se o endpoint é parametrizado, caso seja, será feita várias chamadas e o valor do parâmetro é substituído em cada uma delas
-        final List<ProviderBrands> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
+        final List<ProviderBrandsEntity> brands = providerBrandsRepository.findAllByProviderId(provider.getId());
         EndpointConfigEntity cloneEndpointConfig = originalEndpointConfigEntity; // Clona o endpoint de configuração para não alterar o original
 
         Map<Object, Object> results = null;
@@ -137,7 +137,7 @@ public class CatalogDownloadService extends AccessService {
             cloneEndpointConfig = cloneEndpointConfig(originalEndpointConfigEntity);
         }
 
-        for (final ProviderBrands brand : brands) {
+        for (final ProviderBrandsEntity brand : brands) {
 
             if (isParametrized) {
 
@@ -160,7 +160,7 @@ public class CatalogDownloadService extends AccessService {
      * @param brand Marca
      * @param endpointConfigEntity Endpoint de configuração
      */
-    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrands brand, final EndpointConfigEntity endpointConfigEntity, final Map<Object, Object> results) {
+    private void updateAndProcessEndpointForBrand(final ProviderEntity provider, final ProviderBrandsEntity brand, final EndpointConfigEntity endpointConfigEntity, final Map<Object, Object> results) {
         try {
 
             if (results != null && !results.isEmpty()) {
@@ -285,10 +285,10 @@ public class CatalogDownloadService extends AccessService {
             processAndSaveCatalog(results,
                     endpointConfigEntity,
                     provider,
-                    ProviderTrims.class,
+                    ProviderTrimsEntity.class,
                     trimRepository.findAllByModelId(model.getBaseModel().getId()),
                     model,
-                    providerTrimsRepository.findAllByParentProviderCatalog(model),
+                    providerTrimsRepository.findAllByParentProviderCatalog(model.getId()),
                     providerModelsRepository,
                     endpointConfigEntity.getCategory());
         }
@@ -459,7 +459,7 @@ public class CatalogDownloadService extends AccessService {
         // Salva os itens do catalogo do fornecedor
         final List<ProviderCatalogEntity> saved = ((JpaRepository)providerCatalogRepository).saveAll(providerCatalogsToSave);
         // Salva os itens do catalogo do fornecedor no cache
-        saved.stream().forEach(providerCatalog -> cacheService.putInCache(CacheNames.PROVIDER_CATALOG, providerCatalog.getCacheKey(), providerCatalogsToSave));
+        saved.stream().forEach(providerCatalog -> cacheService.putInCache(CacheNames.PROVIDER_CATALOG.concat("_").concat(endpointCategory.name()), providerCatalog.getCacheKey(), providerCatalogsToSave));
     }
 
     /**

@@ -2,8 +2,11 @@ package br.com.motur.dealbackendservice.core.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Essa classe representa uma revenda de veículos.
@@ -76,4 +79,20 @@ public class DealerEntity {
 
     @Column(name = "rating")
     private Double rating; // Avaliação/Classificação
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "address_id")
+    private AddressEntity addressEntity;
+
+    @ManyToMany(
+            fetch = FetchType.LAZY,
+            targetEntity = ProviderEntity.class)
+    @JoinTable(name = "dealer_provider",
+            joinColumns = {@JoinColumn(name = "dealer_id")},
+            inverseJoinColumns = {@JoinColumn(name = "provider_id")})
+    @Fetch(FetchMode.SUBSELECT)
+    private List<ProviderEntity> providers; // Fornecedores Associados
+
+
+
 }

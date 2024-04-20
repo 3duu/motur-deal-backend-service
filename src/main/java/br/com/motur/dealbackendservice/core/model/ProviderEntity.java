@@ -44,9 +44,9 @@ public class ProviderEntity {
         return Objects.equals(id, that.id) &&
                 Objects.equals(name, that.name) &&
                 Objects.equals(url, that.url) &&
-                apiType == that.apiType &&
+                apiType == that.apiType; //&&
                 //Objects.equals(active, that.active) &&
-                Objects.equals(autoDownloadCatalog, that.autoDownloadCatalog);
+                //Objects.equals(autoDownloadCatalog, that.autoDownloadCatalog);
     }
 
     @Override

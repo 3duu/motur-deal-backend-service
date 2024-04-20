@@ -19,7 +19,9 @@ public class RedisValueSerializer extends GenericJackson2JsonRedisSerializer {
 
     static final byte[] EMPTY_ARRAY = new byte[0];
 
-    public static final ObjectMapper mapper = new ObjectMapper();
+    public RedisValueSerializer(ObjectMapper mapper) {
+        super(mapper);
+    }
 
 
     @Override
@@ -34,12 +36,12 @@ public class RedisValueSerializer extends GenericJackson2JsonRedisSerializer {
                     if(retorno == null){
                         return EMPTY_ARRAY;
                     }
-                    var entityMap = mapper.readValue(this.mapper.writeValueAsString(source), LinkedHashMap.class);
+                    var entityMap = getObjectMapper().readValue(getObjectMapper().writeValueAsString(source), LinkedHashMap.class);
                     if (((ResponseEntity<?>) source).getBody() != null){
                         entityMap.put("bodyType", ((ResponseEntity<?>) source).getBody().getClass().getName());
                     }
 
-                    return this.mapper.writeValueAsBytes(entityMap);
+                    return getObjectMapper().writeValueAsBytes(entityMap);
                 }
                 return super.serialize(source);
             } catch (JsonProcessingException var3) {
@@ -61,13 +63,13 @@ public class RedisValueSerializer extends GenericJackson2JsonRedisSerializer {
             return null;
         } else {
             try {
-                var object = this.mapper.readValue(source, type);
+                var object = getObjectMapper().readValue(source, type);
                 if (object.getClass().equals(LinkedHashMap.class)){
                     var map = (LinkedHashMap) object;
                     if (map.containsKey("body") && map.containsKey("statusCode") && map.containsKey("headers") && map.containsKey("bodyType")){
                         if (map.get("bodyType") != null && map.get("body") != null){
                             Class<?> cls = Class.forName(map.get("bodyType").toString());
-                            var responseEntity = new ResponseEntity( mapper.readValue(this.mapper.writeValueAsString(map.get("body")), cls) ,HttpStatus.valueOf(map.get("statusCode").toString()));
+                            var responseEntity = new ResponseEntity( getObjectMapper().readValue(getObjectMapper().writeValueAsString(map.get("body")), cls) ,HttpStatus.valueOf(map.get("statusCode").toString()));
                             return (T) responseEntity;
                         }
                     }

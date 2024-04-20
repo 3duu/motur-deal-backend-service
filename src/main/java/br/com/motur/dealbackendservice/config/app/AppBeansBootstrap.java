@@ -2,6 +2,7 @@ package br.com.motur.dealbackendservice.config.app;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
@@ -22,6 +23,16 @@ import java.util.TimeZone;
  */
 @Configuration
 public class AppBeansBootstrap {
+
+    /**
+     * Configures the Hibernate5Module bean.
+     *
+     * @return Hibernate5Module instance.
+     */
+    /*@Bean
+    public Hibernate5Module hibernateModule() {
+        return new Hibernate5Module();
+    }*/
 
     /**
      * Configures the ObjectMapper bean.

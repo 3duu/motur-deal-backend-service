@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Classe responsável por tratar as exceções lançadas pela aplicação.
+ */
 @RestControllerAdvice
 public class AppExceptionHandler {
 
@@ -49,17 +52,28 @@ public class AppExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<List<ExceptionDto>> handleGenericException(Exception exception) {
-        String mensagem = messageSource.getMessage(CodigoErroAnuncio.ERRO_GERAL_NAO_TRATADO.getMessage(), new String[]{}, Locale.getDefault());
+        String mensagem = messageSource.getMessage(DefaultErrorCode.ERRO_GERAL_NAO_TRATADO.getMessage(), new String[]{}, Locale.getDefault());
         logger.error("ERRO[{}] KEY[{}]{}",
-                CodigoErroAnuncio.ERRO_GERAL_NAO_TRATADO.getCode(),
-                CodigoErroAnuncio.ERRO_GERAL_NAO_TRATADO.getCode(),
+                DefaultErrorCode.ERRO_GERAL_NAO_TRATADO.getCode(),
+                DefaultErrorCode.ERRO_GERAL_NAO_TRATADO.getCode(),
                 mensagem, exception);
 
         return new ResponseEntity<>(List.of(new ExceptionDto(
-                CodigoErroAnuncio.ERRO_GERAL_NAO_TRATADO.getMessage(),
+                DefaultErrorCode.ERRO_GERAL_NAO_TRATADO.getMessage(),
                 mensagem,
                 ExceptionDto.AlertType.MODAL
         )), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ExceptionDto> handleGenericException(IllegalArgumentException exception) {
+        String mensagem = messageSource.getMessage(DefaultErrorCode.ERRO_GERAL_NAO_TRATADO.getMessage(), new String[]{}, Locale.getDefault());
+        logger.error("ERRO[{}] KEY[{}]{}",
+                DefaultErrorCode.ERRO_GERAL_NAO_TRATADO.getCode(),
+                DefaultErrorCode.ERRO_GERAL_NAO_TRATADO.getCode(),
+                mensagem, exception);
+
+        return new ResponseEntity<>(new ExceptionDto(), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     /*@ExceptionHandler(value = {ValidacaoImagemUseCaseException.class})

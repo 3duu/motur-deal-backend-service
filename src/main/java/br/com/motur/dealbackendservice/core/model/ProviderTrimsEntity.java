@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import jakarta.persistence.*;
 import org.apache.commons.lang3.StringUtils;
@@ -11,7 +12,8 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @Entity
 @Table(name = "provider_trims")
-public class ProviderTrims implements ProviderCatalogEntity {
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class ProviderTrimsEntity implements ProviderCatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,7 +54,7 @@ public class ProviderTrims implements ProviderCatalogEntity {
 
     @Override
     public String getCacheKey() {
-        return "versao:"+getProvider().getId() + ":" + getExternalId() + ":" + (getBaseCatalog() != null ? getBaseCatalog().getId() : StringUtils.EMPTY) + ":" + (getParentProviderCatalog() != null ? getParentProviderCatalog().getExternalId() : StringUtils.EMPTY);
+        return getProvider().getId() + ":" + externalId + ":" + (baseCatalog != null ? baseCatalog.getId() : StringUtils.EMPTY) + ":" + (parentProviderCatalog != null ? parentProviderCatalog.getExternalId() : StringUtils.EMPTY);
     }
 }
 

@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -9,7 +10,8 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "provider_brands")
-public class ProviderBrands implements ProviderCatalogEntity {
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class ProviderBrandsEntity implements ProviderCatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,6 +49,6 @@ public class ProviderBrands implements ProviderCatalogEntity {
 
     @Override
     public String getCacheKey() {
-        return "marca:" + provider.getId() + ":" + baseCatalog.getId() + ":" + id;
+        return provider.getId() + ":" + baseCatalog.getId() + ":" + id;
     }
 }

@@ -32,7 +32,7 @@ public class VehiclePublicationEntity {
 
     @ManyToOne
     @JoinColumn(name = "provider_trims_id", nullable = false)
-    private ProviderTrims providerTrims;
+    private ProviderTrimsEntity providerTrimsEntity;
 
     @Column(name = "plan_id")
     private String planId; //Id do plano de publicação selecionado

@@ -5,7 +5,10 @@ import br.com.motur.dealbackendservice.core.model.common.Color;
 import br.com.motur.dealbackendservice.core.model.common.FuelType;
 import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
@@ -14,6 +17,9 @@ import java.math.BigDecimal;
  */
 @Entity
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "ad")
 public class AdEntity {
 
@@ -63,17 +69,11 @@ public class AdEntity {
     @Column(name = "description")
     private String description; // Descrição
 
-    @Column(name = "dealer_id")
-    private Long dealerId; // Id da concessionária
-
-    @Column(name = "dealer_city_id")
-    private Long dealerCityId; // Id da cidade da concessionária
-
-    @Column(name = "dealer_state_id")
-    private Long dealerStateId; // Id do estado da concessionária
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dealer_id")
+    private DealerEntity dealer; // Id da concessionária
 
     @Column(name = "status")
     private String status; // Status do veículo
-
 
 }

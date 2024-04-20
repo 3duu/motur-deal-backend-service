@@ -1,9 +1,11 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import java.io.Serializable;
+
 /**
  * Essa classe representa uma entidade de catálogo local
  */
-public interface CatalogEntity {
+public interface CatalogEntity extends Serializable {
 
     Integer getId();
 

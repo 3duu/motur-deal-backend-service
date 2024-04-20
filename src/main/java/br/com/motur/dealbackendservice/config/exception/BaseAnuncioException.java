@@ -5,23 +5,23 @@ import lombok.Data;
 @Data
 public class BaseAnuncioException extends RuntimeException {
 
-    private final CodigoErroAnuncio falha;
+    private final DefaultErrorCode falha;
     private final Boolean sqsRollback;
-    public BaseAnuncioException( final CodigoErroAnuncio falha) {
+    public BaseAnuncioException( final DefaultErrorCode falha) {
         super(falha.getMessage());
         this.falha = falha;
         this.sqsRollback = true;
     }
-    public BaseAnuncioException( final CodigoErroAnuncio falha, Boolean roolback) {
+    public BaseAnuncioException(final DefaultErrorCode falha, Boolean roolback) {
         this.falha = falha;
         this.sqsRollback = roolback;
     }
-    public BaseAnuncioException(final CodigoErroAnuncio falha, final Throwable e) {
+    public BaseAnuncioException(final DefaultErrorCode falha, final Throwable e) {
         super(e);
         this.falha = falha;
         this.sqsRollback = true;
     }
-    public BaseAnuncioException(final CodigoErroAnuncio falha, final Throwable e, Boolean rollback) {
+    public BaseAnuncioException(final DefaultErrorCode falha, final Throwable e, Boolean rollback) {
         super(e);
         this.falha = falha;
         this.sqsRollback = rollback;
