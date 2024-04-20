@@ -2,9 +2,8 @@ package br.com.motur.dealbackendservice.core.service;
 
 import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.entrypoints.v1.request.AdDto;
-import br.com.motur.dealbackendservice.core.model.AdEntity;
-import br.com.motur.dealbackendservice.core.model.DealerEntity;
-import br.com.motur.dealbackendservice.core.model.ProviderEntity;
+import br.com.motur.dealbackendservice.core.model.*;
+import br.com.motur.dealbackendservice.core.service.vo.PostResultsVo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,18 +47,23 @@ public class AdPublicationService extends IntegrationService implements AdPublic
     }
 
 
-
     /**
      * Publica um anúncio em todos os integradores configurados para o dealer especificado.
+     *
      * @param adDto Dados do anúncio a ser publicado.
+     * @return PostResultsVo com os resultados da publicação.
      */
-    public void publishAd(final AdDto adDto) {
+    public PostResultsVo publishAd(final AdDto adDto) throws Exception {
         AdEntity ad = adRepository.findById(adDto.getId()).orElseThrow(() -> new IllegalArgumentException("Anúncio não encontrado"));
         DealerEntity dealer = dealerRepository.findById(adDto.getDealerId()).orElseThrow(() -> new IllegalArgumentException("Dealer não encontrado"));
+
+        final PostResultsVo results = new PostResultsVo();
 
         for (ProviderEntity provider : dealer.getProviders()) {
             publishAdToProvider(ad, provider);
         }
+
+        return results;
     }
 
     @Override
@@ -98,8 +102,25 @@ public class AdPublicationService extends IntegrationService implements AdPublic
      * @param ad Anúncio a ser publicado.
      * @param provider Integrador para onde o anúncio será enviado.
      */
-    private void publishAdToProvider(AdEntity ad, ProviderEntity provider) {
+    private void publishAdToProvider(AdEntity ad, ProviderEntity provider) throws Exception {
         // Implementação de publicação específica dependendo do tipo de integrador e sua API
+
+        final VehicleEntity vehicle = VehicleEntity.builder()
+                .trim(TrimEntity.builder().id(ad.getTrimId()).build())
+                .modelYear(ad.getModelYear())
+                .productionYear(ad.getProductionYear())
+                .fuelId(ad.getFuelType())
+                .transmissionType(ad.getTransmissionType())
+                .licensePlate(ad.getLicensePlate())
+                .color(ad.getColor())
+                .km(ad.getKm())
+                .price(ad.getPrice())
+                .description(ad.getDescription())
+                .dealerId(ad.getDealer().getId())
+                .build();
+
+        integrateVehicle(vehicle, provider);
+
         switch (provider.getApiType()) {
             case REST:
                 publishViaRest(ad, provider);

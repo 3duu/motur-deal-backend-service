@@ -32,13 +32,13 @@ public class AdEntity {
     private ProviderEntity provider;
 
     @Column(name = "brand_id")
-    private Long brandId; // Id da marca
+    private Integer brandId; // Id da marca
 
     @Column(name = "model_id")
-    private Long modelId; // Id do modelo
+    private Integer modelId; // Id do modelo
 
     @Column(name = "trim_id")
-    private Long trimId; // Id da versão
+    private Integer trimId; // Id da versão
 
     @Column(name = "model_year")
     private Integer modelYear; // Ano do modelo

@@ -4,7 +4,10 @@ package br.com.motur.dealbackendservice.core.model;
 import br.com.motur.dealbackendservice.common.FieldMappingInfo;
 import br.com.motur.dealbackendservice.core.model.common.*;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,6 +19,9 @@ import java.util.Set;
 @Table(name = "vehicle")
 @Entity
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class VehicleEntity {
 
     @Id

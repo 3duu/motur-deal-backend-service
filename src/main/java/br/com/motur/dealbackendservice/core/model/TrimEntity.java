@@ -5,13 +5,19 @@ import br.com.motur.dealbackendservice.core.model.common.FuelType;
 import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
 import br.com.motur.dealbackendservice.core.model.common.VehicleTractionType;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Entidade que representa uma versão de veículo
  */
 @Entity
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "trim")
 public class TrimEntity implements CatalogEntity {
 

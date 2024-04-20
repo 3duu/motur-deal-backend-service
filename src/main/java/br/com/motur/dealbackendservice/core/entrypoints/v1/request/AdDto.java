@@ -27,11 +27,11 @@ public class AdDto implements Serializable {
 
     private Integer providerId;
 
-    private Long brandId; // Id da marca
+    private Integer brandId; // Id da marca
 
-    private Long modelId; // Id do modelo
+    private Integer modelId; // Id do modelo
 
-    private Long trimId; // Id da versão
+    private Integer trimId; // Id da versão
 
     private Integer modelYear; // Ano do modelo
 
@@ -51,7 +51,7 @@ public class AdDto implements Serializable {
 
     private String description; // Descrição
 
-    private Long dealerId; // Id da concessionária
+    private Integer dealerId; // Id da concessionária
 
     private String status; // Status do anuncio
 

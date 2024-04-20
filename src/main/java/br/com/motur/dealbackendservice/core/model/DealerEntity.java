@@ -18,7 +18,7 @@ public class DealerEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @Column(name = "state_id")
     private Long stateId;
