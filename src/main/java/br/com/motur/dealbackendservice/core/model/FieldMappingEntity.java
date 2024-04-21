@@ -18,9 +18,9 @@ public class FieldMappingEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer Id;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "provider_id", nullable = false)
-    private ProviderEntity provider;
+    //@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @Column(name = "provider_id", nullable = false)
+    private Integer providerId;
 
     @Column(nullable = false, name = "local_field_name", length = 30)
     private String localFieldName;

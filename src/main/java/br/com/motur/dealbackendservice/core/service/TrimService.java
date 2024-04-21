@@ -28,6 +28,11 @@ public class TrimService {
                 .orElseThrow(() -> new RuntimeException("Versão não encontrada para o id: " + trimId));
     }
 
+    public TrimEntity findFullById(Integer trimId) {
+        logger.info("Buscando versão por id: {}", trimId);
+        return trimRepository.findFullById(trimId)
+                .orElseThrow(() -> new RuntimeException("Versão não encontrada para o id: " + trimId));
+    }
 
 
     // Métodos de serviço para interagir com Trim

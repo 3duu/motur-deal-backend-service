@@ -7,6 +7,7 @@ import br.com.motur.dealbackendservice.core.service.vo.PostResultsVo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -34,11 +35,12 @@ public class AdPublicationService extends IntegrationService implements AdPublic
 
     private final ObjectMapper objectMapper;
 
+
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public AdPublicationService(AdRepository adRepository, IntegrationService integrationService, DealerRepository dealerRepository, ProviderRepository providerRepository, AuthConfigRepository authConfigRepository, FieldMappingRepository fieldMappingRepository, RestTemplate restTemplate, ObjectMapper objectMapper) {
-        super(authConfigRepository, fieldMappingRepository, restTemplate, objectMapper);
+    public AdPublicationService(AdRepository adRepository, IntegrationService integrationService, DealerRepository dealerRepository, ProviderRepository providerRepository, AuthConfigRepository authConfigRepository, FieldMappingRepository fieldMappingRepository, RestTemplate restTemplate, ObjectMapper objectMapper, ApplicationContext applicationContext) {
+        super(authConfigRepository, fieldMappingRepository, restTemplate, applicationContext, objectMapper);
         this.adRepository = adRepository;
         this.integrationService = integrationService;
         this.dealerRepository = dealerRepository;

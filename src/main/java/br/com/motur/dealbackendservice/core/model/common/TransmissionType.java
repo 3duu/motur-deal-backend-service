@@ -1,16 +1,18 @@
 package br.com.motur.dealbackendservice.core.model.common;
 
+import org.apache.commons.lang3.StringUtils;
+
 public enum TransmissionType {
     MANUAL("Manual"),
-    AUTOMATIC("Automatic"),
-    SEMI_AUTOMATIC("Semi-Automatic"),
+    AUTOMATIC("Automatico"),
+    SEMI_AUTOMATIC("Semi-Automatico"),
     CVT("CVT"), // Continuously Variable Transmission
-    DUAL_CLUTCH("Dual-Clutch"),
+    DUAL_CLUTCH("Dupla-Embreagem"),
     TIPTRONIC("Tiptronic"),
     DIRECT_SHIFT("Direct Shift"),
-    ELECTRIC_VARIABLE("Electric Variable"),
-    HYBRID("Hybrid"),
-    NONE("None"); // Para veículos que não possuem transmissão (ex: alguns elétricos)
+    ELECTRIC_VARIABLE("Eletrico Variavel"),
+    HYBRID("Híbrido"),
+    NONE(StringUtils.EMPTY); // Para veículos que não possuem transmissão (ex: alguns elétricos)
 
     private final String displayName;
 

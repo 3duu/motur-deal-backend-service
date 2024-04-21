@@ -1,5 +1,7 @@
 package br.com.motur.dealbackendservice.common;
 
+import br.com.motur.dealbackendservice.core.converter.TitleHelper;
+import br.com.motur.dealbackendservice.core.converter.ValueHelper;
 import br.com.motur.dealbackendservice.core.model.common.DataType;
 
 import java.lang.annotation.ElementType;
@@ -15,4 +17,6 @@ import java.lang.annotation.Target;
 public @interface FieldMappingInfo {
     String name();
     DataType type() default DataType.STRING;
+
+    Class<? extends ValueHelper> helper() default TitleHelper .class;
 }

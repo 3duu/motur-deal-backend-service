@@ -1,5 +1,7 @@
 package br.com.motur.dealbackendservice.core.service;
 
+import br.com.motur.dealbackendservice.common.FieldMappingInfo;
+import br.com.motur.dealbackendservice.core.converter.ValueHelper;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.FieldMappingRepository;
 import br.com.motur.dealbackendservice.core.model.*;
@@ -7,6 +9,7 @@ import br.com.motur.dealbackendservice.core.model.common.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -35,16 +38,17 @@ public class IntegrationService {
     private final AuthConfigRepository authConfigRepository;
     private final FieldMappingRepository fieldMappingRepository;
     private final RestTemplate restTemplate;
-
+    final ApplicationContext applicationContext;
     private final ObjectMapper objectMapper;
 
     @Autowired
     public IntegrationService(AuthConfigRepository authConfigRepository,
                               FieldMappingRepository fieldMappingRepository,
-                              RestTemplate restTemplate, ObjectMapper objectMapper) {
+                              RestTemplate restTemplate, ApplicationContext applicationContext, ObjectMapper objectMapper) {
         this.authConfigRepository = authConfigRepository;
         this.fieldMappingRepository = fieldMappingRepository;
         this.restTemplate = restTemplate;
+        this.applicationContext = applicationContext;
         this.objectMapper = objectMapper;
     }
 
@@ -55,13 +59,13 @@ public class IntegrationService {
      * @param ad    O anuncio a ser enviado.
      * @param provider Fornecedor para o qual o veículo deve ser enviado.
      */
-    public void integrateVehicle(AdEntity ad, final ProviderEntity provider) throws Exception {
+    public void integrateVehicle(final AdEntity ad, final ProviderEntity provider) throws Exception {
         // Encontrar a configuração de autenticação e mapeamento de campos para o provedor
         //AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
         List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(provider.getId());
 
         // Adaptar o veículo para o formato esperado pela API do provedor
-        Object providerAd = adaptVehicleToProviderFormat(ad, provider, fieldMappings);
+        final Object providerAd = adaptVehicleToProviderFormat(ad, provider, fieldMappings);
 
         // Realizar a autenticação e enviar a solicitação para a API do provedor
         //String token = authenticateWithProvider(authConfig);
@@ -69,11 +73,11 @@ public class IntegrationService {
     }
 
     public Map<String, Object> adaptVehicleToProviderFormat(final AdEntity ad, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
-        Map<String, Object> adaptedVehicle = new HashMap<>();
+        final Map<String, Object> adaptedVehicle = new HashMap<>();
 
         if (ad.getDealer().getProviders().contains(provider)) {
             for (FieldMappingEntity fieldMapping : fieldMappings) {
-                if (fieldMapping.getProvider().getId().equals(provider.getId())) {
+                if (fieldMapping.getProviderId().equals(provider.getId())) {
                     String localFieldName = fieldMapping.getLocalFieldName();
                     String externalFieldName = fieldMapping.getExternalFieldName();
                     final Object fieldValue = getFieldValue(ad, localFieldName);
@@ -95,7 +99,17 @@ public class IntegrationService {
      */
     private Object getFieldValue(final AdEntity ad, final String fieldName) {
         try {
-            Field field = AdEntity.class.getDeclaredField(fieldName);
+            final Field field = ad.getClass().getDeclaredField(fieldName);
+            final FieldMappingInfo fieldMappingInfo = field.getAnnotation(FieldMappingInfo.class);
+            if (fieldMappingInfo != null) {
+
+                if (fieldMappingInfo.helper() != null) {
+                    final ValueHelper helper = applicationContext.getBean(fieldMappingInfo.helper());
+                    if (helper != null) {
+                        return helper.getDefaultValue(ad);
+                    }
+                }
+            }
             field.setAccessible(true);
             return field.get(ad);
         } catch (NoSuchFieldException | IllegalAccessException e) {

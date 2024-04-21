@@ -2,6 +2,7 @@ package br.com.motur.dealbackendservice.core.model;
 
 
 import br.com.motur.dealbackendservice.common.FieldMappingInfo;
+import br.com.motur.dealbackendservice.core.converter.TitleHelper;
 import br.com.motur.dealbackendservice.core.model.common.Color;
 import br.com.motur.dealbackendservice.core.model.common.DataType;
 import br.com.motur.dealbackendservice.core.model.common.FuelType;
@@ -78,6 +79,10 @@ public class AdEntity {
     @FieldMappingInfo(name = "description", type = DataType.STRING)
     @Column(name = "description")
     private String description; // Descrição
+
+    @FieldMappingInfo(name = "tile", type = DataType.STRING, helper = TitleHelper.class)
+    @Column(name = "title")
+    private String title; // Descrição
 
     @FieldMappingInfo(name = "description", type = DataType.INT)
     @OneToOne(fetch = FetchType.LAZY)

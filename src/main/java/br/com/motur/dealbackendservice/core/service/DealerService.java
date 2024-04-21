@@ -1,8 +1,6 @@
 package br.com.motur.dealbackendservice.core.service;
 
-import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.DealerRepository;
-import br.com.motur.dealbackendservice.core.dataproviders.repository.FieldMappingRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderRepository;
 import br.com.motur.dealbackendservice.core.entrypoints.v1.request.DealerDto;
 import br.com.motur.dealbackendservice.core.model.AddressEntity;
@@ -14,10 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 @Service
-public class DealerService extends IntegrationService implements DealerServiceInterface {
+public class DealerService /*extends IntegrationService*/ implements DealerServiceInterface {
 
     final DealerRepository dealerRepository;
 
@@ -25,14 +22,16 @@ public class DealerService extends IntegrationService implements DealerServiceIn
 
     final ProviderRepository providerRepository;
 
+    final ObjectMapper objectMapper;
+
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public DealerService(AuthConfigRepository authConfigRepository, FieldMappingRepository fieldMappingRepository, RestTemplate restTemplate, ObjectMapper objectMapper, DealerRepository dealerRepository, AddressService addressService, ProviderRepository providerRepository) {
-        super(authConfigRepository, fieldMappingRepository, restTemplate, objectMapper);
+    public DealerService(ObjectMapper objectMapper, DealerRepository dealerRepository, AddressService addressService, ProviderRepository providerRepository) {
         this.dealerRepository = dealerRepository;
         this.addressService = addressService;
         this.providerRepository = providerRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
