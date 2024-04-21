@@ -5,6 +5,7 @@ import br.com.motur.dealbackendservice.core.entrypoints.v1.request.AdDto;
 import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.service.vo.PostResultsVo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -33,6 +34,8 @@ public class AdPublicationService extends IntegrationService implements AdPublic
 
     private final ObjectMapper objectMapper;
 
+    private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
+
     @Autowired
     public AdPublicationService(AdRepository adRepository, IntegrationService integrationService, DealerRepository dealerRepository, ProviderRepository providerRepository, AuthConfigRepository authConfigRepository, FieldMappingRepository fieldMappingRepository, RestTemplate restTemplate, ObjectMapper objectMapper) {
         super(authConfigRepository, fieldMappingRepository, restTemplate, objectMapper);
@@ -55,6 +58,9 @@ public class AdPublicationService extends IntegrationService implements AdPublic
      */
     public PostResultsVo publishAd(final AdDto adDto) throws Exception {
 
+        logger.info("Publicando anúncio: {}", adDto);
+
+        logger.info("Buscando dealer: {}", adDto.getDealerId());
         final DealerEntity dealer = dealerRepository.findById(adDto.getDealerId()).orElseThrow(() -> new IllegalArgumentException("Dealer não encontrado"));
 
         final AdEntity ad = AdEntity.builder()
@@ -74,12 +80,14 @@ public class AdPublicationService extends IntegrationService implements AdPublic
                 .status(adDto.getStatus())
                 .build();
 
+        logger.info("Salvando anúncio: {}", ad);
         adRepository.save(ad);
 
         final PostResultsVo results = new PostResultsVo();
         results.setAdId(ad.getId());
 
         for (ProviderEntity provider : dealer.getProviders()) {
+            logger.info("Publicando anúncio no integrador: {}", provider.getName());
             publishAdToProvider(ad, provider);
         }
 

@@ -1,7 +1,5 @@
 package br.com.motur.dealbackendservice.core.entrypoints.v1.request;
 
-import br.com.motur.dealbackendservice.core.entrypoints.v1.pojo.config.Provider;
-import br.com.motur.dealbackendservice.core.model.AddressEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +21,7 @@ public class DealerDto implements java.io.Serializable {
 
     private String cnpj;
 
-    private AddressEntity address;
+    private AddressDto address;
 
     private String phone;
 
@@ -31,5 +29,5 @@ public class DealerDto implements java.io.Serializable {
 
     private String status;
 
-    private List<Provider> providers;
+    private List<Integer> providersIds;
 }

@@ -34,7 +34,7 @@ public class AddressEntity implements Serializable {
     private String complement;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "city_id", nullable=false)
+    @JoinColumn(name = "city_id", nullable=false, referencedColumnName = "id")
     private CityEntity city;
 
     @Column(name = "latitude")

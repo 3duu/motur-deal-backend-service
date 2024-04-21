@@ -61,11 +61,11 @@ public class IntegrationService {
         List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(provider.getId());
 
         // Adaptar o veículo para o formato esperado pela API do provedor
-        Object providerVehicle = adaptVehicleToProviderFormat(ad, provider, fieldMappings);
+        Object providerAd = adaptVehicleToProviderFormat(ad, provider, fieldMappings);
 
         // Realizar a autenticação e enviar a solicitação para a API do provedor
         //String token = authenticateWithProvider(authConfig);
-        sendVehicleToProvider(ad, provider);
+        sendVehicleToProvider(providerAd, provider);
     }
 
     public Map<String, Object> adaptVehicleToProviderFormat(final AdEntity ad, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
@@ -284,27 +284,18 @@ public class IntegrationService {
      * @param vehicle    O veículo a ser enviado.
      * @param provider O ID do provedor para o qual o veículo deve ser enviado.
      */
-    public void sendVehicleToProvider(final AdEntity vehicle, final ProviderEntity provider) throws Exception {
+    public void sendVehicleToProvider(final Object vehicle, final ProviderEntity provider) throws Exception {
         // Obter configuração de autenticação
         final AuthConfigEntity authConfig = authConfigRepository.findByProviderId(provider.getId());
         if (authConfig == null) {
             throw new IllegalStateException("Configuração de autenticação não encontrada para o provedor: " + provider.getId());
         }
 
-        final List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(provider.getId());
-
-        final Map<String, Object> vehicleData = adaptVehicleToProviderFormat(vehicle, provider, fieldMappings);
-
         // Autenticar com o provedor e obter o token
         String authToken = authenticateWithProvider(authConfig);
 
-        // Preparar a URL e os dados do veículo
-        String providerApiUrl = getProviderApiUrl(provider);
-
-        /*String createAdUrl = provider.getCreateAdEndpoint();
-
-        // Enviar veículo
-        sendVehicleData(createAdUrl, vehicleData, authToken);*/
+       //Enviar veículo
+        //sendVehicleData(createAdUrl, vehicleData, authToken);
     }
 
     private void sendVehicleData(String providerApiUrl, Map<String, Object> vehicleData, String authToken) {

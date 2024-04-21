@@ -29,7 +29,7 @@ public class AdPublicationEntity {
     private String externalId; // Id da publicação no fornecedor
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ad_id", nullable = false)
+    @JoinColumn(name = "ad_id", nullable = false, referencedColumnName = "id")
     private AdEntity ad;
 
     @ManyToOne(fetch = FetchType.LAZY)
