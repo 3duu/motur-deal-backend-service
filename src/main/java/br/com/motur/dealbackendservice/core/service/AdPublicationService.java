@@ -58,7 +58,6 @@ public class AdPublicationService extends IntegrationService implements AdPublic
         final DealerEntity dealer = dealerRepository.findById(adDto.getDealerId()).orElseThrow(() -> new IllegalArgumentException("Dealer não encontrado"));
 
         final AdEntity ad = AdEntity.builder()
-                .provider(ProviderEntity.builder().id(adDto.getProviderId()).build())
                 .brandId(adDto.getBrandId())
                 .modelId(adDto.getModelId())
                 .trimId(adDto.getTrimId())
@@ -75,7 +74,10 @@ public class AdPublicationService extends IntegrationService implements AdPublic
                 .status(adDto.getStatus())
                 .build();
 
+        adRepository.save(ad);
+
         final PostResultsVo results = new PostResultsVo();
+        results.setAdId(ad.getId());
 
         for (ProviderEntity provider : dealer.getProviders()) {
             publishAdToProvider(ad, provider);
@@ -111,7 +113,6 @@ public class AdPublicationService extends IntegrationService implements AdPublic
     private AdDto convertToDto(final AdEntity adEntity) {
         return AdDto.builder()
                 .id(adEntity.getId())
-                .providerId(adEntity.getProvider().getId())
                 .brandId(adEntity.getBrandId())
                 .modelId(adEntity.getModelId())
                 .trimId(adEntity.getTrimId())
@@ -142,21 +143,7 @@ public class AdPublicationService extends IntegrationService implements AdPublic
     private void publishAdToProvider(AdEntity ad, ProviderEntity provider) throws Exception {
         // Implementação de publicação específica dependendo do tipo de integrador e sua API
 
-        final VehicleEntity vehicle = VehicleEntity.builder()
-                .trim(TrimEntity.builder().id(ad.getTrimId()).build())
-                .modelYear(ad.getModelYear())
-                .productionYear(ad.getProductionYear())
-                .fuelId(ad.getFuelType())
-                .transmissionType(ad.getTransmissionType())
-                .licensePlate(ad.getLicensePlate())
-                .color(ad.getColor())
-                .km(ad.getKm())
-                .price(ad.getPrice())
-                .description(ad.getDescription())
-                .dealerId(ad.getDealer().getId())
-                .build();
-
-        integrateVehicle(vehicle, provider);
+        integrateVehicle(ad, provider);
 
         switch (provider.getApiType()) {
             case REST:

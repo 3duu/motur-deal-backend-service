@@ -42,6 +42,8 @@ public class RedisCacheConfig {
         return (builder) -> builder
                 .withCacheConfiguration(CacheNames.COLORS,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                .withCacheConfiguration(CacheNames.BASE_CATALOG_TRIMS,
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
                 .withCacheConfiguration(CacheNames.PROVIDER_CATALOG.concat("_").concat(EndpointCategory.CATALOG_BRANDS.name()),
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
                 .withCacheConfiguration(CacheNames.PROVIDER_CATALOG.concat("_").concat(EndpointCategory.CATALOG_MODELS.name()),

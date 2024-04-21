@@ -2,18 +2,24 @@ package br.com.motur.dealbackendservice.core.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.Date;
 import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
 
 /**
  * Essa classe representa o uma publicação de um veículo. Ela é responsável por guardar informações sobre a publicação de um veículo que já foi publicado.
  */
 @Entity
-@Table(name = "vehicle_publication")
+@Table(name = "ad_publication")
 @Data
-public class VehiclePublicationEntity {
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class AdPublicationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,11 +28,11 @@ public class VehiclePublicationEntity {
     @Column(name = "external_id")
     private String externalId; // Id da publicação no fornecedor
 
-    @ManyToOne
-    @JoinColumn(name = "vehicle_id", nullable = false)
-    private VehicleEntity vehicle;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ad_id", nullable = false)
+    private AdEntity ad;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_id", nullable = false)
     private ProviderEntity provider;
 

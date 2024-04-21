@@ -2,10 +2,7 @@ package br.com.motur.dealbackendservice.core.service;
 
 import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.FieldMappingRepository;
-import br.com.motur.dealbackendservice.core.model.AuthConfigEntity;
-import br.com.motur.dealbackendservice.core.model.FieldMappingEntity;
-import br.com.motur.dealbackendservice.core.model.ProviderEntity;
-import br.com.motur.dealbackendservice.core.model.VehicleEntity;
+import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.model.common.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
@@ -55,31 +52,31 @@ public class IntegrationService {
     /**
      * Envia o veículo para o provedor.
      *
-     * @param vehicle    O veículo a ser enviado.
+     * @param ad    O anuncio a ser enviado.
      * @param provider Fornecedor para o qual o veículo deve ser enviado.
      */
-    public void integrateVehicle(VehicleEntity vehicle, final ProviderEntity provider) throws Exception {
+    public void integrateVehicle(AdEntity ad, final ProviderEntity provider) throws Exception {
         // Encontrar a configuração de autenticação e mapeamento de campos para o provedor
         //AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
         List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(provider.getId());
 
         // Adaptar o veículo para o formato esperado pela API do provedor
-        Object providerVehicle = adaptVehicleToProviderFormat(vehicle, provider, fieldMappings);
+        Object providerVehicle = adaptVehicleToProviderFormat(ad, provider, fieldMappings);
 
         // Realizar a autenticação e enviar a solicitação para a API do provedor
         //String token = authenticateWithProvider(authConfig);
-        sendVehicleToProvider(vehicle, provider);
+        sendVehicleToProvider(ad, provider);
     }
 
-    public Map<String, Object> adaptVehicleToProviderFormat(final VehicleEntity vehicle, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
+    public Map<String, Object> adaptVehicleToProviderFormat(final AdEntity ad, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
         Map<String, Object> adaptedVehicle = new HashMap<>();
 
-        if (vehicle.getProviderIds().contains(provider.getId())) {
+        if (ad.getDealer().getProviders().contains(provider)) {
             for (FieldMappingEntity fieldMapping : fieldMappings) {
                 if (fieldMapping.getProvider().getId().equals(provider.getId())) {
                     String localFieldName = fieldMapping.getLocalFieldName();
                     String externalFieldName = fieldMapping.getExternalFieldName();
-                    final Object fieldValue = getFieldValue(vehicle, localFieldName);
+                    final Object fieldValue = getFieldValue(ad, localFieldName);
 
                     adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType()));
                 }
@@ -92,15 +89,15 @@ public class IntegrationService {
     /**
      * Obtém o valor de um campo privado de um objeto.
      *
-     * @param vehicle   O objeto do qual o valor do campo deve ser obtido.
+     * @param ad   O objeto do qual o valor do campo deve ser obtido.
      * @param fieldName O nome do campo.
      * @return O valor do campo.
      */
-    private Object getFieldValue(final VehicleEntity vehicle, final String fieldName) {
+    private Object getFieldValue(final AdEntity ad, final String fieldName) {
         try {
-            Field field = VehicleEntity.class.getDeclaredField(fieldName);
+            Field field = AdEntity.class.getDeclaredField(fieldName);
             field.setAccessible(true);
-            return field.get(vehicle);
+            return field.get(ad);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             //e.printStackTrace();
             // Tratamento adequado de exceções ou retorno de um valor padrão
@@ -287,7 +284,7 @@ public class IntegrationService {
      * @param vehicle    O veículo a ser enviado.
      * @param provider O ID do provedor para o qual o veículo deve ser enviado.
      */
-    public void sendVehicleToProvider(final VehicleEntity vehicle, final ProviderEntity provider) throws Exception {
+    public void sendVehicleToProvider(final AdEntity vehicle, final ProviderEntity provider) throws Exception {
         // Obter configuração de autenticação
         final AuthConfigEntity authConfig = authConfigRepository.findByProviderId(provider.getId());
         if (authConfig == null) {

@@ -1,7 +1,7 @@
 package br.com.motur.dealbackendservice.core.entrypoints.v1.request;
 
 import br.com.motur.dealbackendservice.common.FieldMappingInfo;
-import br.com.motur.dealbackendservice.core.model.VehiclePublicationEntity;
+import br.com.motur.dealbackendservice.core.model.AdPublicationEntity;
 import br.com.motur.dealbackendservice.core.model.common.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -74,7 +74,7 @@ public class VehicleDTO implements Serializable {
     private String status; // Status
 
     @NotNull
-    private List<VehiclePublicationEntity> publication;
+    private List<AdPublicationEntity> publication;
 
     @NotNull
     @Column(name = "provider_id")

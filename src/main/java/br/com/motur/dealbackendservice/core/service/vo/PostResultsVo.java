@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 @Data
@@ -17,7 +18,8 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PostResultsVo implements Serializable {
 
-    private Map<Provider, Result> results;
+    private Long adId;
+    private Map<Provider, Result> results = new HashMap<>();
 
     @Data
     @Builder

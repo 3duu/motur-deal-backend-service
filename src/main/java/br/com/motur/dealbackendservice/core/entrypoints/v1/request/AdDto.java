@@ -23,9 +23,7 @@ import java.math.BigDecimal;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AdDto implements Serializable {
 
-    private Long id;
-
-    private Integer providerId;
+    private Long id; // Id do anúncio
 
     private Integer brandId; // Id da marca
 

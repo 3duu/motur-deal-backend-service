@@ -27,10 +27,9 @@ public class AdPublicationEndpoints {
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "500", description = "Server error")
     })
-    @PostMapping("/publish")
+    @PostMapping(value = "/publish", consumes = "application/json", produces = "application/json")
     public ResponseEntity<PostResultsVo> publishAd(@RequestBody AdDto adDto) throws Exception {
-        adPublicationService.publishAd(adDto);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(adPublicationService.publishAd(adDto));
     }
 
     @Operation(summary = "Obter um anúncio por id")

@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class CityEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Integer id;
 
     @Column(name = "name", length = 150, nullable = false)
