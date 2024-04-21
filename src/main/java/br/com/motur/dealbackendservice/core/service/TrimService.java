@@ -20,7 +20,7 @@ public class TrimService {
         this.trimRepository = trimRepository;
     }
 
-    @Cacheable(value=CacheNames.BASE_CATALOG_TRIMS, key = "#trimId")
+    @Cacheable(value=CacheNames.BASE_CATALOG_TRIMS, key = "#trimId", unless = "#result == null")
     public TrimEntity findById(Integer trimId) {
 
         logger.info("Buscando versão por id: {}", trimId);
@@ -28,8 +28,9 @@ public class TrimService {
                 .orElseThrow(() -> new RuntimeException("Versão não encontrada para o id: " + trimId));
     }
 
+    @Cacheable(value=CacheNames.BASE_CATALOG_TRIMS, key = "#trimId", unless = "#result == null")
     public TrimEntity findFullById(Integer trimId) {
-        logger.info("Buscando versão por id: {}", trimId);
+        logger.info("Buscando versão completa por id: {}", trimId);
         return trimRepository.findFullById(trimId)
                 .orElseThrow(() -> new RuntimeException("Versão não encontrada para o id: " + trimId));
     }

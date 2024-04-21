@@ -41,17 +41,17 @@ public class RedisCacheConfig {
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         return (builder) -> builder
                 .withCacheConfiguration(CacheNames.COLORS,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues()/*.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))*/).enableStatistics()
                 .withCacheConfiguration(CacheNames.BASE_CATALOG_TRIMS,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues()/*.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))*/).enableStatistics()
                 .withCacheConfiguration(CacheNames.PROVIDER_CATALOG.concat("_").concat(EndpointCategory.CATALOG_BRANDS.name()),
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues()/*.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))*/).enableStatistics()
                 .withCacheConfiguration(CacheNames.PROVIDER_CATALOG.concat("_").concat(EndpointCategory.CATALOG_MODELS.name()),
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(4)).disableCachingNullValues()/*.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))*/).enableStatistics()
                 .withCacheConfiguration(CacheNames.PROVIDER_CATALOG.concat("_").concat(EndpointCategory.CATALOG_TRIMS.name()),
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(3)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics()
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(3)).disableCachingNullValues()/*.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))*/).enableStatistics()
                 .withCacheConfiguration(CacheNames.FIND_BY_CATEGORY,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(48)).disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))).enableStatistics();
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(48)).disableCachingNullValues()/*.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))*/).enableStatistics();
     }
 
     @Bean
@@ -70,7 +70,7 @@ public class RedisCacheConfig {
         final RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(24))
                 .disableCachingNullValues()
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+                /*.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))*/;
 
         final RedisCacheManager cm = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(cacheConfiguration)
@@ -84,10 +84,10 @@ public class RedisCacheConfig {
     public RedisTemplate<String, Object> redisTemplate(final LettuceConnectionFactory redisConnectionFactory) {
         final RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
-        template.setKeySerializer(new GenericJackson2JsonRedisSerializer());
+        /*template.setKeySerializer(new GenericJackson2JsonRedisSerializer());
         template.setValueSerializer(serializer);
         template.setHashKeySerializer(serializer);
-        template.setHashValueSerializer(serializer);
+        template.setHashValueSerializer(serializer);*/
 
         return template;
     }

@@ -34,15 +34,16 @@ public class TitleHelper implements ValueHelper<AdEntity,String> {
             if (adEntity.getTrimId() == null){
                 return adEntity.getTitle();
             }
+
             final TrimEntity trimEntity = trimService.findFullById(adEntity.getTrimId());
             if (trimEntity == null){
                 return adEntity.getTitle();
             }
 
-            return trimEntity.getModel().getBrand().getName() + " " + trimEntity.getModel().getName() + " " + trimEntity.getName() + " " + adEntity.getModelYear() + " " + adEntity.getTransmissionType().getDisplayName();
+            return trimEntity.getModel().getBrand().getName() + " " + trimEntity.getModel().getName() + " " + trimEntity.getName().replace(trimEntity.getModel().getName(), StringUtils.EMPTY) + " " + adEntity.getModelYear() + " " + adEntity.getTransmissionType().getDisplayName();
 
         }
-        else{
+        else {
             return adEntity.getTitle();
         }
     }
