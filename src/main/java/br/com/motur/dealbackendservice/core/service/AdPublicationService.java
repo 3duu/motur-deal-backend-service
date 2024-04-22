@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice.core.service;
 
+import br.com.motur.dealbackendservice.core.converter.AdConverter;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.*;
 import br.com.motur.dealbackendservice.core.entrypoints.v1.request.AdDto;
 import br.com.motur.dealbackendservice.core.model.*;
@@ -35,12 +36,18 @@ public class AdPublicationService extends IntegrationService implements AdPublic
 
     private final ObjectMapper objectMapper;
 
+    private final AdConverter adConverter;
+
 
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public AdPublicationService(AdRepository adRepository, IntegrationService integrationService, DealerRepository dealerRepository, ProviderRepository providerRepository, AuthConfigRepository authConfigRepository, FieldMappingRepository fieldMappingRepository, RestTemplate restTemplate, ObjectMapper objectMapper, ApplicationContext applicationContext) {
-        super(authConfigRepository, fieldMappingRepository, restTemplate, applicationContext, objectMapper);
+    public AdPublicationService(AdRepository adRepository, IntegrationService integrationService,
+                                DealerRepository dealerRepository, ProviderRepository providerRepository,
+                                AuthConfigRepository authConfigRepository, FieldMappingRepository fieldMappingRepository,
+                                RestTemplate restTemplate, ObjectMapper objectMapper, ApplicationContext applicationContext,
+                                ProviderTrimsRepository providerTrimsRepository, AdConverter adConverter) {
+        super(authConfigRepository, fieldMappingRepository, restTemplate, applicationContext, objectMapper, providerTrimsRepository);
         this.adRepository = adRepository;
         this.integrationService = integrationService;
         this.dealerRepository = dealerRepository;
@@ -49,6 +56,7 @@ public class AdPublicationService extends IntegrationService implements AdPublic
         this.fieldMappingRepository = fieldMappingRepository;
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.adConverter = adConverter;
     }
 
 
@@ -65,22 +73,7 @@ public class AdPublicationService extends IntegrationService implements AdPublic
         logger.info("Buscando dealer: {}", adDto.getDealerId());
         final DealerEntity dealer = dealerRepository.findById(adDto.getDealerId()).orElseThrow(() -> new IllegalArgumentException("Dealer não encontrado"));
 
-        final AdEntity ad = AdEntity.builder()
-                .brandId(adDto.getBrandId())
-                .modelId(adDto.getModelId())
-                .trimId(adDto.getTrimId())
-                .modelYear(adDto.getModelYear())
-                .productionYear(adDto.getProductionYear())
-                .fuelType(adDto.getFuelType())
-                .transmissionType(adDto.getTransmissionType())
-                .licensePlate(adDto.getLicensePlate())
-                .color(adDto.getColor())
-                .km(adDto.getKm())
-                .price(adDto.getPrice())
-                .description(adDto.getDescription())
-                .dealer(dealer)
-                .status(adDto.getStatus())
-                .build();
+        final AdEntity ad = adConverter.convert(adDto);
 
         logger.info("Salvando anúncio: {}", ad);
         adRepository.save(ad);
@@ -121,23 +114,7 @@ public class AdPublicationService extends IntegrationService implements AdPublic
     }
 
     private AdDto convertToDto(final AdEntity adEntity) {
-        return AdDto.builder()
-                .id(adEntity.getId())
-                .brandId(adEntity.getBrandId())
-                .modelId(adEntity.getModelId())
-                .trimId(adEntity.getTrimId())
-                .modelYear(adEntity.getModelYear())
-                .productionYear(adEntity.getProductionYear())
-                .fuelType(adEntity.getFuelType())
-                .transmissionType(adEntity.getTransmissionType())
-                .licensePlate(adEntity.getLicensePlate())
-                .color(adEntity.getColor())
-                .km(adEntity.getKm())
-                .price(adEntity.getPrice())
-                .description(adEntity.getDescription())
-                .dealerId(adEntity.getDealer().getId())
-                .status(adEntity.getStatus())
-                .build();
+        return adConverter.invert(adEntity);
     }
 
     @Override

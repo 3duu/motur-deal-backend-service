@@ -38,7 +38,7 @@ public class AdEntity {
     @Column(name = "model_id")
     private Integer modelId; // Id do modelo
 
-    @FieldMappingInfo(name = "id", type = DataType.ID)
+    //@FieldMappingInfo(name = "id", type = DataType.ID)
     @Column(name = "trim_id")
     private Integer trimId; // Id da versão
 
@@ -76,6 +76,10 @@ public class AdEntity {
     @Column(name = "price")
     private BigDecimal price; // Preço
 
+    @FieldMappingInfo(name = "mileage", type = DataType.INT)
+    @Column(name = "mileage")
+    private Integer mileage; // Quilometragem
+
     @FieldMappingInfo(name = "description", type = DataType.STRING)
     @Column(name = "description")
     private String description; // Descrição
@@ -84,7 +88,7 @@ public class AdEntity {
     @Column(name = "title")
     private String title; // Descrição
 
-    @FieldMappingInfo(name = "description", type = DataType.INT)
+    @FieldMappingInfo(name = "dealer", type = DataType.ID)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dealer_id")
     private DealerEntity dealer; // Id da concessionária

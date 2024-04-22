@@ -4,9 +4,12 @@ import br.com.motur.dealbackendservice.common.FieldMappingInfo;
 import br.com.motur.dealbackendservice.core.converter.ValueHelper;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.FieldMappingRepository;
+import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderTrimsRepository;
 import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.model.common.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -38,18 +41,20 @@ public class IntegrationService {
     private final AuthConfigRepository authConfigRepository;
     private final FieldMappingRepository fieldMappingRepository;
     private final RestTemplate restTemplate;
-    final ApplicationContext applicationContext;
+    private final ApplicationContext applicationContext;
     private final ObjectMapper objectMapper;
+    private final ProviderTrimsRepository providerTrimsRepository;
 
     @Autowired
     public IntegrationService(AuthConfigRepository authConfigRepository,
                               FieldMappingRepository fieldMappingRepository,
-                              RestTemplate restTemplate, ApplicationContext applicationContext, ObjectMapper objectMapper) {
+                              RestTemplate restTemplate, ApplicationContext applicationContext, ObjectMapper objectMapper, ProviderTrimsRepository providerTrimsRepository) {
         this.authConfigRepository = authConfigRepository;
         this.fieldMappingRepository = fieldMappingRepository;
         this.restTemplate = restTemplate;
         this.applicationContext = applicationContext;
         this.objectMapper = objectMapper;
+        this.providerTrimsRepository = providerTrimsRepository;
     }
 
 
@@ -75,15 +80,31 @@ public class IntegrationService {
     public Map<String, Object> adaptVehicleToProviderFormat(final AdEntity ad, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
         final Map<String, Object> adaptedVehicle = new HashMap<>();
 
-        if (ad.getDealer().getProviders().contains(provider)) {
-            for (FieldMappingEntity fieldMapping : fieldMappings) {
-                if (fieldMapping.getProviderId().equals(provider.getId())) {
-                    String localFieldName = fieldMapping.getLocalFieldName();
-                    String externalFieldName = fieldMapping.getExternalFieldName();
-                    final Object fieldValue = getFieldValue(ad, localFieldName);
+        for (FieldMappingEntity fieldMapping : fieldMappings) {
 
-                    adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType()));
-                }
+            String localFieldName = fieldMapping.getLocalFieldName();
+            String externalFieldName = fieldMapping.getExternalFieldName();
+            final Object fieldValue = getFieldValue(ad, localFieldName);
+
+            adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType()));
+        }
+
+        // Adicionar campos adicionais de catalogo do provedor
+        final ProviderTrimsEntity providerTrims = providerTrimsRepository.findByProviderIdAndBaseCatalogTrimId(provider.getId(), ad.getTrimId()).orElse(null);
+        if (providerTrims != null){
+            final FieldMappingEntity trimField = fieldMappings.stream().filter(f -> f.getLocalFieldName().equalsIgnoreCase("trim")).findFirst().orElse(null);
+            if (trimField != null) {
+                adaptedVehicle.put(trimField.getExternalFieldName(), providerTrims.getExternalId());
+            }
+
+            final FieldMappingEntity modelField = fieldMappings.stream().filter(f -> f.getLocalFieldName().equalsIgnoreCase("model")).findFirst().orElse(null);
+            if (modelField != null) {
+                adaptedVehicle.put(modelField.getExternalFieldName(), providerTrims.getParentProviderCatalog().getExternalId());
+            }
+
+            final FieldMappingEntity brandField = fieldMappings.stream().filter(f -> f.getLocalFieldName().equalsIgnoreCase("brand")).findFirst().orElse(null);
+            if (brandField != null) {
+                adaptedVehicle.put(brandField.getExternalFieldName(), providerTrims.getParentProviderCatalog().getParentProviderCatalog().getExternalId());
             }
         }
 
@@ -103,11 +124,30 @@ public class IntegrationService {
             final FieldMappingInfo fieldMappingInfo = field.getAnnotation(FieldMappingInfo.class);
             if (fieldMappingInfo != null) {
 
-                if (fieldMappingInfo.helper() != null) {
-                    final ValueHelper helper = applicationContext.getBean(fieldMappingInfo.helper());
+                if (fieldMappingInfo.helper() != null && fieldMappingInfo.helper().length > 0) {
+                    final ValueHelper helper = applicationContext.getBean(fieldMappingInfo.helper()[0]);
                     if (helper != null) {
                         return helper.getDefaultValue(ad);
                     }
+                }
+                else {
+                    if (fieldMappingInfo.type() == DataType.ID) {
+
+                        Entity entity = field.getAnnotation(Entity.class);
+                        if (entity != null) {
+
+                            for(var fieldEntity : field.get(ad).getClass().getDeclaredFields()) {
+                                if (fieldEntity.getAnnotation(Id.class) != null || fieldEntity.getAnnotation(org.springframework.data.annotation.Id.class) != null) {
+                                    return fieldEntity.get(ad).toString();
+                                }
+                            }
+
+                            return field.get(ad).toString();
+                        }
+
+                        //return List.of(field.get(ad).toString().split(","));
+                    }
+
                 }
             }
             field.setAccessible(true);

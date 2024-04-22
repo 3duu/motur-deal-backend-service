@@ -38,6 +38,7 @@ public class AdConverter extends ValueObjectConverter<AdDto, AdEntity> {
                 .brandId(dto.getBrandId())
                 .modelId(dto.getModelId())
                 .status(dto.getStatus())
+                .mileage(dto.getMileage())
                 .dealer(DealerEntity.builder().id(dto.getDealerId()).build())
                 .build();
     }
@@ -60,6 +61,7 @@ public class AdConverter extends ValueObjectConverter<AdDto, AdEntity> {
                 .modelId(source.getModelId())
                 .status(source.getStatus())
                 .dealerId(source.getDealer().getId())
+                .mileage(source.getMileage())
                 .build();
     }
 }

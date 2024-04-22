@@ -67,4 +67,6 @@ public class AdDto implements Serializable {
 
     private String status; // Status do anuncio
 
+    private Integer mileage; // Quilometragem
+
 }
