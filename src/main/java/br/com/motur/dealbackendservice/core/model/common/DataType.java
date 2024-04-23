@@ -19,17 +19,13 @@ public enum DataType {
     DOUBLE("double", Double.class),//5
     BOOLEAN("boolean", Boolean.class),//6
     CHAR("char", Character.class),//7
-
     STRING("String", String.class),//8
     DATE("Date", Date.class),//9
     LOCAL_DATETIME("LocalDateTime", LocalDateTime.class),//10
     BIG_DECIMAL("BigDecimal", BigDecimal.class),//11
     LIST("List", List.class),//12
-
     JSON("JSON", JsonNode.class),//13
-
     ID("ID", Id.class),//14
-
     MAP("Map", HashMap.class);//15
 
     private final String displayName;

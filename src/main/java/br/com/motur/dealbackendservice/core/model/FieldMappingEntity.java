@@ -18,17 +18,16 @@ public class FieldMappingEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer Id;
 
-    //@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @Column(name = "provider_id", nullable = false)
     private Integer providerId;
 
-    @Column(nullable = false, name = "local_field_name", length = 30)
+    @Column(nullable = false, name = "local_field_name", columnDefinition = "text")
     private String localFieldName;
 
     @Column(nullable = false, name = "external_field_name", length = 30)
     private String externalFieldName;
 
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "data_type")
     private DataType dataType;
 

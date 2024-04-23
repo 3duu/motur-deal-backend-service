@@ -27,10 +27,7 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Essa classe é responsável por executar integrações de anúncio com provedores
@@ -82,9 +79,8 @@ public class IntegrationService {
 
         for (FieldMappingEntity fieldMapping : fieldMappings) {
 
-            String localFieldName = fieldMapping.getLocalFieldName();
             String externalFieldName = fieldMapping.getExternalFieldName();
-            final Object fieldValue = getFieldValue(ad, localFieldName);
+            final Object fieldValue = getFieldValue(ad, fieldMapping);
 
             adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType()));
         }
@@ -115,48 +111,83 @@ public class IntegrationService {
      * Obtém o valor de um campo privado de um objeto.
      *
      * @param ad   O objeto do qual o valor do campo deve ser obtido.
-     * @param fieldName O nome do campo.
+     * @param fieldMapping O nome do campo.
      * @return O valor do campo.
      */
-    private Object getFieldValue(final AdEntity ad, final String fieldName) {
+    private Object getFieldValue(final AdEntity ad, final FieldMappingEntity fieldMapping) {
         try {
-            final Field field = ad.getClass().getDeclaredField(fieldName);
-            final FieldMappingInfo fieldMappingInfo = field.getAnnotation(FieldMappingInfo.class);
-            if (fieldMappingInfo != null) {
 
-                if (fieldMappingInfo.helper() != null && fieldMappingInfo.helper().length > 0) {
-                    final ValueHelper helper = applicationContext.getBean(fieldMappingInfo.helper()[0]);
-                    if (helper != null) {
-                        return helper.getDefaultValue(ad);
+            final List<Field> fields = Arrays.stream(ad.getClass().getDeclaredFields()).toList();
+
+            final Field field = fields.stream().filter(f -> f.getName().equalsIgnoreCase(fieldMapping.getLocalFieldName())).findFirst().orElse(null);
+            if (field != null) {
+
+                final FieldMappingInfo fieldMappingInfo = field.getAnnotation(FieldMappingInfo.class);
+                if (fieldMappingInfo != null) {
+
+                    if (fieldMappingInfo.helper() != null && fieldMappingInfo.helper().length > 0) {
+                        final ValueHelper helper = applicationContext.getBean(fieldMappingInfo.helper()[0]);
+                        if (helper != null) {
+                            return helper.getDefaultValue(ad);
+                        }
                     }
-                }
-                else {
-                    if (fieldMappingInfo.type() == DataType.ID) {
+                    else {
 
-                        Entity entity = field.getAnnotation(Entity.class);
-                        if (entity != null) {
+                        if (fieldMappingInfo.type() == DataType.ID) {
 
-                            for(var fieldEntity : field.get(ad).getClass().getDeclaredFields()) {
-                                if (fieldEntity.getAnnotation(Id.class) != null || fieldEntity.getAnnotation(org.springframework.data.annotation.Id.class) != null) {
-                                    return fieldEntity.get(ad).toString();
+                            Entity entity = ad.getClass().getAnnotation(Entity.class);
+                            if (entity != null) {
+
+                                for(var fieldEntity : field.get(ad).getClass().getDeclaredFields()) {
+                                    if (fieldEntity.getAnnotation(Id.class) != null || fieldEntity.getAnnotation(org.springframework.data.annotation.Id.class) != null) {
+                                        return fieldEntity.get(ad).toString();
+                                    }
                                 }
+
+                                return field.get(ad).toString();
                             }
 
-                            return field.get(ad).toString();
+                            //return List.of(field.get(ad).toString().split(","));
                         }
 
-                        //return List.of(field.get(ad).toString().split(","));
                     }
+                }
+                field.setAccessible(true);
+                return field.get(ad);
+            }
+            else {
+
+                if (fieldMapping.getDataType() == DataType.MAP) {
+                    final Map<String, Object> innerFields = new JSONObject(fieldMapping.getLocalFieldName()).toMap();
+                    final Map<String, Object> value = new HashMap<>();
+
+                    fields.forEach(f -> {
+                        try {
+                            var v = innerFields.get(f.getName());
+                            if (v != null){
+                                f.setAccessible(true);
+                                f.get(ad);
+                            }
+
+                            //if (f.getName().equalsIgnoreCase(fieldMapping.getLocalFieldName()) {
+
+                            f.setAccessible(true);
+                            //map.put(f.getName(), f.get(ad));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
 
                 }
             }
-            field.setAccessible(true);
-            return field.get(ad);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+
+        } catch (/*NoSuchFieldException |*/ IllegalAccessException e) {
             //e.printStackTrace();
             // Tratamento adequado de exceções ou retorno de um valor padrão
             return null;
         }
+
+        return null;
     }
 
 
@@ -205,6 +236,8 @@ public class IntegrationService {
                     return List.of(value.toString().split(","));
                 case JSON:
                     return new JSONObject(value.toString());
+                case MAP:
+                    return objectMapper.convertValue(value, Map.class);
                 default:
                     return value;
             }
