@@ -27,4 +27,9 @@ public class BrandService implements IBrandService {
         return brandRepository.getByName(name).orElse(null);
     }
 
+    @Override
+    public BrandEntity findById(Integer trimId) {
+        return brandRepository.findById(trimId).orElse(null);
+    }
+
 }

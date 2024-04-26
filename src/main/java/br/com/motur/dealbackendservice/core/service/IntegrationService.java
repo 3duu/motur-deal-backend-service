@@ -128,7 +128,7 @@ public class IntegrationService {
                     if (fieldMappingInfo.helper() != null && fieldMappingInfo.helper().length > 0) {
                         final ValueHelper helper = applicationContext.getBean(fieldMappingInfo.helper()[0]);
                         if (helper != null) {
-                            return helper.getDefaultValue(ad);
+                            return helper.getDefaultValue(ad, fieldMappingInfo);
                         }
                     }
                     else {
@@ -159,19 +159,50 @@ public class IntegrationService {
 
                 if (fieldMapping.getDataType() == DataType.MAP) {
                     final Map<String, Object> innerFields = new JSONObject(fieldMapping.getLocalFieldName()).toMap();
-                    final Map<String, Object> value = new HashMap<>();
+                    final Map<String, Object> returnValue = new HashMap<>();
+
+
+                    innerFields.forEach((k, v) -> {
+                        try {
+                                for (Field f : fields) {
+
+                                    final FieldMappingInfo fieldMappingInfo = f.getAnnotation(FieldMappingInfo.class);
+                                    if (fieldMappingInfo != null) {
+
+                                        if (v.toString().contains("#")){
+                                            returnValue.put(k, getValueFromNestedFields(ad, v.toString()));
+                                        }
+                                        else if (f.getName().equalsIgnoreCase(fieldMapping.getLocalFieldName())) {
+                                            returnValue.put(k, f.get(ad));
+                                        }
+                                        else{
+                                            returnValue.put(k, v);
+                                        }
+
+                                        if (fieldMappingInfo.helper() != null && fieldMappingInfo.helper().length > 0) {
+                                            final ValueHelper helper = applicationContext.getBean(fieldMappingInfo.helper()[0]);
+                                            if (helper != null) {
+                                                returnValue.put(k, helper.getDefaultValue(ad, fieldMappingInfo));
+                                            }
+                                        }
+
+                                    }
+                                }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
 
                     fields.forEach(f -> {
                         try {
                             var v = innerFields.get(f.getName());
                             if (v != null){
                                 f.setAccessible(true);
-                                f.get(ad);
+                                //returnValue.put();//f.get(ad);
                             }
 
                             //if (f.getName().equalsIgnoreCase(fieldMapping.getLocalFieldName()) {
 
-                            f.setAccessible(true);
                             //map.put(f.getName(), f.get(ad));
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -188,6 +219,22 @@ public class IntegrationService {
         }
 
         return null;
+    }
+
+    public Object getValueFromNestedFields(AdEntity obj, String fieldsStr) throws Exception {
+        String[] fields = fieldsStr.split("#");
+        Object currentObj = obj;
+
+        for (String fieldName : fields) {
+            Field field = currentObj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            currentObj = field.get(currentObj);
+            if (currentObj == null) {
+                throw new NullPointerException("Null value encountered while traversing field path");
+            }
+        }
+
+        return currentObj;
     }
 
 

@@ -8,4 +8,6 @@ public interface IBrandService {
     List<BrandEntity> findAllBrands();
 
     BrandEntity findBrandByName(String name);
+
+    BrandEntity findById(Integer trimId);
 }

@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice.core.converter;
 
+import br.com.motur.dealbackendservice.common.FieldMappingInfo;
 import br.com.motur.dealbackendservice.core.model.AdEntity;
 import br.com.motur.dealbackendservice.core.model.ProviderCatalogEntity;
 import br.com.motur.dealbackendservice.core.model.TrimEntity;
@@ -27,24 +28,24 @@ public class TrimHelper implements ValueHelper<AdEntity, String> {
     }
 
     @Override
-    public String getDefaultValue(final AdEntity adEntity) {
+    public String getDefaultValue(final AdEntity adEntity, final FieldMappingInfo fieldMappingInfo) {
 
         if (isNull(adEntity)){
 
             if (adEntity.getTrimId() == null){
-                return adEntity.getTitle();
+                return adEntity.getTrimId().toString();
             }
 
-            final TrimEntity trimEntity = trimService.findFullById(adEntity.getTrimId());
+            final TrimEntity trimEntity = trimService.findById(adEntity.getTrimId());
             if (trimEntity == null){
-                return adEntity.getTitle();
+                return adEntity.getTrimId().toString();
             }
 
-            return trimEntity.getModel().getBrand().getName() + " " + trimEntity.getModel().getName() + " " + trimEntity.getName().replace(trimEntity.getModel().getName(), StringUtils.EMPTY) + " " + adEntity.getModelYear() + " " + adEntity.getTransmissionType().getDisplayName();
+            return trimEntity.getName();
 
         }
         else {
-            return adEntity.getTitle();
+            return adEntity.getTrimId().toString();
         }
     }
 

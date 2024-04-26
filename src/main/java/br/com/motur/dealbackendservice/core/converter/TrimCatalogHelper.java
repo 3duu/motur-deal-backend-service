@@ -2,50 +2,53 @@ package br.com.motur.dealbackendservice.core.converter;
 
 import br.com.motur.dealbackendservice.common.FieldMappingInfo;
 import br.com.motur.dealbackendservice.core.model.AdEntity;
+import br.com.motur.dealbackendservice.core.model.ModelEntity;
 import br.com.motur.dealbackendservice.core.model.TrimEntity;
+import br.com.motur.dealbackendservice.core.service.ModelService;
 import br.com.motur.dealbackendservice.core.service.TrimService;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TitleHelper implements ValueHelper<AdEntity,String> {
+public class TrimCatalogHelper implements ValueHelper<AdEntity, String> {
 
     private final TrimService trimService;
 
-    public TitleHelper(TrimService trimService) {
+    @Autowired
+    public TrimCatalogHelper(TrimService trimService) {
         this.trimService = trimService;
     }
 
-
     @Override
     public String getValue(AdEntity value) {
-        return value.getTitle();
+        return value.getTrimId().toString();
     }
 
     @Override
-    public boolean isNull(AdEntity object) {
-        return StringUtils.isEmpty(object.getTitle());
+    public boolean isNull(AdEntity adEntity) {
+        return StringUtils.isEmpty(adEntity.getTrimId() != null ? adEntity.getTrimId().toString() : StringUtils.EMPTY);
     }
 
     @Override
     public String getDefaultValue(final AdEntity adEntity, final FieldMappingInfo fieldMappingInfo) {
 
-        if (isNull(adEntity)){
+        if (!isNull(adEntity)){
 
             if (adEntity.getTrimId() == null){
-                return adEntity.getTitle();
+                return null;
             }
 
-            final TrimEntity trimEntity = trimService.findFullById(adEntity.getTrimId());
+            final TrimEntity trimEntity = trimService.findById(adEntity.getTrimId());
             if (trimEntity == null){
-                return adEntity.getTitle();
+                return adEntity.getTrimId().toString();
             }
 
-            return trimEntity.getModel().getBrand().getName() + " " + trimEntity.getModel().getName() + " " + trimEntity.getName().replace(trimEntity.getModel().getName(), StringUtils.EMPTY) + " " + adEntity.getModelYear() + " " + adEntity.getTransmissionType().getDisplayName();
+            return trimEntity.getName();
 
         }
         else {
-            return adEntity.getTitle();
+            return adEntity.getTrimId().toString();
         }
     }
 

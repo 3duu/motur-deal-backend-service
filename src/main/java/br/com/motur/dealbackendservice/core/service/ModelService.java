@@ -6,27 +6,19 @@ import br.com.motur.dealbackendservice.core.finder.TransmissionFinder;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.ModelRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.TrimRepository;
 import br.com.motur.dealbackendservice.core.model.ModelEntity;
-import br.com.motur.dealbackendservice.core.model.TrimEntity;
-import br.com.motur.dealbackendservice.core.model.common.TransmissionType;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import br.com.motur.dealbackendservice.core.model.common.CacheNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
-public class ModelService {
+public class ModelService implements IModelService {
 
     private final ModelRepository modelRepository;
     private final BrandService brandService;
@@ -228,5 +220,9 @@ public class ModelService {
 
     }
 
-
+    @Override
+    @Cacheable(CacheNames.BASE_CATALOG_MODELS)
+    public ModelEntity findById(final Integer modelId) {
+        return modelRepository.findById(modelId).orElse(null);
+    }
 }

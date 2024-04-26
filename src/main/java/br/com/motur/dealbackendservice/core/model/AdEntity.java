@@ -2,7 +2,10 @@ package br.com.motur.dealbackendservice.core.model;
 
 
 import br.com.motur.dealbackendservice.common.FieldMappingInfo;
+import br.com.motur.dealbackendservice.core.converter.BrandCatalogHelper;
+import br.com.motur.dealbackendservice.core.converter.ModelCatalogHelper;
 import br.com.motur.dealbackendservice.core.converter.TitleHelper;
+import br.com.motur.dealbackendservice.core.converter.TrimCatalogHelper;
 import br.com.motur.dealbackendservice.core.model.common.Color;
 import br.com.motur.dealbackendservice.core.model.common.DataType;
 import br.com.motur.dealbackendservice.core.model.common.FuelType;
@@ -12,8 +15,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -32,13 +33,15 @@ public class AdEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @FieldMappingInfo(name = "brand", type = DataType.INT, helper = BrandCatalogHelper.class)
     @Column(name = "brand_id")
     private Integer brandId; // Id da marca
 
+    @FieldMappingInfo(name = "model", type = DataType.INT, helper = ModelCatalogHelper.class)
     @Column(name = "model_id")
     private Integer modelId; // Id do modelo
 
-    //@FieldMappingInfo(name = "id", type = DataType.ID)
+    @FieldMappingInfo(name = "trim", type = DataType.INT, helper = TrimCatalogHelper.class)
     @Column(name = "trim_id")
     private Integer trimId; // Id da versão
 
