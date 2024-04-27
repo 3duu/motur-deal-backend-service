@@ -36,7 +36,7 @@ public class AdPublicationEntity {
     @JoinColumn(name = "provider_id", nullable = false)
     private ProviderEntity provider;
 
-    @ManyToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "provider_trims_id", nullable = false)
     private ProviderTrimsEntity providerTrimsEntity;
 

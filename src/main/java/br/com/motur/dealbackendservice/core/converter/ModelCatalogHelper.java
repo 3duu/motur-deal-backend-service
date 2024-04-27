@@ -1,6 +1,5 @@
 package br.com.motur.dealbackendservice.core.converter;
 
-import br.com.motur.dealbackendservice.common.FieldMappingInfo;
 import br.com.motur.dealbackendservice.core.model.AdEntity;
 import br.com.motur.dealbackendservice.core.model.ModelEntity;
 import br.com.motur.dealbackendservice.core.service.IModelService;
@@ -29,7 +28,7 @@ public class ModelCatalogHelper implements ValueHelper<AdEntity, String> {
     }
 
     @Override
-    public String getDefaultValue(final AdEntity adEntity, final FieldMappingInfo fieldMappingInfo) {
+    public String getDefaultValue(final AdEntity adEntity, final Object reference) {
 
         if (!isNull(adEntity)){
 

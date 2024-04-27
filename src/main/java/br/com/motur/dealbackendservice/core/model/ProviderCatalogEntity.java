@@ -19,13 +19,10 @@ public interface ProviderCatalogEntity extends CacheableEntity {
 
     void setProvider(ProviderEntity provider);
 
-    /**
-     * Retorna o item pai desse item no catálogo do fornecedor. No caso da Marca, esse método retorna null.
-     * @return
-     */
     ProviderCatalogEntity getParentProviderCatalog();
 
     void setParentProviderCatalog(ProviderCatalogEntity parentProviderCatalog);
 
     void setBaseCatalog(CatalogEntity baseCatalog);
+
 }

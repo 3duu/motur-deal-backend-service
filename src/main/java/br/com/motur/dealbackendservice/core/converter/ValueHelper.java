@@ -9,5 +9,5 @@ public interface ValueHelper<T,V> {
 
     boolean isNull(T object);
 
-    V getDefaultValue(T adEntity, FieldMappingInfo fieldMappingInfo);
+    V getDefaultValue(T adEntity, final Object reference);
 }

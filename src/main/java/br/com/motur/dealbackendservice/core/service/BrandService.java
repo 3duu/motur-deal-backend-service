@@ -1,7 +1,9 @@
 package br.com.motur.dealbackendservice.core.service;
 
 import br.com.motur.dealbackendservice.core.dataproviders.repository.BrandRepository;
+import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderBrandsRepository;
 import br.com.motur.dealbackendservice.core.model.BrandEntity;
+import br.com.motur.dealbackendservice.core.model.ProviderBrandsEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,10 +13,12 @@ import java.util.List;
 public class BrandService implements IBrandService {
 
     private final BrandRepository brandRepository;
+    private final ProviderBrandsRepository providerBrandsRepository;
 
     @Autowired
-    public BrandService(BrandRepository brandRepository) {
+    public BrandService(BrandRepository brandRepository, ProviderBrandsRepository providerBrandsRepository) {
         this.brandRepository = brandRepository;
+        this.providerBrandsRepository = providerBrandsRepository;
     }
 
     @Override
@@ -30,6 +34,11 @@ public class BrandService implements IBrandService {
     @Override
     public BrandEntity findById(Integer trimId) {
         return brandRepository.findById(trimId).orElse(null);
+    }
+
+    @Override
+    public ProviderBrandsEntity findByIdProvider(Integer brandId, Integer providerId) {
+        return providerBrandsRepository.findByBaseCatalogandProvider(brandId, providerId).orElse(null);
     }
 
 }

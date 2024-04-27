@@ -28,7 +28,7 @@ public class TrimHelper implements ValueHelper<AdEntity, String> {
     }
 
     @Override
-    public String getDefaultValue(final AdEntity adEntity, final FieldMappingInfo fieldMappingInfo) {
+    public String getDefaultValue(final AdEntity adEntity, final Object reference) {
 
         if (isNull(adEntity)){
 

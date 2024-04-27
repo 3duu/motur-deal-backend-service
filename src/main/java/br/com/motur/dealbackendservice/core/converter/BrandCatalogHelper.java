@@ -1,8 +1,7 @@
 package br.com.motur.dealbackendservice.core.converter;
 
-import br.com.motur.dealbackendservice.common.FieldMappingInfo;
 import br.com.motur.dealbackendservice.core.model.AdEntity;
-import br.com.motur.dealbackendservice.core.model.BrandEntity;
+import br.com.motur.dealbackendservice.core.model.ProviderBrandsEntity;
 import br.com.motur.dealbackendservice.core.service.IBrandService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +28,7 @@ public class BrandCatalogHelper implements ValueHelper<AdEntity, String> {
     }
 
     @Override
-    public String getDefaultValue(final AdEntity adEntity, final FieldMappingInfo fieldMappingInfo) {
+    public String getDefaultValue(final AdEntity adEntity, final Object reference) {
 
         if (!isNull(adEntity)){
 
@@ -37,17 +36,15 @@ public class BrandCatalogHelper implements ValueHelper<AdEntity, String> {
                 return null;
             }
 
-            final BrandEntity brandEntity = brandService.findById(adEntity.getTrimId());
+            final ProviderBrandsEntity brandEntity = brandService.findByIdProvider(adEntity.getBrandId(), Integer.valueOf(reference.toString()));
             if (brandEntity == null){
                 return adEntity.getTrimId().toString();
             }
 
-            return brandEntity.getName();
+            return brandEntity.getExternalId();
+        }
 
-        }
-        else {
-            return adEntity.getTrimId().toString();
-        }
+        return adEntity.getTrimId().toString();
     }
 
 

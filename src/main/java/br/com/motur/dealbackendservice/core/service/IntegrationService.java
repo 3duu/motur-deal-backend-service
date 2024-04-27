@@ -4,7 +4,6 @@ import br.com.motur.dealbackendservice.common.FieldMappingInfo;
 import br.com.motur.dealbackendservice.core.converter.ValueHelper;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.FieldMappingRepository;
-import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderTrimsRepository;
 import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.model.common.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,18 +39,16 @@ public class IntegrationService {
     private final RestTemplate restTemplate;
     private final ApplicationContext applicationContext;
     private final ObjectMapper objectMapper;
-    private final ProviderTrimsRepository providerTrimsRepository;
 
     @Autowired
     public IntegrationService(AuthConfigRepository authConfigRepository,
                               FieldMappingRepository fieldMappingRepository,
-                              RestTemplate restTemplate, ApplicationContext applicationContext, ObjectMapper objectMapper, ProviderTrimsRepository providerTrimsRepository) {
+                              RestTemplate restTemplate, ApplicationContext applicationContext, ObjectMapper objectMapper) {
         this.authConfigRepository = authConfigRepository;
         this.fieldMappingRepository = fieldMappingRepository;
         this.restTemplate = restTemplate;
         this.applicationContext = applicationContext;
         this.objectMapper = objectMapper;
-        this.providerTrimsRepository = providerTrimsRepository;
     }
 
 
@@ -85,22 +82,25 @@ public class IntegrationService {
             adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType()));
         }
 
+        final ProviderTrimsEntity providerTrim = ad.getAdPublicationEntityList().stream().filter(adPublicationEntity -> adPublicationEntity.getProvider().getId().equals(provider.getId())).findFirst().orElse(null).getProviderTrimsEntity();
+        /*final ProviderModelsEntity providerModel = (ProviderModelsEntity) providerTrim.getParentProviderCatalog();
+        final ProviderBrandsEntity providerBrand = (ProviderBrandsEntity) providerModel.getParentProviderCatalog();*/
+
         // Adicionar campos adicionais de catalogo do provedor
-        final ProviderTrimsEntity providerTrims = providerTrimsRepository.findByProviderIdAndBaseCatalogTrimId(provider.getId(), ad.getTrimId()).orElse(null);
-        if (providerTrims != null){
+        if (providerTrim != null){
             final FieldMappingEntity trimField = fieldMappings.stream().filter(f -> f.getLocalFieldName().equalsIgnoreCase("trim")).findFirst().orElse(null);
             if (trimField != null) {
-                adaptedVehicle.put(trimField.getExternalFieldName(), providerTrims.getExternalId());
+                adaptedVehicle.put(trimField.getExternalFieldName(), providerTrim.getExternalId());
             }
 
             final FieldMappingEntity modelField = fieldMappings.stream().filter(f -> f.getLocalFieldName().equalsIgnoreCase("model")).findFirst().orElse(null);
             if (modelField != null) {
-                adaptedVehicle.put(modelField.getExternalFieldName(), providerTrims.getParentProviderCatalog().getExternalId());
+                adaptedVehicle.put(modelField.getExternalFieldName(), providerTrim.getParentProviderCatalog().getExternalId());
             }
 
             final FieldMappingEntity brandField = fieldMappings.stream().filter(f -> f.getLocalFieldName().equalsIgnoreCase("brand")).findFirst().orElse(null);
             if (brandField != null) {
-                adaptedVehicle.put(brandField.getExternalFieldName(), providerTrims.getParentProviderCatalog().getParentProviderCatalog().getExternalId());
+                adaptedVehicle.put(brandField.getExternalFieldName(), providerTrim.getParentProviderCatalog().getParentProviderCatalog().getExternalId());
             }
         }
 
@@ -221,14 +221,20 @@ public class IntegrationService {
         return null;
     }
 
-    public Object getValueFromNestedFields(AdEntity obj, String fieldsStr) throws Exception {
-        String[] fields = fieldsStr.split("#");
+    public Object getValueFromNestedFields(final AdEntity obj, String fieldsStr) {
+        final String[] fields = fieldsStr.split("#");
         Object currentObj = obj;
 
         for (String fieldName : fields) {
-            Field field = currentObj.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            currentObj = field.get(currentObj);
+            Field field = null;
+            try {
+                field = currentObj.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                currentObj = field.get(currentObj);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                //throw new RuntimeException(e);
+            }
+
             if (currentObj == null) {
                 throw new NullPointerException("Null value encountered while traversing field path");
             }

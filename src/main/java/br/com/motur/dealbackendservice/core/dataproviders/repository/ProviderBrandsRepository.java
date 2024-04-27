@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProviderBrandsRepository extends JpaRepository<ProviderBrandsEntity, Integer> {
@@ -14,4 +15,7 @@ public interface ProviderBrandsRepository extends JpaRepository<ProviderBrandsEn
 
     @Query("SELECT pb FROM ProviderBrandsEntity pb inner join fetch pb.provider p inner join fetch pb.baseCatalog bc WHERE p.id = ?1")
     List<ProviderBrandsEntity> findAllByProviderId(Integer id);
+
+    @Query("SELECT pb FROM ProviderBrandsEntity pb inner join fetch pb.provider p inner join fetch pb.baseCatalog bc WHERE bc.id = ?1")
+    Optional<ProviderBrandsEntity> findByBaseCatalogandProvider(Integer brandId, Integer providerId);
 }
