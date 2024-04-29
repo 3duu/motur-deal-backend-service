@@ -6,6 +6,7 @@ import br.com.motur.dealbackendservice.core.service.vo.PostResultsVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,13 +29,13 @@ public class AdPublicationEndpoints {
             @ApiResponse(responseCode = "500", description = "Server error")
     })
     @PostMapping(value = "/publish", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<PostResultsVo> publishAd(@RequestBody AdDto adDto) throws Exception {
+    public ResponseEntity<PostResultsVo> publishAd(@RequestBody @Valid AdDto adDto) throws Exception {
         return ResponseEntity.ok(adPublicationService.publishAd(adDto));
     }
 
     @Operation(summary = "Obter um anúncio por id")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found the ad"),
+            @ApiResponse(responseCode = "200", description = "Anúncio encontrado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Invalid id supplied"),
             @ApiResponse(responseCode = "404", description = "Ad not found"),
             @ApiResponse(responseCode = "500", description = "Server error")

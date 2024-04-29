@@ -74,17 +74,17 @@ public class IntegrationService {
     public Map<String, Object> adaptVehicleToProviderFormat(final AdEntity ad, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
         final Map<String, Object> adaptedVehicle = new HashMap<>();
 
+        final ProviderTrimsEntity providerTrim = ad.getAdPublicationEntityList().stream().filter(adPublicationEntity -> adPublicationEntity.getProvider().getId().equals(provider.getId())).findFirst().orElse(null).getProviderTrimsEntity();
+        final ProviderModelsEntity providerModel = (ProviderModelsEntity) providerTrim.getParentProviderCatalog();
+        final ProviderBrandsEntity providerBrand = (ProviderBrandsEntity) providerModel.getParentProviderCatalog();
+
         for (FieldMappingEntity fieldMapping : fieldMappings) {
 
             String externalFieldName = fieldMapping.getExternalFieldName();
-            final Object fieldValue = getFieldValue(ad, fieldMapping);
+            final Object fieldValue = getFieldValue(ad, fieldMapping, providerTrim, providerModel, providerBrand);
 
             adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType()));
         }
-
-        final ProviderTrimsEntity providerTrim = ad.getAdPublicationEntityList().stream().filter(adPublicationEntity -> adPublicationEntity.getProvider().getId().equals(provider.getId())).findFirst().orElse(null).getProviderTrimsEntity();
-        /*final ProviderModelsEntity providerModel = (ProviderModelsEntity) providerTrim.getParentProviderCatalog();
-        final ProviderBrandsEntity providerBrand = (ProviderBrandsEntity) providerModel.getParentProviderCatalog();*/
 
         // Adicionar campos adicionais de catalogo do provedor
         if (providerTrim != null){
@@ -114,7 +114,7 @@ public class IntegrationService {
      * @param fieldMapping O nome do campo.
      * @return O valor do campo.
      */
-    private Object getFieldValue(final AdEntity ad, final FieldMappingEntity fieldMapping) {
+    private Object getFieldValue(final AdEntity ad, final FieldMappingEntity fieldMapping, final ProviderTrimsEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
         try {
 
             final List<Field> fields = Arrays.stream(ad.getClass().getDeclaredFields()).toList();
@@ -170,7 +170,7 @@ public class IntegrationService {
                                     if (fieldMappingInfo != null) {
 
                                         if (v.toString().contains("#")){
-                                            returnValue.put(k, getValueFromNestedFields(ad, v.toString()));
+                                            returnValue.put(k, getValueFromNestedFields(ad, v.toString(), providerTrim, providerModel, providerBrand));
                                         }
                                         else if (f.getName().equalsIgnoreCase(fieldMapping.getLocalFieldName())) {
                                             returnValue.put(k, f.get(ad));
@@ -221,7 +221,14 @@ public class IntegrationService {
         return null;
     }
 
-    public Object getValueFromNestedFields(final AdEntity obj, String fieldsStr) {
+    /**
+     * Obtém o valor de um campo privado de um objeto.
+     *
+     * @param obj   O objeto do qual o valor do campo deve ser obtido.
+     * @param fieldsStr O nome do campo.
+     * @return O valor do campo.
+     */
+    private Object getValueFromNestedFields(final AdEntity obj, String fieldsStr, final ProviderTrimsEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
         final String[] fields = fieldsStr.split("#");
         Object currentObj = obj;
 
@@ -378,20 +385,20 @@ public class IntegrationService {
         return apiKey;
     }
 
-    private String authenticateWithBearerToken(AuthConfigEntity authConfig) throws Exception {
+    private String authenticateWithBearerToken(AuthConfigEntity authConfig) {
         BearerTokenAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), BearerTokenAuthConfig.class);
-        return "Bearer " + config.getToken();
+        return "Bearer ".concat(config.getToken());
     }
 
-    private String authenticateWithDigest(AuthConfigEntity authConfig) throws Exception {
+    private String authenticateWithDigest(AuthConfigEntity authConfig) {
         DigestAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), DigestAuthConfig.class);
         // Implemente a lógica de autenticação Digest aqui
         return ""; // Retorne o valor apropriado
     }
 
-    private String authenticateWithJwt(AuthConfigEntity authConfig) throws Exception {
+    private String authenticateWithJwt(AuthConfigEntity authConfig) {
         JWTAuthConfig config = objectMapper.convertValue(authConfig.getDetails(), JWTAuthConfig.class);
-        return "Bearer " + config.getJwtToken();
+        return "Bearer ".concat(config.getJwtToken());
     }
 
     private String authenticateWithSaml(AuthConfigEntity authConfig) throws Exception {

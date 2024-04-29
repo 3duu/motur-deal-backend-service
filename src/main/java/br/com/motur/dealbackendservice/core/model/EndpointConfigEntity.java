@@ -9,7 +9,10 @@ import br.com.motur.dealbackendservice.core.model.common.EndpointMethod;
 import br.com.motur.dealbackendservice.core.model.common.ResponseMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
@@ -21,6 +24,9 @@ import java.util.Objects;
 @Table(name = "endpoint_config", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"provider_id", "category"})
 })
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class EndpointConfigEntity {
 
     @Id

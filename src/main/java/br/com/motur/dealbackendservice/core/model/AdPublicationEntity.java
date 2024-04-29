@@ -1,14 +1,17 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
 import java.util.Date;
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 
 /**
  * Essa classe representa o uma publicação de um veículo. Ela é responsável por guardar informações sobre a publicação de um veículo que já foi publicado.
@@ -52,8 +55,9 @@ public class AdPublicationEntity {
     @Column(name = "expiration_date")
     private Date expirationDate;
 
-    @Column(columnDefinition = "JSON")
-    private String additionalInfo;
+    @Column(name = "additional_info", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private JsonNode additionalInfo;
 
 }
 

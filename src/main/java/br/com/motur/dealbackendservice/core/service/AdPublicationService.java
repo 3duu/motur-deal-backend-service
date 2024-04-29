@@ -47,7 +47,7 @@ public class AdPublicationService extends IntegrationService implements AdPublic
                                 AuthConfigRepository authConfigRepository, FieldMappingRepository fieldMappingRepository,
                                 RestTemplate restTemplate, ObjectMapper objectMapper, ApplicationContext applicationContext,
                                 ProviderTrimsRepository providerTrimsRepository, AdConverter adConverter) {
-        super(authConfigRepository, fieldMappingRepository, restTemplate, applicationContext, objectMapper, providerTrimsRepository);
+        super(authConfigRepository, fieldMappingRepository, restTemplate, applicationContext, objectMapper);
         this.adRepository = adRepository;
         this.integrationService = integrationService;
         this.dealerRepository = dealerRepository;
@@ -76,10 +76,10 @@ public class AdPublicationService extends IntegrationService implements AdPublic
         final AdEntity ad = adConverter.convert(adDto);
 
         logger.info("Salvando anúncio: {}", ad);
-        adRepository.save(ad);
+        final AdEntity saved = adRepository.save(ad);
 
         final PostResultsVo results = new PostResultsVo();
-        results.setAdId(ad.getId());
+        results.setAdId(saved.getId());
 
         for (ProviderEntity provider : dealer.getProviders()) {
             logger.info("Publicando anúncio no integrador: {}", provider.getName());

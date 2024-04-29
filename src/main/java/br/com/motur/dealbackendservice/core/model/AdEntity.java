@@ -102,4 +102,8 @@ public class AdEntity {
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "ad", cascade = CascadeType.ALL)
     private List<AdPublicationEntity> adPublicationEntityList;
 
+    public String toString() {
+        return "AdEntity(id=" + this.getId() + ", brandId=" + this.getBrandId() + ", modelId=" + this.getModelId() + ", trimId=" + this.getTrimId() + ", modelYear=" + this.getModelYear() + ", productionYear=" + this.getProductionYear() + ", fuelType=" + this.getFuelType() + ", transmissionType=" + this.getTransmissionType() + ", licensePlate=" + this.getLicensePlate() + ", color=" + this.getColor() + ", km=" + this.getKm() + ", price=" + this.getPrice() + ", mileage=" + this.getMileage() + ", description=" + this.getDescription() + ", title=" + this.getTitle() + ", dealer=" + this.getDealer() + ", status=" + this.getStatus() + ", adPublicationEntityList=" + this.getAdPublicationEntityList() + ")";
+    }
+
 }
