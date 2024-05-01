@@ -1,8 +1,10 @@
 package br.com.motur.dealbackendservice.core.service;
 
+import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderMinimalTrimsRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.ProviderTrimsRepository;
 import br.com.motur.dealbackendservice.core.dataproviders.repository.TrimRepository;
 import br.com.motur.dealbackendservice.core.model.ProviderTrimsEntity;
+import br.com.motur.dealbackendservice.core.model.ProviderTrimsMinimalEntity;
 import br.com.motur.dealbackendservice.core.model.TrimEntity;
 import br.com.motur.dealbackendservice.core.model.common.CacheNames;
 import org.slf4j.Logger;
@@ -15,13 +17,15 @@ public class TrimService {
 
     private final TrimRepository trimRepository;
     private final ProviderTrimsRepository providerTrimsRepository;
+    private final ProviderMinimalTrimsRepository providerMinimalTrimsRepository;
 
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public TrimService(TrimRepository trimRepository, ProviderTrimsRepository providerTrimsRepository) {
+    public TrimService(TrimRepository trimRepository, ProviderTrimsRepository providerTrimsRepository, ProviderMinimalTrimsRepository providerMinimalTrimsRepository) {
         this.trimRepository = trimRepository;
         this.providerTrimsRepository = providerTrimsRepository;
+        this.providerMinimalTrimsRepository = providerMinimalTrimsRepository;
     }
 
     @Cacheable(value=CacheNames.BASE_CATALOG_TRIMS, key = "#trimId", unless = "#result == null")
@@ -40,9 +44,9 @@ public class TrimService {
     }
 
     @Cacheable(value=CacheNames.PROVIDER_CATALOG_TRIMS, key = "#providerTrimId", unless = "#result == null")
-    public ProviderTrimsEntity findProviderById(final Long providerTrimId) {
+    public ProviderTrimsMinimalEntity findProviderById(final Long providerTrimId) {
         logger.info("Buscando versão do integrador por id: {}", providerTrimId);
-        return providerTrimsRepository.findById(providerTrimId)
+        return providerMinimalTrimsRepository.findFullById(providerTrimId)
                 .orElseThrow(() -> new RuntimeException("Versão do integrador não encontrada para o id: " + providerTrimId));
     }
 

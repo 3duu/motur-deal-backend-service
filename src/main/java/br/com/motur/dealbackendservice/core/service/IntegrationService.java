@@ -74,7 +74,7 @@ public class IntegrationService {
     public Map<String, Object> adaptVehicleToProviderFormat(final AdEntity ad, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
         final Map<String, Object> adaptedVehicle = new HashMap<>();
 
-        final ProviderTrimsEntity providerTrim = ad.getAdPublicationEntityList().stream().filter(adPublicationEntity -> adPublicationEntity.getProvider().getId().equals(provider.getId())).findFirst().orElse(null).getProviderTrimsEntity();
+        final ProviderTrimsMinimalEntity providerTrim = ad.getAdPublicationEntityList().stream().filter(adPublicationEntity -> adPublicationEntity.getProvider().getId().equals(provider.getId())).findFirst().orElse(null).getProviderTrimsEntity();
         final ProviderModelsEntity providerModel = (ProviderModelsEntity) providerTrim.getParentProviderCatalog();
         final ProviderBrandsEntity providerBrand = (ProviderBrandsEntity) providerModel.getParentProviderCatalog();
 
@@ -114,7 +114,7 @@ public class IntegrationService {
      * @param fieldMapping O nome do campo.
      * @return O valor do campo.
      */
-    private Object getFieldValue(final AdEntity ad, final FieldMappingEntity fieldMapping, final ProviderTrimsEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
+    private Object getFieldValue(final AdEntity ad, final FieldMappingEntity fieldMapping, final ProviderTrimsMinimalEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
         try {
 
             final List<Field> fields = Arrays.stream(ad.getClass().getDeclaredFields()).toList();
@@ -228,7 +228,7 @@ public class IntegrationService {
      * @param fieldsStr O nome do campo.
      * @return O valor do campo.
      */
-    private Object getValueFromNestedFields(final AdEntity obj, String fieldsStr, final ProviderTrimsEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
+    private Object getValueFromNestedFields(final AdEntity obj, String fieldsStr, final ProviderTrimsMinimalEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
         final String[] fields = fieldsStr.split("#");
         Object currentObj = obj;
 

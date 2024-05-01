@@ -7,8 +7,10 @@ import br.com.motur.dealbackendservice.core.model.AdEntity;
 import br.com.motur.dealbackendservice.core.model.AdPublicationEntity;
 import br.com.motur.dealbackendservice.core.model.DealerEntity;
 import br.com.motur.dealbackendservice.core.service.TrimService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -55,10 +57,13 @@ public class AdConverter extends ValueObjectConverter<AdDto, AdEntity> {
                                 .providerTrimsEntity(trimService.findProviderById(pubDto.getProviderTrimId()))
                                 .planId(pubDto.getPlanId())
                                 .additionalInfo(pubDto.getAdditionalInfo() != null ? objectMapper.convertValue(objectMapper.writeValueAsString(pubDto.getAdditionalInfo()), JsonNode.class)  : null)
-                                .provider(providerRepository.findById(pubDto.getProviderId()).orElseThrow(Exception::new))
+                                .provider(providerRepository.findById(pubDto.getProviderId()).orElseThrow(NotFoundException::new))
                                 .build();
-                    } catch (Exception e) {
+                    } catch (NotFoundException e) {
                         throw new RuntimeException("Integrador com id: " + pubDto.getProviderId()  +" não encontrado.");
+                    }
+                    catch (JsonProcessingException e) {
+                        throw new RuntimeException("Erro ao converter Json para JsonNode.");
                     }
                 }).toList())
                 .build();

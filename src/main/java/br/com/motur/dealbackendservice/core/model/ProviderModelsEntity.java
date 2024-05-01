@@ -2,20 +2,26 @@ package br.com.motur.dealbackendservice.core.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Essa classe representa o um modelo de um veículo no catálogo do fornecedor.
  */
 @Data
+@Builder
 @Entity
 @Table(name = "provider_models")
+@AllArgsConstructor
+@NoArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ProviderModelsEntity implements ProviderCatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(name = "name", length = 50, nullable = false)
     private String name;

@@ -1,5 +1,6 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import br.com.motur.dealbackendservice.core.converter.JsonNodeConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -41,7 +42,7 @@ public class AdPublicationEntity {
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "provider_trims_id", nullable = false)
-    private ProviderTrimsEntity providerTrimsEntity;
+    private ProviderTrimsMinimalEntity providerTrimsEntity;
 
     @Column(name = "plan_id")
     private String planId; //Id do plano de publicação selecionado
@@ -57,6 +58,7 @@ public class AdPublicationEntity {
 
     @Column(name = "additional_info", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
+    @Convert(converter = JsonNodeConverter.class)
     private JsonNode additionalInfo;
 
 }

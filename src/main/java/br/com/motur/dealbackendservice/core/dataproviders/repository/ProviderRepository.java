@@ -17,8 +17,7 @@ public interface ProviderRepository extends JpaRepository<ProviderEntity, Intege
     ProviderEntity findByName(String name);
 
     @Query("SELECT p FROM ProviderEntity p WHERE p.id = ?1 and p.active = true")
-    @Override
-    Optional<ProviderEntity> findById(Integer integer);
+    Optional<ProviderEntity> findActiveById(Integer integer);
 
     @Query("SELECT p FROM ProviderEntity p WHERE p.active = true")
     List<ProviderEntity> findActives();

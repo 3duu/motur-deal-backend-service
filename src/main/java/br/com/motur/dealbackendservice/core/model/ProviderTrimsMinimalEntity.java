@@ -1,8 +1,7 @@
 package br.com.motur.dealbackendservice.core.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Data;
 import jakarta.persistence.*;
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -12,23 +11,20 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @Entity
 @Table(name = "provider_trims")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class ProviderTrimsEntity implements ProviderCatalogEntity {
+public class ProviderTrimsMinimalEntity implements ProviderCatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(name = "name", length = 100, nullable = false)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "provider_id", nullable = false)
-    private ProviderEntity provider;
+    @Column(name = "provider_id", nullable = false)
+    private Integer providerId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "provider_model_id", nullable = false)
-    private ProviderModelsEntity parentProviderCatalog;
+    @Column(name = "provider_model_id", nullable = false)
+    private Long parentProviderCatalogId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "base_trim_id", nullable = false)
@@ -43,18 +39,28 @@ public class ProviderTrimsEntity implements ProviderCatalogEntity {
     }
 
     @Override
+    public ProviderEntity getProvider() {
+        return ProviderEntity.builder().id(providerId).build();
+    }
+
+    @Override
+    public void setProvider(ProviderEntity provider) {
+
+    }
+
+    @Override
     public ProviderCatalogEntity getParentProviderCatalog() {
-        return this.parentProviderCatalog;
+        return ProviderModelsEntity.builder().id(parentProviderCatalogId).build();
     }
 
     @Override
     public void setParentProviderCatalog(ProviderCatalogEntity parentProviderCatalog) {
-        this.parentProviderCatalog = (ProviderModelsEntity) parentProviderCatalog;
+
     }
 
     @Override
     public String getCacheKey() {
-        return getProvider().getId() + ":" + externalId + ":" + (baseCatalog != null ? baseCatalog.getId() : StringUtils.EMPTY) + ":" + (parentProviderCatalog != null ? parentProviderCatalog.getId() : StringUtils.EMPTY);
+        return getProvider().getId() + ":" + externalId + ":" + (baseCatalog != null ? baseCatalog.getId() : StringUtils.EMPTY) + ":" + parentProviderCatalogId;
     }
 }
 
