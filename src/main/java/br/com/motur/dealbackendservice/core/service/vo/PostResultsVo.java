@@ -21,6 +21,10 @@ public class PostResultsVo implements Serializable {
     private Long adId;
     private Map<Provider, Result> results = new HashMap<>();
 
+    public void addError(String name, String message) {
+        results.put(Provider.builder().name(name).build(), Result.builder().code("ERROR").status("ERROR").message(message).build());
+    }
+
     @Data
     @Builder
     @AllArgsConstructor

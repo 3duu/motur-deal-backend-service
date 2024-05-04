@@ -25,6 +25,7 @@ public class CacheNames {
     public static final String VEHICLE_CATEGORIES = "VEHICLE_CATEGORIES";
     public static final String FIND_BY_CATEGORY = "FIND_BY_CATEGORY";
     public static final String PROVIDER_CATALOG_TRIMS = "PROVIDER_CATALOG_TRIMS";
+    public static final String PROVIDER_CATALOG_TRIMS_VO = "PROVIDER_CATALOG_TRIMS_VO";
 
     private CacheNames() {
     }

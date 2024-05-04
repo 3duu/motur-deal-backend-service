@@ -1,5 +1,7 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import br.com.motur.dealbackendservice.common.FieldMappingInfo;
+import br.com.motur.dealbackendservice.core.model.common.DataType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -18,6 +20,7 @@ public class ProviderBrandsEntity implements ProviderCatalogEntity {
     private Integer id;
 
     @Column(name = "name", length = 50, nullable = false)
+    @FieldMappingInfo(name = "name", type = DataType.STRING)
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -28,6 +31,7 @@ public class ProviderBrandsEntity implements ProviderCatalogEntity {
     @JoinColumn(name = "base_brand_id", nullable = false)
     private BrandEntity baseCatalog;
 
+    @FieldMappingInfo(name = "id", type = DataType.STRING)
     @Column(name = "external_id", length = 64, nullable = false)
     private String externalId;
 

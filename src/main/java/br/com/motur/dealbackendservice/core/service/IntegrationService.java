@@ -6,6 +6,7 @@ import br.com.motur.dealbackendservice.core.dataproviders.repository.AuthConfigR
 import br.com.motur.dealbackendservice.core.dataproviders.repository.FieldMappingRepository;
 import br.com.motur.dealbackendservice.core.model.*;
 import br.com.motur.dealbackendservice.core.model.common.*;
+import br.com.motur.dealbackendservice.core.service.vo.AdVo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -51,39 +52,19 @@ public class IntegrationService {
         this.objectMapper = objectMapper;
     }
 
-
-    /**
-     * Envia o veículo para o provedor.
-     *
-     * @param ad    O anuncio a ser enviado.
-     * @param provider Fornecedor para o qual o veículo deve ser enviado.
-     */
-    public void integrateVehicle(final AdEntity ad, final ProviderEntity provider) throws Exception {
-        // Encontrar a configuração de autenticação e mapeamento de campos para o provedor
-        //AuthConfigEntity authConfig = authConfigRepository.findByProviderId(providerId);
-        List<FieldMappingEntity> fieldMappings = fieldMappingRepository.findByProviderId(provider.getId());
-
-        // Adaptar o veículo para o formato esperado pela API do provedor
-        final Object providerAd = adaptVehicleToProviderFormat(ad, provider, fieldMappings);
-
-        // Realizar a autenticação e enviar a solicitação para a API do provedor
-        //String token = authenticateWithProvider(authConfig);
-        sendVehicleToProvider(providerAd, provider);
-    }
-
-    public Map<String, Object> adaptVehicleToProviderFormat(final AdEntity ad, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
+    public Map<String, Object> adaptVehicleToProviderFormat(final AdEntity ad, final AdVo adVo, final ProviderEntity provider, final List<FieldMappingEntity> fieldMappings) {
         final Map<String, Object> adaptedVehicle = new HashMap<>();
 
-        final ProviderTrimsMinimalEntity providerTrim = ad.getAdPublicationEntityList().stream().filter(adPublicationEntity -> adPublicationEntity.getProvider().getId().equals(provider.getId())).findFirst().orElse(null).getProviderTrimsEntity();
+        final ProviderTrimsEntity providerTrim = ad.getAdPublicationList().stream().filter(adPublicationEntity -> adPublicationEntity.getProvider().getId().equals(provider.getId())).findFirst().orElse(null).getProviderTrimsEntity();
         final ProviderModelsEntity providerModel = (ProviderModelsEntity) providerTrim.getParentProviderCatalog();
         final ProviderBrandsEntity providerBrand = (ProviderBrandsEntity) providerModel.getParentProviderCatalog();
 
         for (FieldMappingEntity fieldMapping : fieldMappings) {
 
             String externalFieldName = fieldMapping.getExternalFieldName();
-            final Object fieldValue = getFieldValue(ad, fieldMapping, providerTrim, providerModel, providerBrand);
+            final Object fieldValue = getFieldValue(adVo, fieldMapping, providerTrim, providerModel, providerBrand);
 
-            adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType()));
+            adaptedVehicle.put(externalFieldName, convertValueToType(fieldValue, fieldMapping.getDataType(), providerTrim, providerModel, providerBrand));
         }
 
         // Adicionar campos adicionais de catalogo do provedor
@@ -95,12 +76,12 @@ public class IntegrationService {
 
             final FieldMappingEntity modelField = fieldMappings.stream().filter(f -> f.getLocalFieldName().equalsIgnoreCase("model")).findFirst().orElse(null);
             if (modelField != null) {
-                adaptedVehicle.put(modelField.getExternalFieldName(), providerTrim.getParentProviderCatalog().getExternalId());
+                adaptedVehicle.put(modelField.getExternalFieldName(), providerModel.getExternalId());
             }
 
             final FieldMappingEntity brandField = fieldMappings.stream().filter(f -> f.getLocalFieldName().equalsIgnoreCase("brand")).findFirst().orElse(null);
             if (brandField != null) {
-                adaptedVehicle.put(brandField.getExternalFieldName(), providerTrim.getParentProviderCatalog().getParentProviderCatalog().getExternalId());
+                adaptedVehicle.put(brandField.getExternalFieldName(), providerBrand.getExternalId());
             }
         }
 
@@ -114,7 +95,7 @@ public class IntegrationService {
      * @param fieldMapping O nome do campo.
      * @return O valor do campo.
      */
-    private Object getFieldValue(final AdEntity ad, final FieldMappingEntity fieldMapping, final ProviderTrimsMinimalEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
+    private Object getFieldValue(final AdVo ad, final FieldMappingEntity fieldMapping, final ProviderTrimsEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
         try {
 
             final List<Field> fields = Arrays.stream(ad.getClass().getDeclaredFields()).toList();
@@ -161,7 +142,6 @@ public class IntegrationService {
                     final Map<String, Object> innerFields = new JSONObject(fieldMapping.getLocalFieldName()).toMap();
                     final Map<String, Object> returnValue = new HashMap<>();
 
-
                     innerFields.forEach((k, v) -> {
                         try {
                                 for (Field f : fields) {
@@ -170,7 +150,7 @@ public class IntegrationService {
                                     if (fieldMappingInfo != null) {
 
                                         if (v.toString().contains("#")){
-                                            returnValue.put(k, getValueFromNestedFields(ad, v.toString(), providerTrim, providerModel, providerBrand));
+                                            returnValue.put(k, getValueFromNestedFields(ad, v.toString()));
                                         }
                                         else if (f.getName().equalsIgnoreCase(fieldMapping.getLocalFieldName())) {
                                             returnValue.put(k, f.get(ad));
@@ -189,6 +169,8 @@ public class IntegrationService {
                                     }
                                 }
                         } catch (Exception e) {
+
+                            //logger
                             e.printStackTrace();
                         }
                     });
@@ -209,6 +191,7 @@ public class IntegrationService {
                         }
                     });
 
+                    return returnValue;
                 }
             }
 
@@ -228,23 +211,42 @@ public class IntegrationService {
      * @param fieldsStr O nome do campo.
      * @return O valor do campo.
      */
-    private Object getValueFromNestedFields(final AdEntity obj, String fieldsStr, final ProviderTrimsMinimalEntity providerTrim, final ProviderModelsEntity providerModel, final ProviderBrandsEntity providerBrand) {
+    private Object getValueFromNestedFields(final AdVo obj, String fieldsStr) {
         final String[] fields = fieldsStr.split("#");
         Object currentObj = obj;
 
         for (String fieldName : fields) {
             Field field = null;
-            try {
-                field = currentObj.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                currentObj = field.get(currentObj);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                //throw new RuntimeException(e);
+
+            for (Field f : currentObj.getClass().getDeclaredFields()) {
+
+                final FieldMappingInfo fieldMappingInfo = f.getAnnotation(FieldMappingInfo.class);
+                if (fieldMappingInfo != null && fieldMappingInfo.name().equals(fieldName)){
+                    field = f;
+
+                    try {
+
+                        field.setAccessible(true);
+                        if (fieldMappingInfo.helper() != null && fieldMappingInfo.helper().length > 0) {
+                            final ValueHelper helper = applicationContext.getBean(fieldMappingInfo.helper()[0]);
+                            if (helper != null) {
+                                currentObj = helper.getDefaultValue(obj, fieldMappingInfo);
+                                break;
+                            }
+                        }
+
+                        currentObj = field.get(currentObj);
+                        break;
+
+                    } catch (IllegalAccessException e) {
+                        return null;
+                    }
+
+                    //break;
+                }
             }
 
-            if (currentObj == null) {
-                throw new NullPointerException("Null value encountered while traversing field path");
-            }
+
         }
 
         return currentObj;
@@ -254,11 +256,14 @@ public class IntegrationService {
     /**
      * Converte um valor para um tipo de dados.
      *
-     * @param value O valor a ser convertido.
-     * @param type  O tipo de dados para o qual o valor deve ser convertido.
+     * @param value         O valor a ser convertido.
+     * @param type          O tipo de dados para o qual o valor deve ser convertido.
+     * @param providerTrim
+     * @param providerModel
+     * @param providerBrand
      * @return O valor convertido.
      */
-    private Object convertValueToType(Object value, DataType type) {
+    private Object convertValueToType(Object value, DataType type, ProviderTrimsEntity providerTrim, ProviderModelsEntity providerModel, ProviderBrandsEntity providerBrand) {
         if (value == null) {
             return null;
         }
@@ -425,25 +430,7 @@ public class IntegrationService {
         return ""; // Retorne o valor apropriado
     }
 
-    /**
-     * Envia o veículo para o provedor.
-     *
-     * @param vehicle    O veículo a ser enviado.
-     * @param provider O ID do provedor para o qual o veículo deve ser enviado.
-     */
-    public void sendVehicleToProvider(final Object vehicle, final ProviderEntity provider) throws Exception {
-        // Obter configuração de autenticação
-        final AuthConfigEntity authConfig = authConfigRepository.findByProviderId(provider.getId());
-        if (authConfig == null) {
-            throw new IllegalStateException("Configuração de autenticação não encontrada para o provedor: " + provider.getId());
-        }
 
-        // Autenticar com o provedor e obter o token
-        String authToken = authenticateWithProvider(authConfig);
-
-       //Enviar veículo
-        //sendVehicleData(createAdUrl, vehicleData, authToken);
-    }
 
     private void sendVehicleData(String providerApiUrl, Map<String, Object> vehicleData, String authToken) {
         HttpHeaders headers = new HttpHeaders();

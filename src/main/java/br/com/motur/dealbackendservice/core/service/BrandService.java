@@ -32,8 +32,8 @@ public class BrandService implements IBrandService {
     }
 
     @Override
-    public BrandEntity findById(Integer trimId) {
-        return brandRepository.findById(trimId).orElse(null);
+    public BrandEntity findById(Integer brandId) {
+        return brandRepository.findById(brandId).orElse(null);
     }
 
     @Override

@@ -3,12 +3,14 @@ package br.com.motur.dealbackendservice.core.model;
 import br.com.motur.dealbackendservice.core.model.common.ApiType;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -20,7 +22,8 @@ import java.util.Objects;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "provider")
-public class ProviderEntity {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ProviderEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,6 +1,7 @@
 package br.com.motur.dealbackendservice.core.model;
 
 import br.com.motur.dealbackendservice.core.converter.JsonNodeConverter;
+import br.com.motur.dealbackendservice.core.model.common.PublishingStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -32,7 +33,7 @@ public class AdPublicationEntity {
     @Column(name = "external_id")
     private String externalId; // Id da publicação no fornecedor
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ad_id", nullable = false, referencedColumnName = "id")
     private AdEntity ad;
 
@@ -42,13 +43,14 @@ public class AdPublicationEntity {
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "provider_trims_id", nullable = false)
-    private ProviderTrimsMinimalEntity providerTrimsEntity;
+    private ProviderTrimsEntity providerTrimsEntity;
 
     @Column(name = "plan_id")
     private String planId; //Id do plano de publicação selecionado
 
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private PublishingStatus status;
 
     @Column(name = "publication_date")
     private Date publicationDate;
@@ -60,6 +62,21 @@ public class AdPublicationEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     @Convert(converter = JsonNodeConverter.class)
     private JsonNode additionalInfo;
+
+    @Column(name = "return_data", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Convert(converter = JsonNodeConverter.class)
+    private JsonNode returnData;
+
+    @Column(name = "original_ad", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Convert(converter = JsonNodeConverter.class)
+    private JsonNode originalAd;
+
+    @Override
+    public String toString() {
+        return "AdPublicationEntity(id=" + this.getId() + ", externalId=" + this.getExternalId() + ", ad=" + this.getAd().getId() + ", provider=" + this.getProvider().getName() + ", providerTrimsEntity=" + this.getProviderTrimsEntity().getName() + ", planId=" + this.getPlanId() + ", status=" + this.getStatus() + ", publicationDate=" + this.getPublicationDate() + ", expirationDate=" + this.getExpirationDate() + ", additionalInfo=" + this.getAdditionalInfo() + ")";
+    }
 
 }
 

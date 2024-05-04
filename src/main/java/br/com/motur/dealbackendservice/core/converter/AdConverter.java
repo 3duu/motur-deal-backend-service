@@ -49,18 +49,18 @@ public class AdConverter extends ValueObjectConverter<AdDto, AdEntity> {
                 .status(dto.getStatus())
                 .mileage(dto.getMileage())
                 .dealer(DealerEntity.builder().id(dto.getDealerId()).build())
-                .adPublicationEntityList(dto.getPublications().stream().map(pubDto -> {
+                .adPublicationList(dto.getPublications().stream().map(pubDto -> {
                     try {
                         return AdPublicationEntity.builder()
                                 .id(pubDto.getId())
                                 .externalId(pubDto.getExternalId())
-                                .providerTrimsEntity(trimService.findProviderById(pubDto.getProviderTrimId()))
+                                .providerTrimsEntity(trimService.findProviderEntityById(pubDto.getProviderTrimId(), pubDto.getProviderId()))
                                 .planId(pubDto.getPlanId())
                                 .additionalInfo(pubDto.getAdditionalInfo() != null ? objectMapper.convertValue(objectMapper.writeValueAsString(pubDto.getAdditionalInfo()), JsonNode.class)  : null)
                                 .provider(providerRepository.findById(pubDto.getProviderId()).orElseThrow(NotFoundException::new))
                                 .build();
                     } catch (NotFoundException e) {
-                        throw new RuntimeException("Integrador com id: " + pubDto.getProviderId()  +" não encontrado.");
+                        throw new NotFoundException("Integrador com id: " + pubDto.getProviderId()  +" não encontrado.", e);
                     }
                     catch (JsonProcessingException e) {
                         throw new RuntimeException("Erro ao converter Json para JsonNode.");
@@ -68,7 +68,7 @@ public class AdConverter extends ValueObjectConverter<AdDto, AdEntity> {
                 }).toList())
                 .build();
 
-        adEntity.getAdPublicationEntityList().forEach(pub -> pub.setAd(adEntity));
+        adEntity.getAdPublicationList().forEach(pub -> pub.setAd(adEntity));
 
         return adEntity;
     }

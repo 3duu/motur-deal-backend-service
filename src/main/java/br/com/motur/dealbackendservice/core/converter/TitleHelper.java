@@ -48,5 +48,4 @@ public class TitleHelper implements ValueHelper<AdEntity,String> {
         }
     }
 
-
 }

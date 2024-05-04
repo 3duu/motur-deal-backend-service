@@ -1,8 +1,13 @@
 package br.com.motur.dealbackendservice.core.model;
 
+import br.com.motur.dealbackendservice.common.FieldMappingInfo;
+import br.com.motur.dealbackendservice.core.model.common.DataType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -12,14 +17,18 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @Entity
 @Table(name = "provider_trims")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ProviderTrimsEntity implements ProviderCatalogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(name = "name", length = 100, nullable = false)
+    @FieldMappingInfo(name = "name", type = DataType.STRING)
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,6 +44,7 @@ public class ProviderTrimsEntity implements ProviderCatalogEntity {
     private TrimEntity baseCatalog;
 
     @Column(name = "external_id", length = 64, nullable = false)
+    @FieldMappingInfo(name = "id", type = DataType.STRING)
     private String externalId;
 
     @Override
